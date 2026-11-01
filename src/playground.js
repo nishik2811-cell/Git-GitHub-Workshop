@@ -356,15 +356,15 @@
     });
     return s+'</svg><div class="glg">Pink tag = where you are now. Cloud = this commit is also on GitHub.</div>'}
   /* missions */
-  var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',merge:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 8c0 3 4 4 9.5 4"/></svg>',more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
+  var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',merge:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 8c0 3 4 4 9.5 4"/></svg>',more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',nd:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
   function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
   function flang(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase();return {md:'Markdown',html:'HTML',css:'CSS',js:'JavaScript',json:'JSON',py:'Python',gitignore:'Ignore'}[e]||'Plain Text'}
   function vsShell(folder,list,cur,editor,branch,state){
     var dirty=list.filter(function(x){return x[1]}).length;
-    var side='<div class="vsside"><div class="vssh"><span>EXPLORER</span><button class="vsnew" data-new="1" title="New File" aria-label="New File">'+VI.nf+'</button></div><div class="vsfold">&#8964; '+esc(folder.toUpperCase())+'</div>'+(S.vsNaming?'<div class="vsname"><input id="vsName" placeholder="name.txt" spellcheck="false" autocomplete="off"></div>':'')+(list.length?list.map(function(x){return '<div class="vsfile'+(x[0]===cur?' on':'')+(x[1]?' g'+x[1]:'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+'<span>'+esc(x[0])+'</span>'+(x[1]?'<b>'+(x[1]==='C'?'!':x[1])+'</b>':'')+'<button class="vsdel" data-del="1" title="Delete" aria-label="Delete '+esc(x[0])+'">'+VI.del+'</button></div>'}).join(''):'<div class="vsnone">empty folder</div>')+'</div>';
+    var side='<div class="vsside"><div class="vssh"><span>EXPLORER</span><span class="vstools"><button class="vsnew" data-new="1" title="New File" aria-label="New File">'+VI.nf+'</button><button class="vsnew" data-newdir="1" title="New Folder" aria-label="New Folder">'+VI.nd+'</button></span></div><div class="vsfold" data-root="1">&#8964; '+esc(folder.toUpperCase())+'</div>'+vsTreeHtml+'</div>';
     var scm=S.vsView==='scm';if(scm)side=scmSide();
     var act='<div class="vsact"><i'+(scm?'':' class="on"')+' title="Explorer" data-view="files">'+VI.files+'</i><i title="Search">'+VI.search+'</i><i'+(scm?' class="on"':'')+' title="Source Control" data-view="scm">'+VI.scm+(dirty?'<em>'+dirty+'</em>':'')+'</i><i title="Extensions">'+VI.ext+'</i></div>';
-    var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(x[0])+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+ficon(cur)+esc(cur)+'</div>':'';
+    var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(base(x[0]))+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+vsCrumb(cur)+'</div>':'';
     var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?'<a class="vsbr" data-brpick="1" title="Switch branch">'+VI.br+esc(branch)+'</a>'+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
     return '<div class="vsmain'+(scm?' scm':'')+'">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
   function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
@@ -406,7 +406,7 @@
     d.addEventListener('pointerdown',function(e){e.stopPropagation()});
     np.appendChild(d);var f=d.querySelector('.vsqi');if(f)f.focus({preventScroll:true})}
   function scmAct(a,f){var r=R();
-    if(a==='init'){vsRun('git init');return}
+    if(a==='init'){var im=vsMode();vsRun(im.root!==S.cwd?['cd '+tilde(im.root),'git init']:'git init');return}
     if(!r)return;
     if(a==='stage'){var t=work()[f];if(r.conf[f]&&/^<<<<<<<|^>>>>>>>/m.test(t||'')){vsPop('Are you sure you want to stage '+esc(f)+' with merge conflicts?','The file still has conflict markers (&lt;&lt;&lt;&lt;&lt;&lt;&lt;). Fix it first with the Accept links or the Merge Editor.',[{t:'Stage anyway',fn:function(){vsRun('git add '+gp(f))}},{t:'Cancel'}]);return}vsRun('git add '+gp(f));return}
     if(a==='unstage'){vsRun('git restore --staged '+gp(f));return}
@@ -422,12 +422,12 @@
       if(!st.staged.length){if(!st.unstaged.length&&!st.untracked.length){vsPop('Nothing to commit','There are no changes. Edit or create a file first.');return}
         vsPop('There are no staged changes to commit.','Would you like to stage all your changes and commit them directly?',[{t:'Yes',fn:function(){S.scmMsg='';vsRun(['git add .','git commit -m "'+msg+'"'])}},{t:'Cancel'}]);return}
       S.scmMsg='';vsRun('git commit -m "'+msg+'"')}}
-  function vsAsk(title,ph,fn){var old=np.querySelector('.vsdlg');if(old)old.remove();
+  function vsAsk(title,ph,fn,val){var old=np.querySelector('.vsdlg');if(old)old.remove();
     var d=document.createElement('div');d.className='vsdlg vspick';d.innerHTML='<div class="vsqp"><input class="vsqin" placeholder="'+ph+'" spellcheck="false" autocomplete="off"><div class="vsqt" style="border:0;margin:0;padding:6px 6px 2px">'+title+'</div></div>';
     var inp2=d.querySelector('input');function close(){d.remove()}
     inp2.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Escape')close();if(e.key==='Enter'){var v=inp2.value.trim();if(!/^[A-Za-z0-9._\/-]+$/.test(v)){inp2.classList.add('bad');return}close();fn(v)}});
     d.addEventListener('click',function(e){if(e.target===d)close()});d.addEventListener('pointerdown',function(e){e.stopPropagation()});
-    np.appendChild(d);inp2.focus({preventScroll:true})}
+    np.appendChild(d);if(val!=null){inp2.value=val;var dot=val.lastIndexOf('.');inp2.setSelectionRange(0,dot>0?dot:val.length)}inp2.focus({preventScroll:true})}
   function brPick(){var r=R();if(!r)return;vsPickList('Select a branch to switch to',[{t:'+ Create new branch...',fn:function(){vsAsk('Type a new branch name and press Enter (no spaces)','feature',function(n){vsRun('git switch -c '+n)})}}].concat(keys(r.br).map(function(b){return {t:VI.br+' '+esc(b),d:b===r.head?'current':'',fn:function(){if(b!==r.head)vsRun('git switch '+b)}}})))}
   function mParse(t){var segs=[],L=t.replace(/\n$/,'').split('\n'),i=0,base=[];
     while(i<L.length){var l=L[i];
@@ -461,7 +461,115 @@
     if(left&&!force){vsPop('Do you want to complete the merge of '+esc(f)+'?','The file still has '+left+' unhandled conflict'+(left>1?'s':'')+'.',[{t:'Complete with Conflicts',fn:function(){mDone(true)}},{t:'Cancel'}]);return}
     S.files[abs]=mResult(segs,pick,true);mClose();
     pr('<span class="y">[VS Code] Merge completed for '+esc(f)+'. File saved. Next: git add '+esc(f)+', then git commit.</span>');render()}
-  function vsPath(){return S.repo?R().root+'/'+S.fvf:S.fvf}
+  /* ---------- shared file system: VS Code, desktop and Bin all use these ---------- */
+  function under(p,d){return !!p&&!!d&&(p===d||p.indexOf(d+'/')===0)}
+  function okName(n){return /^[A-Za-z0-9_.-]+$/.test(n)&&n!=='.'&&n!=='..'&&n!=='.git'}
+  function exists(a){return !!S.dirs[a]||(a in S.files)}
+  function uniq(dir,name){if(!exists(dir+'/'+name))return name;var m=name.match(/^(.+?)(\.[^.]*)?$/),st=m[1],ex=m[2]||'';
+    for(var i=1;;i++){var n=st+'-copy'+(i>1?i:'')+ex;if(!exists(dir+'/'+n))return n}}
+  function tilde(a){return a===HOME?'~':a.indexOf(HOME+'/')===0?'~'+a.slice(HOME.length):a}
+  function sigNow(){return S.cwd+'|'+(S.repo?S.repo.root:'')}
+  function hasGit(a){return /(^|\/)\.git(\/|$)/.test(a)}
+  function fsNew(a,dir){if(!okName(base(a)))return {err:'Use letters, numbers, dots, dashes or underscores. No spaces.'};
+    if(exists(a))return {err:'A file or folder called <b>'+esc(base(a))+'</b> already exists here.'};
+    if(!S.dirs[dirname(a)])return {err:'That folder does not exist any more.'};
+    if(dir)S.dirs[a]=1;else S.files[a]='';return {abs:a}}
+  function fsRename(o,n){if(o===n)return {abs:n};if(o===HOME)return {err:'The home folder cannot be renamed.'};
+    if(!okName(base(n)))return {err:'Use letters, numbers, dots, dashes or underscores. No spaces.'};
+    if(exists(n))return {err:'A file or folder called <b>'+esc(base(n))+'</b> already exists there.'};
+    if(!S.dirs[dirname(n)])return {err:'That folder does not exist any more.'};
+    if(S.dirs[o]){if(under(n,o))return {err:'A folder cannot go inside itself.'};
+      var pin=S.vsPin&&S.vsPinSig===sigNow();
+      keys(S.dirs).forEach(function(d){if(under(d,o)){delete S.dirs[d];S.dirs[n+d.slice(o.length)]=1}});
+      keys(S.files).forEach(function(f){if(f.indexOf(o+'/')===0){var t=S.files[f];delete S.files[f];S.files[n+f.slice(o.length)]=t}});
+      var mv=function(x){return under(x,o)?n+x.slice(o.length):x};
+      S.cwd=mv(S.cwd);if(S.repo)S.repo.root=mv(S.repo.root);if(S.vsPin)S.vsPin=mv(S.vsPin);if(S.vsSelDir)S.vsSelDir=mv(S.vsSelDir);
+      if(pin)S.vsPinSig=sigNow();if(S.fvfWant)S.fvfWant=mv(S.fvfWant)}
+    else if(o in S.files){var t=S.files[o];delete S.files[o];S.files[n]=t}
+    else return {err:'It is not there any more.'};
+    return {abs:n}}
+  function fsDelete(a){if(a===HOME)return {err:'The home folder cannot be deleted.'};
+    if(S.dirs[a]){keys(S.files).forEach(function(f){if(f.indexOf(a+'/')===0)delete S.files[f]});keys(S.dirs).forEach(function(d){if(under(d,a))delete S.dirs[d]});
+      if(S.repo&&under(S.repo.root,a)){S.repo=null;S.vsMerge=null}
+      while(!S.dirs[S.cwd])S.cwd=dirname(S.cwd)}
+    else if(a in S.files)delete S.files[a];
+    else return {err:'It is not there any more.'};
+    return {abs:a}}
+  function fsCopy(src,dir){if(!exists(src))return {err:'It is not there any more.'};if(!S.dirs[dir])return {err:'That folder does not exist any more.'};
+    if(S.dirs[src]&&under(dir,src))return {err:'A folder cannot be pasted inside itself.'};
+    var dst=dir+'/'+uniq(dir,base(src));
+    if(S.dirs[src]){keys(S.dirs).forEach(function(d){if(under(d,src)&&!hasGit(d.slice(src.length)))S.dirs[dst+d.slice(src.length)]=1});
+      keys(S.files).forEach(function(f){if(f.indexOf(src+'/')===0&&!hasGit(f.slice(src.length)))S.files[dst+f.slice(src.length)]=S.files[f]})}
+    else S.files[dst]=S.files[src];
+    return {abs:dst}}
+  function fsMove(src,dir){if(!exists(src))return {err:'It is not there any more.'};if(dirname(src)===dir)return {abs:src};
+    if(S.dirs[src]&&under(dir,src))return {err:'A folder cannot go inside itself.'};
+    return fsRename(src,dir+'/'+uniq(dir,base(src)))}
+  var binSeq=0;
+  function binPut(a){if(!exists(a))return {err:'It is not there any more.'};if(a===HOME)return {err:'The home folder cannot be deleted.'};
+    var e={id:++binSeq,name:base(a),from:dirname(a),dir:!!S.dirs[a],files:{},dirs:[]};
+    if(e.dir){keys(S.dirs).forEach(function(d){if(d.indexOf(a+'/')===0)e.dirs.push(d.slice(a.length+1))});
+      keys(S.files).forEach(function(f){if(f.indexOf(a+'/')===0)e.files[f.slice(a.length+1)]=S.files[f]});
+      if(S.repo&&under(S.repo.root,a)){e.repo=S.repo;e.repoRel=S.repo.root.slice(a.length)}}
+    else e.files['']=S.files[a];
+    var r=fsDelete(a);if(r.err)return r;(S.bin||(S.bin=[])).push(e);return {abs:a,repo:!!e.repo}}
+  function binRestore(id){var b=S.bin||[],i=-1;b.forEach(function(x,k){if(x.id===id)i=k});if(i<0)return {err:'It is not in the Bin any more.'};var e=b[i];
+    var p=e.from,need=[];while(!S.dirs[p]){need.unshift(p);p=dirname(p)}need.forEach(function(d){S.dirs[d]=1});
+    var dst=e.from+'/'+uniq(e.from,e.name),note='';
+    if(e.dir){S.dirs[dst]=1;e.dirs.forEach(function(d){S.dirs[dst+'/'+d]=1});keys(e.files).forEach(function(f){S.files[dst+'/'+f]=e.files[f]});
+      if(e.repo){if(S.repo)note='Its Git history could not come back, because another repo is open on the Mini laptop.';else{S.repo=e.repo;S.repo.root=dst+e.repoRel}}}
+    else S.files[dst]=e.files[''];
+    b.splice(i,1);return {abs:dst,note:note}}
+  function binEmpty(id){if(id==null)S.bin=[];else S.bin=(S.bin||[]).filter(function(x){return x.id!==id})}
+  function gitMark(a){var r=S.repo;if(!r||!under(a,r.root)||a===r.root||!(a in S.files))return '';var f=a.slice(r.root.length+1);
+    if(r.conf[f])return 'C';if(!(f in r.index))return 'U';var h=headTree();return S.files[a]!==r.index[f]?'M':r.index[f]!==h[f]?(f in h?'M':'A'):''}
+  /* VS Code shows the terminal's repo or folder, unless the desktop opened another folder in it */
+  function vsMode(){var r=S.repo;
+    if(S.vsPin&&S.dirs[S.vsPin]&&S.vsPinSig===sigNow()){if(r&&under(S.vsPin,r.root))return {root:r.root,repo:true};return {root:S.vsPin,repo:false}}
+    S.vsPin=null;return r?{root:r.root,repo:true}:{root:S.cwd,repo:false}}
+  function vsAbs(k){var m=vsMode();return m.repo?m.root+'/'+k:k}
+  function vsKeyOf(a,m){m=m||vsMode();if(!under(a,m.root)||a===m.root)return null;return m.repo?a.slice(m.root.length+1):a}
+  function vsTarget(m){var d=S.vsSelDir;return d&&S.dirs[d]&&under(d,m.root)?d:m.root}
+  function vsOpenUp(d,root){while(d&&d!==root&&under(d,root)){if(S.vsClosed)delete S.vsClosed[d];d=dirname(d)}}
+  /* small right-click menu used by VS Code and the desktop */
+  var ctxLast=0;
+  function ctxClose(){document.querySelectorAll('.ctxm').forEach(function(m){m.remove()})}
+  function ctxMenu(x,y,items,sub,px){if(!sub)ctxClose();else document.querySelectorAll('.ctxm.sub').forEach(function(m){m.remove()});
+    ctxLast=Date.now();
+    var m=document.createElement('div');m.className='ctxm'+(sub?' sub':'');m.setAttribute('role','menu');
+    items.forEach(function(it){if(it==='-'){var h=document.createElement('hr');m.appendChild(h);return}
+      var b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');
+      b.innerHTML='<i>'+(it.on?'&#10003;':'')+'</i><span>'+it.t+'</span>'+(it.sub?'<em>&#9656;</em>':it.k?'<small>'+it.k+'</small>':'');
+      if(it.dis){b.disabled=true;b.setAttribute('aria-disabled','true')}
+      b.addEventListener('click',function(e){e.stopPropagation();if(it.dis)return;
+        if(it.sub){var r=b.getBoundingClientRect();ctxMenu(r.right-4,r.top-4,it.sub,true,r.left);return}
+        ctxClose();if(it.fn)it.fn()});
+      b.addEventListener('pointerenter',function(){if(!it.sub&&!sub)document.querySelectorAll('.ctxm.sub').forEach(function(q){q.remove()})});
+      m.appendChild(b)});
+    m.addEventListener('pointerdown',function(e){e.stopPropagation()});
+    m.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation()});
+    m.addEventListener('keydown',function(e){var bs=[].slice.call(m.querySelectorAll('button:not([disabled])')),i=bs.indexOf(document.activeElement);
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!bs.length)return;i=e.key==='ArrowDown'?(i+1)%bs.length:(i-1+bs.length)%bs.length;bs[i].focus()}
+      else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();if(sub)m.remove();else ctxClose()}
+      else if(e.key==='ArrowRight'&&document.activeElement&&document.activeElement.querySelector('em'))document.activeElement.click()
+      else if(e.key==='ArrowLeft'&&sub)m.remove()});
+    document.body.appendChild(m);
+    var w=m.offsetWidth,h=m.offsetHeight;
+    if(sub&&x+w>innerWidth-4)x=Math.max(4,px-w+4);
+    m.style.left=Math.max(4,Math.min(x,innerWidth-w-4))+'px';m.style.top=Math.max(4,Math.min(y,innerHeight-h-42))+'px';
+    var f=m.querySelector('button:not([disabled])');if(f)f.focus({preventScroll:true});return m}
+  document.addEventListener('pointerdown',function(){if(document.querySelector('.ctxm'))ctxClose()});
+  addEventListener('blur',ctxClose);addEventListener('resize',ctxClose);
+  document.addEventListener('scroll',function(){if(Date.now()-ctxLast>300)ctxClose()},true);
+  /* long press = right-click on touch screens */
+  function longPress(el,test,fn){var t=null,sx=0,sy=0;
+    el.addEventListener('pointerdown',function(e){if(e.pointerType==='mouse'||!test(e.target))return;sx=e.clientX;sy=e.clientY;var tg=e.target;clearTimeout(t);
+      t=setTimeout(function(){t=null;el._lp=Date.now();fn({target:tg,clientX:sx,clientY:sy,preventDefault:function(){},stopPropagation:function(){}})},550)});
+    el.addEventListener('pointermove',function(e){if(t&&Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>10){clearTimeout(t);t=null}});
+    ['pointerup','pointercancel','pointerleave'].forEach(function(n){el.addEventListener(n,function(){clearTimeout(t);t=null})});
+    el.addEventListener('contextmenu',function(e){if(!test(e.target))return;e.preventDefault();e.stopPropagation();if(el._lp&&Date.now()-el._lp<900)return;fn(e)});
+    el.addEventListener('click',function(e){if(el._lp&&Date.now()-el._lp<900){e.preventDefault();e.stopPropagation();el._lp=0}},true)}
+  function vsPath(){return vsAbs(S.fvf)}
   var vsSel=null;
   function vsKeep(){var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);ta.scrollTop=vsSel.t;ta.scrollLeft=vsSel.l}vsSel=null}
   $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
@@ -474,36 +582,83 @@
     if(e.target.id==='vsTa'&&e.key==='Tab'){e.preventDefault();var ta=e.target,s=ta.selectionStart;ta.setRangeText('  ',s,ta.selectionEnd,'end');ta.dispatchEvent(new Event('input',{bubbles:true}))}
     if(e.target.id!=='vsName')return;
     if(e.key==='Escape'){S.vsNaming=0;fvDraw();return}
-    if(e.key!=='Enter')return;e.preventDefault();var nm=e.target.value.trim();
-    if(!/^[A-Za-z0-9_.-]+$/.test(nm)||nm==='.'||nm==='..'){e.target.classList.add('bad');e.target.title='Use letters, numbers, dots, dashes or underscores. No spaces.';return}
-    var abs=S.cwd+'/'+nm;S.vsNaming=0;
-    if(S.dirs[abs]){vsPop('Cannot create file','A folder called <b>'+esc(nm)+'</b> already exists here.');fvDraw();return}
-    if(!(abs in S.files))S.files[abs]='';
-    var rp=S.repo?rel(abs):abs;
-    if(S.repo&&rp===null){vsPop('This file is outside the repo','The terminal is in a folder outside your repo. <code>cd</code> into the repo first.');render();return}
-    S.fvf=rp;pr('<span class="c">[VS Code] Created '+esc(nm)+'. Type in it, then use git add and git commit here.</span>');render();var ta=$('vsTa');if(ta)ta.focus({preventScroll:true})});
+    if(e.key!=='Enter')return;e.preventDefault();var nm=e.target.value.trim(),vm=vsMode(),dir=vsTarget(vm),isDir=S.vsNaming==='dir';
+    if(!okName(nm)){e.target.classList.add('bad');e.target.title='Use letters, numbers, dots, dashes or underscores. No spaces.';return}
+    var abs=dir+'/'+nm;S.vsNaming=0;
+    if(!isDir&&(abs in S.files)){S.fvf=vsKeyOf(abs,vm);render();return}
+    var r=fsNew(abs,isDir);
+    if(r.err){vsPop(isDir?'Cannot create folder':'Cannot create file',r.err);fvDraw();return}
+    if(isDir){S.vsSelDir=abs;delete S.vsClosed[abs];pr('<span class="c">[VS Code] Created folder '+esc(nm)+'.'+(vm.repo?' Git does not save empty folders, so put a file in it.':'')+'</span>');render();return}
+    S.fvf=vsKeyOf(abs,vm);pr('<span class="c">[VS Code] Created '+esc(nm)+'.'+(vm.repo?' Type in it, then use git add and git commit here.':' Type in it.')+'</span>');render();var ta=$('vsTa');if(ta)ta.focus({preventScroll:true})});
   $('fvB').addEventListener('focusout',function(e){if(e.target.id==='vsName'&&S.vsNaming){setTimeout(function(){if(S.vsNaming&&document.activeElement.id!=='vsName'){S.vsNaming=0;fvDraw()}},150)}});
+  var vsTreeHtml='';
+  function vsCrumb(k){var m=vsMode(),rp=m.repo?k:k.slice(m.root.length+1),pa=rp.split('/'),last=pa.pop();
+    return pa.map(function(x){return esc(x)+' &rsaquo; '}).join('')+ficon(k)+esc(last)}
+  function vsTree(m,list,cur){var root=m.root,dirs={},tgt=vsTarget(m),cl=S.vsClosed||(S.vsClosed={});
+    var files=list.map(function(x){return {k:x[0],s:x[1],a:m.repo?root+'/'+x[0]:x[0]}});
+    keys(S.dirs).forEach(function(d){if(d.indexOf(root+'/')===0&&!hasGit(d.slice(root.length)))dirs[d]=1});
+    files.forEach(function(x){var q=dirname(x.a);while(q!==root&&q.indexOf(root+'/')===0){dirs[q]=1;q=dirname(q)}});
+    var dl=keys(dirs);
+    function pad(n,f){return ' style="padding-left:'+((f?14:4)+n*12)+'px"'}
+    function nameRow(n){var dir=S.vsNaming==='dir';return '<div class="vsname"'+pad(n,1)+'><input id="vsName" placeholder="'+(dir?'folder-name':'name.txt')+'" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="'+(dir?'New folder name':'New file name')+'"></div>'}
+    function walk(dir,n){var o=S.vsNaming&&tgt===dir?nameRow(n):'';
+      dl.filter(function(d){return dirname(d)===dir}).sort().forEach(function(d){var open=!cl[d];
+        o+='<div class="vsfile vsdir'+(S.vsSelDir===d?' sel':'')+'" data-d="'+esc(d)+'"'+pad(n)+' title="'+esc(base(d))+'"><i class="vsar" aria-hidden="true">'+(open?'&#9662;':'&#9656;')+'</i><span>'+esc(base(d))+'</span><button class="vsdel" data-del="1" title="Delete" aria-label="Delete '+esc(base(d))+'">'+VI.del+'</button></div>';
+        if(open)o+=walk(d,n+1)});
+      files.filter(function(x){return dirname(x.a)===dir}).sort(function(a,b){return a.a<b.a?-1:1}).forEach(function(x){
+        o+='<div class="vsfile'+(x.k===cur?' on':'')+(x.s?' g'+x.s:'')+'" data-f="'+esc(x.k)+'"'+pad(n,1)+'>'+ficon(x.k)+'<span>'+esc(base(x.k))+'</span>'+(x.s?'<b>'+(x.s==='C'?'!':x.s)+'</b>':'')+'<button class="vsdel" data-del="1" title="Delete" aria-label="Delete '+esc(base(x.k))+'">'+VI.del+'</button></div>'});
+      return o}
+    return walk(root,0)||'<div class="vsnone">empty folder</div>'}
+  function vsShowWin(){np.classList.add('show');var t=$('tkVS');if(t)t.hidden=false;window.vsDock(false)}
+  function vsOpenPath(a){S.vsClosed=S.vsClosed||{};
+    if(S.dirs[a]){S.vsPin=a;S.vsPinSig=sigNow();S.vsSelDir=null;delete S.vsClosed[a];var m=vsMode();if(m.repo&&a!==m.root){S.vsSelDir=a;vsOpenUp(a,m.root)}}
+    else if(a in S.files){var d=dirname(a);S.vsPin=d;S.vsPinSig=sigNow();vsOpenUp(d,vsMode().root);S.fvfWant=a}
+    else return;
+    S.vsView='files';S.vsNaming=0;vsShowWin();render()}
+  function vsDelete(a){var nm=base(a),isDir=!!S.dirs[a],rp=S.repo&&isDir&&under(S.repo.root,a),inr=S.repo&&a!==S.repo.root&&under(a,S.repo.root);if(inr)nm=a.slice(S.repo.root.length+1);
+    vsPop('Are you sure you want to delete \''+esc(nm)+'\''+(isDir?' and everything in it':'')+'?','You can restore it from the Bin on the desktop.'+(rp?'<br><b>This folder holds a Git repo.</b> Its history (the hidden .git folder) goes to the Bin with it.':inr?'<br>Git will then show it as <b>deleted</b>. Run <code>git add '+(isDir?'.':esc(nm))+'</code> and <code>git commit</code> to save that.':''),
+      [{t:'Move to Bin',fn:function(){var r=binPut(a);if(r.err){vsPop('Cannot delete',r.err);return}
+        pr('<span class="c">[VS Code] Moved '+esc(nm)+' to the Bin.'+(inr?' Next: git add '+(isDir?'.':esc(nm))+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}])}
+  function vsRename(a){var old=base(a);
+    vsAsk('Type a new name and press Enter (no spaces)',old,function(n){if(n===old)return;if(!okName(n)){vsPop('Cannot rename','Use letters, numbers, dots, dashes or underscores. No spaces.');return}
+      var fa=S.fvf?vsAbs(S.fvf):null,r=fsRename(a,dirname(a)+'/'+n);if(r.err){vsPop('Cannot rename',r.err);return}
+      if(fa&&under(fa,a))S.fvfWant=r.abs+fa.slice(a.length);
+      pr('<span class="c">[VS Code] Renamed '+esc(old)+' to '+esc(n)+'.'+(S.repo&&under(r.abs,S.repo.root)&&r.abs!==S.repo.root?' Git will show the old name as deleted and the new name as a new file.':'')+'</span>');render()},old)}
+  function vsMenu(e){var t=e.target,m=vsMode(),row=t.closest&&t.closest('.vsfile[data-f],.vsdir');
+    function nw(d,kind){S.vsSelDir=d===m.root?null:d;S.vsNaming=kind;S.vsView='files';fvDraw()}
+    var items;
+    if(row&&row.classList.contains('vsdir')){var d=row.getAttribute('data-d');
+      items=[{t:'New File...',fn:function(){nw(d,'file')}},{t:'New Folder...',fn:function(){nw(d,'dir')}},'-',{t:'Rename...',k:'F2',fn:function(){vsRename(d)}},{t:'Delete',k:'Del',fn:function(){vsDelete(d)}}]}
+    else if(row){var k=row.getAttribute('data-f'),a=vsAbs(k);
+      items=[{t:'Open',fn:function(){S.fvf=k;fvDraw()}},'-',{t:'Rename...',k:'F2',fn:function(){vsRename(a)}},{t:'Delete',k:'Del',fn:function(){vsDelete(a)}}]}
+    else items=[{t:'New File...',fn:function(){nw(m.root,'file')}},{t:'New Folder...',fn:function(){nw(m.root,'dir')}}];
+    ctxMenu(e.clientX,e.clientY,items)}
   function fvDraw(){
-    var T=$('fvT'),B=$('fvB'),w,ks,conf=false,folder=base(S.repo?S.repo.root:S.cwd)||'/',empty='<div class="vsempty">No files yet. Click the <b>New File</b> icon next to EXPLORER, or type in the terminal:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';
-    if(!S.repo){var fl=keys(S.files).filter(function(f){return dirname(f)===S.cwd});np.classList.remove('bad');
-      if(!fl.length){T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,null);return}
-      S.fvf=S.fvf&&S.files[S.fvf]!==undefined?S.fvf:fl[0];T.textContent=base(S.fvf)+' - '+folder+' - Visual Studio Code';
-      B.innerHTML=vsShell(folder,fl.sort().map(function(f){return [base(f),'']}),base(S.fvf),vsEdit(S.files[S.fvf]),null);vsKeep();
-      B.querySelectorAll('[data-f]').forEach(function(e){e.setAttribute('data-f',S.cwd+'/'+e.getAttribute('data-f'))});return}
+    var m=vsMode(),T=$('fvT'),B=$('fvB'),w,ks,conf=false,folder=base(m.root)||'/',empty='<div class="vsempty">No files yet. Click the <b>New File</b> icon next to EXPLORER, or type in the terminal:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';
+    S.vsClosed=S.vsClosed||{};
+    if(S.fvfWant){var wk=vsKeyOf(S.fvfWant,m);if(wk!==null&&(vsAbs(wk) in S.files))S.fvf=wk;S.fvfWant=null}
+    if(S.vsNaming){var tg=vsTarget(m);delete S.vsClosed[tg];vsOpenUp(tg,m.root)}
+    if(!m.repo){var fl=keys(S.files).filter(function(f){return f.indexOf(m.root+'/')===0&&!hasGit(f.slice(m.root.length))}).sort(function(a,b){var x=dirname(a)===m.root,y=dirname(b)===m.root;return x!==y?(x?-1:1):a<b?-1:1});np.classList.remove('bad');
+      if(S.vsMerge){S.vsMerge=null;np.classList.remove('merging')}
+      var nl=fl.map(function(f){return [f,'']});
+      if(!fl.length){vsTreeHtml=vsTree(m,[],null);T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,null);vsKeep();return}
+      if(!S.fvf||!(S.fvf in S.files)||fl.indexOf(S.fvf)<0)S.fvf=fl[0];vsTreeHtml=vsTree(m,nl,S.fvf);T.textContent=base(S.fvf)+' - '+folder+' - Visual Studio Code';
+      B.innerHTML=vsShell(folder,nl,S.fvf,vsEdit(S.files[S.fvf]),null);vsKeep();return}
     w=work();ks=keys(w).sort();
-    if(!ks.length){np.classList.remove('bad');T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,R().head);return}
+    var hT=headTree();
+    function st(f){return R().conf[f]?'C':!(f in R().index)?'U':w[f]!==R().index[f]?'M':R().index[f]!==hT[f]?(f in hT?'M':'A'):''}
+    if(!ks.length){np.classList.remove('bad');vsTreeHtml=vsTree(m,[],null);T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,R().head);vsKeep();return}
     if(!S.fvf||!(S.fvf in w))S.fvf=ks[0];
     conf=!!R().conf[S.fvf];
     if(S.vsMerge&&(!conf||S.vsMerge.f!==S.fvf||!/^<<<<<<</m.test(w[S.fvf]||''))){S.vsMerge=null;np.classList.remove('merging')}
-    var hT=headTree();
-    function st(f){return R().conf[f]?'C':!(f in R().index)?'U':w[f]!==R().index[f]?'M':R().index[f]!==hT[f]?(f in hT?'M':'A'):''}
+    var lst=ks.map(function(f){return [f,st(f)]});vsTreeHtml=vsTree(m,lst,S.fvf);
     var state=conf?'merge conflict':({U:'new file, not tracked',M:(w[S.fvf]!==R().index[S.fvf]?'changed, not staged':'staged'),A:'staged',C:'merge conflict'})[st(S.fvf)]||'saved';
     T.textContent=S.fvf+' - '+folder+' - Visual Studio Code';
     np.classList.toggle('bad',conf);
     if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
     if(!conf)S.conflShown=0;
     var nc=conf?((w[S.fvf].match(/^<<<<<<</gm)||[]).length):0;
-    B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(S.vsMerge&&S.vsMerge.f===S.fvf&&nc?mEditor(w[S.fvf]):nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc&&!(S.vsMerge&&S.vsMerge.f===S.fvf)?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();
+    B.innerHTML=vsShell(folder,lst,S.fvf,(S.vsMerge&&S.vsMerge.f===S.fvf&&nc?mEditor(w[S.fvf]):nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc&&!(S.vsMerge&&S.vsMerge.f===S.fvf)?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();
   }
   function mdPrev(t){var h='<div class="mdp"><div class="mdh">How GitHub shows it</div>';t.replace(/\n$/,'').split('\n').forEach(function(l){
       if(/^## /.test(l))h+='<h4>'+esc(l.replace(/^#+ /,''))+'</h4>';else if(/^# /.test(l))h+='<h3>'+esc(l.slice(2))+'</h3>';else if(l.trim())h+='<p>'+esc(l)+'</p>'});return h+'</div>'}
@@ -554,17 +709,25 @@
       $('pgType').onclick=function(){sStep()}}
     var l='';TT.forEach(function(t,i){l+='<li class="'+(i<si?'d':i===cur?'c':'')+'">'+t+'</li>'});$('pgList').innerHTML=l;
     if(window.sDraw)sDraw();
+    if(window.deskDraw)deskDraw();
   }
-  function showFile(e){if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming=1;fvDraw();return}
+  function showFile(e){if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming='file';fvDraw();return}
+    if(e.target.closest&&e.target.closest('[data-newdir]')){S.vsNaming='dir';fvDraw();return}
     var vv=e.target.closest&&e.target.closest('[data-view]');if(vv){S.vsView=vv.getAttribute('data-view');fvDraw();return}
     if(e.target.closest&&e.target.closest('[data-brpick]')){brPick();return}
     var sc=e.target.closest&&e.target.closest('[data-scm]');if(sc){var rw=sc.closest('[data-f]');scmAct(sc.getAttribute('data-scm'),rw&&rw.getAttribute('data-f'));return}
-    var dl=e.target.closest&&e.target.closest('[data-del]');if(dl){var f=dl.closest('[data-f]').getAttribute('data-f'),abs=S.repo?R().root+'/'+f:f,nm=base(abs);
-      vsPop('Are you sure you want to delete \''+esc(nm)+'\'?','You can restore this file from the Trash.'+(S.repo?'<br>Git will then show it as <b>deleted</b>. Run <code>git add '+esc(nm)+'</code> and <code>git commit</code> to save that.':''),[{t:'Move to Trash',fn:function(){delete S.files[abs];if(S.fvf===f)S.fvf=null;pr('<span class="c">[VS Code] Deleted '+esc(nm)+'.'+(S.repo?' Next: git add '+esc(nm)+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}]);return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){mOpen();return}
+    var dl=e.target.closest&&e.target.closest('[data-del]');if(dl){var drow=dl.closest('[data-f],[data-d]');if(drow)vsDelete(drow.hasAttribute('data-d')?drow.getAttribute('data-d'):vsAbs(drow.getAttribute('data-f')));return}
+    var dr=e.target.closest&&e.target.closest('.vsdir');if(dr){var dd=dr.getAttribute('data-d');S.vsClosed=S.vsClosed||{};if(S.vsClosed[dd])delete S.vsClosed[dd];else S.vsClosed[dd]=1;S.vsSelDir=dd;fvDraw();return}
+    if(e.target.closest&&(e.target.closest('[data-root]')||(e.target.classList&&e.target.classList.contains('vsside')&&!e.target.classList.contains('scmside'))||e.target.closest('.vsnone'))){S.vsSelDir=null;fvDraw();return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){mOpen();return}
     if(e.target.closest&&e.target.closest('[data-mclose]')){mClose();return}
     if(e.target.closest&&e.target.closest('[data-mdone]')){mDone();return}
-    var mc=e.target.closest&&e.target.closest('[data-mc]');if(mc){var k=mc.getAttribute('data-mc'),sd=mc.getAttribute('data-side'),a=S.vsMerge.pick[k]||(S.vsMerge.pick[k]=[]),ix=a.indexOf(sd);if(mc.checked&&ix<0)a.push(sd);if(!mc.checked&&ix>=0)a.splice(ix,1);fvDraw();return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+    var mc=e.target.closest&&e.target.closest('[data-mc]');if(mc){var k=mc.getAttribute('data-mc'),sd=mc.getAttribute('data-side'),a=S.vsMerge.pick[k]||(S.vsMerge.pick[k]=[]),ix=a.indexOf(sd);if(mc.checked&&ix<0)a.push(sd);if(!mc.checked&&ix>=0)a.splice(ix,1);fvDraw();return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;
+    if(el.classList.contains('fchip')){S.vsPin=null;S.fvf=S.repo?el.getAttribute('data-f'):S.cwd+'/'+el.getAttribute('data-f');S.vsView='files'}
+    else{S.fvf=el.getAttribute('data-f');if(el.classList.contains('vsfile')&&!el.classList.contains('scmrow')){var fd=dirname(vsAbs(S.fvf));S.vsSelDir=fd===vsMode().root?null:fd}}
+    fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
   $('fvB').addEventListener('click',showFile);
+  longPress($('fvB'),function(t){var sd=t.closest&&t.closest('.vsside');return !!sd&&!sd.classList.contains('scmside')&&!(t.closest&&t.closest('input'))},vsMenu);
+  $('fvB').addEventListener('keydown',function(e){if(e.target.closest&&e.target.closest('.vsside')&&(e.key==='F2'||e.key==='Delete')&&e.target.tagName!=='INPUT'){var row=e.target.closest('.vsfile[data-f],.vsdir');if(!row)return;var a=row.classList.contains('vsdir')?row.getAttribute('data-d'):vsAbs(row.getAttribute('data-f'));e.preventDefault();if(e.key==='F2')vsRename(a);else vsDelete(a)}});
   $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */
   var sGen=0;
@@ -579,7 +742,7 @@
     })();
     return true;
   }
-  function reset(){fresh();out.innerHTML='';pl('Welcome to your pretend computer! Type  help  to see what you can do.','y');setPrompt();S.sig={};render()}
+  function reset(){fresh();out.innerHTML='';pl('Welcome to your Mini laptop! Type  help  to see what you can do.','y');setPrompt();S.sig={};render()}
   inp.addEventListener('keydown',function(e){
     if(e.key==='Enter'){var v=inp.value;inp.value='';run(v)}
     else if(e.key==='ArrowUp'){if(S.hi>0){S.hi--;inp.value=S.hist[S.hi]||'';e.preventDefault()}}
@@ -609,7 +772,7 @@
     }).catch(function(){perr('Could not reach GitHub.')}).then(function(){busy=false;inp.disabled=false;inp.focus({preventScroll:true});refreshLive()});
   }
   $('pgReset').onclick=function(){if(pend)return;stopScripts();
-    if(RL.on&&window.gitPop)window.gitPop('err','CLEAR EVERYTHING?','This clears the terminal, deletes your pretend files and starts over.<br><br>Also delete every file in <b>github.com/'+esc(RL.repo)+'</b>?',[{t:'Laptop only',fn:reset},{t:'Laptop + GitHub',fn:wipeReal},{t:'Cancel'}]);
+    if(RL.on&&window.gitPop)window.gitPop('err','CLEAR EVERYTHING?','This clears the terminal, deletes the files on your Mini laptop and starts over.<br><br>Also delete every file in <b>github.com/'+esc(RL.repo)+'</b>?',[{t:'Laptop only',fn:reset},{t:'Laptop + GitHub',fn:wipeReal},{t:'Cancel'}]);
     else reset()};
   $('pgReadme').onclick=function(){if(busy)return;
     if(!S.repo||!S.cfg.name){window.gitPop&&window.gitPop('warn','MAKE A REPO FIRST','A README lives inside a repo. Run <code>git init</code> and set your name and email first, or press Start the story.');return}
@@ -761,7 +924,7 @@
      +'<label class="rf">Token (starts with ghp_ or github_pat_)<input id="rfTok" type="password" placeholder="paste the token here" autocomplete="off"></label>'
      +'<p class="empty" style="margin:4px 0 0">The token stays in this tab only. It is never saved.</p>'
      +(msg?'<p class="rerr">'+esc(msg)+'</p>':'')
-     +'<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button class="greenbtn" id="rfGo">Connect</button><button id="rfOff">Back to pretend mode</button></div>';
+     +'<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button class="greenbtn" id="rfGo">Connect</button><button id="rfOff">Back to Mini laptop only</button></div>';
     $('rfGo').onclick=connect;$('rfOff').onclick=realOff;
   }
   function parseRepo(v){v=v.trim();var m=v.match(/github\.com[\/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[\/?#].*)?$/);if(m)return m[1]+'/'+m[2];m=v.match(/^([\w.-]+)\/([\w.-]+)$/);return m?m[1]+'/'+m[2].replace(/\.git$/,''):''}
@@ -798,7 +961,7 @@
       }else h+='<p class="empty">This repo has no commits on <b>'+esc(v)+'</b> yet. Make a commit and push.</p>';
       h+='<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button id="rfWipe" class="redbtn">Delete everything in this repo</button><button id="rfOff2">Switch off real mode</button></div>';
       rbody.innerHTML=h;rb.hidden=false;
-      var b=$('rfRef');if(b)b.onclick=function(){refreshLive()};$('rfOff2').onclick=realOff;$('rfWipe').onclick=function(){if(busy)return;window.gitPop('err','DELETE EVERYTHING?','This deletes <b>every file and every extra branch</b> in <b>github.com/'+esc(RL.repo)+'</b> and clears the pretend computer too. Use it to reset the repo for the next demo.',[{t:'Yes, delete everything',fn:wipeReal},{t:'Cancel'}])};
+      var b=$('rfRef');if(b)b.onclick=function(){refreshLive()};$('rfOff2').onclick=realOff;$('rfWipe').onclick=function(){if(busy)return;window.gitPop('err','DELETE EVERYTHING?','This deletes <b>every file and every extra branch</b> in <b>github.com/'+esc(RL.repo)+'</b> and clears the Mini laptop too. Use it to reset the repo for the next demo.',[{t:'Yes, delete everything',fn:wipeReal},{t:'Cancel'}])};
     });
   }
   rbody.addEventListener('click',function(e){var el=e.target.closest&&e.target.closest('.lvfile');if(!el||el.getAttribute('data-t')!=='file')return;
@@ -832,5 +995,8 @@
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
+  window.ML={S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
+    fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,
+    ctxMenu:ctxMenu,ctxClose:ctxClose,longPress:longPress,ficon:ficon,openInVS:vsOpenPath,showVS:vsShowWin};
   reset();
 })();

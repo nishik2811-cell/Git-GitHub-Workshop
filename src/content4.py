@@ -291,7 +291,7 @@ p4+=card('t4-6','d','WRAP-UP_OUTCOMES.EXE','Wrap-up: can you do all seven?',
 
 p5=''
 p5+=card('t2-3b','c','P5_PRACTICE-TERMINAL.EXE','Practice lab: type real Git commands',
- lead('This is a <mark>pretend computer</mark>. Type the commands and watch your project change on the right.')
+ lead('This is your <mark>Mini laptop</mark>. Type the commands and watch your project change on the right.')
  +'<div class="pg" id="pg"><div class="pgl">'
  +'<div class="story" id="story"><div class="stabs" id="stTabs"></div><div class="sth"><span id="stH">GUIDED STORY: PASTA, BRANCH, CONFLICT</span><b id="stC">0 / 0</b></div><div class="stsay" id="stSay">Press <b>Start the story</b>. You will watch every command get typed, and a line under it will explain what it does. You can go one step at a time, or press Auto-play.</div><div class="sdots" id="sDots"></div><div class="btns"><button id="stNext" class="greenbtn">Start the story</button><button id="stAuto">Auto-play</button><button id="stRestart">Restart story</button></div></div>'
  +'<div class="pgterm" id="pgTerm"><div class="bar"><i></i><span>GIT BASH / TERMINAL</span></div><div class="pgout" id="pgOut"></div><div class="pgline"><div id="pgPs"></div><div class="pgin"><span>$&nbsp;</span><input id="pgIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a Git command here"></div></div></div>'

@@ -98,7 +98,7 @@
       ct.textContent='STEP '+(i+1)+' OF '+st.length;bar.style.width=Math.round((i+1)*100/st.length)+'%';
       pv.disabled=i===0;nx.disabled=i===st.length-1;nx.textContent=i===st.length-2?'Last step >':(i===st.length-1?'Done!':'Next >');
     }
-    function keep(){requestAnimationFrame(function(){var r=w.getBoundingClientRect();if(r.top<0)window.scrollTo({top:scrollY+r.top-4,behavior:'smooth'})})}
+    function keep(){requestAnimationFrame(function(){var r=w.getBoundingClientRect();var sc=document.getElementById('wsBody'),tp=sc?sc.getBoundingClientRect().top:0;if(r.top<tp)w.scrollIntoView({behavior:'smooth',block:'start'})})}
     pv.onclick=function(){go(i-1);keep()};
     nx.onclick=function(){go(i+1);keep()};
     go(0);
@@ -305,8 +305,8 @@
   if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.06});
     document.querySelectorAll('.card:not(.hero)').forEach(function(c){c.classList.add('rv');io.observe(c)})}
   var lw=$('loadFill'),ll=$('loadLbl');
-  function prog(){var h=document.documentElement.scrollHeight-innerHeight;var p=h>0?Math.min(100,Math.round(scrollY*100/h)):100;lw.style.width=p+'%';ll.textContent=p>=100?'LOADED! \u2605':'LOADING... '+p+'%'}
-  addEventListener('scroll',prog,{passive:true});prog();
+  function prog(){var sc=document.getElementById('wsBody'),h=sc?sc.scrollHeight-sc.clientHeight:document.documentElement.scrollHeight-innerHeight,y=sc?sc.scrollTop:scrollY;var p=h>0?Math.min(100,Math.round(y*100/h)):100;lw.style.width=p+'%';ll.textContent=p>=100?'LOADED! \u2605':'LOADING... '+p+'%'}
+  document.addEventListener('scroll',prog,{passive:true,capture:true});prog();
   var hy=$('heroYes'),hn=$('heroNo');
   if(hy)hy.onclick=function(){pop('warn','WARNING','Going back is exactly what Git is for.<br>Press START to learn how.',[{t:'OK',fn:function(){location.hash='p1'}}])};
   if(hn)hn.onclick=function(){location.hash='p1'};
@@ -333,7 +333,7 @@
       L.hidden=true;R.hidden=false;R.innerHTML=m.length?m.map(function(x){return '<a href="'+x.h+'">'+esc2(x.t)+'<small>'+esc2(x.p)+'</small></a>'}).join(''):'<p>Nothing found. Try "branch", "push" or "merge".</p>'});
     sb2.addEventListener('click',function(){Q.value='';R.hidden=true;L.hidden=false;setTimeout(function(){if(!sm.hidden)Q.focus()},30)});
     sm.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;
-      if(a.id==='smTop'){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})}
+      if(a.id==='smTop'){e.preventDefault();(document.getElementById('wsBody')||window).scrollTo({top:0,behavior:'smooth'})}
       if(a.classList.contains('smp')&&a.nextElementSibling&&a.nextElementSibling.children.length&&window.matchMedia('(hover:none)').matches&&!a.parentNode.classList.contains('open')){e.preventDefault();Array.prototype.forEach.call(L.children,function(c){c.classList.remove('open')});a.parentNode.classList.add('open');return}
       sm.hidden=true})})();
   var clk=$('clock');function tick(){var d=new Date(),h=d.getHours(),m=d.getMinutes();clk.textContent=(h%12||12)+':'+(m<10?'0':'')+m+' '+(h<12?'AM':'PM')}

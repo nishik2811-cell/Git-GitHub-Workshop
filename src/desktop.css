@@ -1,0 +1,178 @@
+/* ---------- Mini laptop desktop: boot screen, desktop, windows, menus ---------- */
+:root{--tb1:#3b78ea;--tb2:#245edc;--tb3:#1f55cc;--tb4:#17409f;--tbl:#6ba0ff;--tbt:#1d4ba6}
+html.th-green{--tb1:#4bb35a;--tb2:#2f9a40;--tb3:#278636;--tb4:#1b6326;--tbl:#8fe39a;--tbt:#24763a}
+html.th-pink{--tb1:#f07aa8;--tb2:#de4f88;--tb3:#c93f77;--tb4:#9c2c5a;--tbl:#ffb3d0;--tbt:#b3366a}
+html.th-purple{--tb1:#9a7be8;--tb2:#7653d1;--tb3:#6643bf;--tb4:#4b2f93;--tbl:#c9b6ff;--tbt:#5a3fa6}
+html.th-orange{--tb1:#f5a04a;--tb2:#e07f22;--tb3:#c96d17;--tb4:#9c520e;--tbl:#ffcf96;--tbt:#b0600f}
+.taskbar{background:linear-gradient(var(--tb1),var(--tb2) 12%,var(--tb3) 88%,var(--tb4));border-top-color:var(--tbl)}
+.startmenu{border-color:var(--tb2)}
+.startmenu .smh{background:linear-gradient(var(--tb1),var(--tb2))}
+
+/* boot screen */
+.boot{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;box-sizing:border-box;
+  background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px;transition:opacity .35s}
+.boot[hidden]{display:none}
+.boot.out{opacity:0;pointer-events:none}
+.boot .heroframe{margin:auto;width:100%;max-width:660px}
+.boot .bootnote{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-family:var(--pix);letter-spacing:.08em;color:var(--ink2);font-size:14px;margin:0;pointer-events:none}
+html.booting,html.booting body{overflow:hidden}
+
+/* desktop */
+.desk{position:fixed;inset:0 0 38px 0;z-index:50;overflow:hidden;background:#5d8fd6 center/cover no-repeat;image-rendering:pixelated;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.desk[hidden]{display:none}
+html.deskon,html.deskon body{overflow:hidden;height:100%}
+.desk.flash{animation:dkfl .35s}
+@keyframes dkfl{0%{filter:brightness(1.35)}100%{filter:none}}
+.dico{position:absolute;width:84px;padding:6px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:1px solid transparent;border-radius:4px;box-shadow:none;transform:none;cursor:default;color:#fff;font-family:'Nunito',system-ui,sans-serif;font-weight:700;font-size:12.5px;line-height:1.2;letter-spacing:0;touch-action:none;transition:left .15s,top .15s}
+.dico.drag{transition:none;z-index:5;opacity:.85}
+.dico:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.25)}
+.dico.sel,.dico:focus-visible{background:rgba(29,75,166,.45);border-color:rgba(255,255,255,.6);outline:0}
+.dico.drop{background:rgba(255,241,176,.45);border-color:#fff1b0}
+.dico.cut .dic{opacity:.45}
+.dico .dic{position:relative;width:48px;height:48px;display:block;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.35))}
+.dico .dic svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
+.dico .dl{max-width:100%;padding:0 3px;border-radius:2px;text-shadow:1px 1px 0 #000,0 0 3px #000;overflow-wrap:anywhere;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dico.sel .dl{-webkit-line-clamp:4}
+.dico .dbadge{position:absolute;right:-6px;bottom:-4px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:3px;border:2px solid #fff;font:700 10px/12px 'Fira Code',monospace;color:#fff;text-align:center;filter:none}
+.dbadge.bU,.dbadge.bA{background:#2e9e4f}.dbadge.bM{background:#c98a1b}.dbadge.bC{background:#c23b3b}
+.dico .dren{width:100%;box-sizing:border-box;font:600 12.5px 'Nunito',system-ui,sans-serif;text-align:center;border:1px solid var(--ink);border-radius:2px;padding:1px 2px;background:#fff;color:var(--ink);outline:0;user-select:text;-webkit-user-select:text}
+.dico .dren.bad{border-color:#c23b3b;background:#ffe3ee}
+.desk.small .dico{width:68px;font-size:11.5px}
+.desk.small .dico .dic{width:32px;height:32px}
+.desk .dhint{position:absolute;right:14px;bottom:12px;max-width:260px;background:rgba(255,255,255,.92);color:var(--ink);border:3px solid var(--ink);border-radius:8px;padding:8px 12px;font-size:13.5px;line-height:1.4;box-shadow:4px 4px 0 rgba(22,50,122,.35)}
+.desk .dhint b{font-family:var(--pix);font-weight:400;letter-spacing:.04em}
+
+/* taskbar buttons for the workshop, browser and Bin */
+.tk.tkapp{display:flex;align-items:center;gap:7px;font-family:var(--pix);font-weight:400;letter-spacing:.02em;cursor:pointer;box-shadow:none;transform:none;max-width:230px}
+.tk.tkapp[hidden]{display:none}
+.tk.tkapp:hover{background:rgba(255,255,255,.28)}
+.tk.tkapp.on{background:rgba(0,0,0,.22);border-color:rgba(0,0,0,.3);box-shadow:inset 1px 1px 3px rgba(0,0,0,.35)}
+.tk.tkapp i{flex:none;width:16px;height:16px;display:block}
+.tk.tkapp i svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
+.tk.tkapp span{overflow:hidden;text-overflow:ellipsis}
+.tkshow{align-self:stretch;width:10px;margin-left:2px;padding:0;border:0;border-left:1px solid rgba(255,255,255,.35);border-radius:0;background:rgba(255,255,255,.12);box-shadow:none;transform:none;cursor:pointer}
+.tkshow:hover{background:rgba(255,255,255,.3)}
+.tktip{position:fixed;left:8px;bottom:46px;z-index:62;max-width:270px;background:#fff8d6;color:var(--ink);border:3px solid var(--ink);border-radius:8px;padding:8px 30px 8px 12px;font-size:13.5px;line-height:1.4;box-shadow:4px 4px 0 rgba(22,50,122,.35)}
+.tktip:after{content:"";position:absolute;left:var(--ax,40px);bottom:-10px;width:14px;height:14px;background:#fff8d6;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:rotate(45deg)}
+.tktip button{position:absolute;right:4px;top:4px;padding:0 6px;font-size:12px;line-height:1.4;border:2px solid var(--ink);border-radius:3px;background:#fff;color:var(--ink);box-shadow:none;transform:none;cursor:pointer}
+
+/* power button in the start menu */
+.smfoot{display:flex;align-items:stretch}
+.smfoot a{flex:1}
+.smpower{display:flex;align-items:center;gap:6px;border:0;border-left:2px solid #c9d8f6;border-radius:0;background:none;box-shadow:none;transform:none;color:#b3366a;font-family:var(--pix);font-weight:400;font-size:14px;letter-spacing:.04em;padding:0 14px;cursor:pointer}
+.smpower:hover,.smpower:focus-visible{background:#b3366a;color:#fff;outline:0}
+.smpower svg{width:18px;height:18px;display:block}
+
+/* desktop windows (browser, Bin) */
+.dwin{position:fixed;z-index:56;left:50%;top:70px;width:520px;max-width:calc(100vw - 16px);height:360px;min-width:240px;min-height:150px;display:flex;flex-direction:column;background:#fff;border:3px solid var(--ink);border-radius:10px;box-shadow:5px 5px 0 rgba(22,50,122,.35);overflow:hidden;color:var(--ink);font-family:'Nunito',system-ui,sans-serif}
+.dwin[hidden],.dwin.docked{display:none}
+.dwin.flash{animation:fl .7s}
+.dwh{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 10px;background:linear-gradient(var(--tb1),var(--tb2));color:#fff;font-family:var(--pix);font-size:14px;letter-spacing:.05em;cursor:move;touch-action:none;user-select:none;flex:none}
+.dwh i{width:16px;height:16px;flex:none}
+.dwh i svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
+.dwh span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dwh button{flex:none;width:26px;height:24px;padding:0;display:flex;align-items:center;justify-content:center;font:700 14px/1 'Nunito',sans-serif;color:#fff;background:rgba(255,255,255,.18);border:2px solid #fff;border-radius:4px;box-shadow:none;transform:none;cursor:pointer}
+.dwh button:hover{background:rgba(255,255,255,.35)}
+.dwh button.dx{background:#e8336d}
+.dwh button.dx:hover{background:#ff4d84}
+.dwb{flex:1;min-height:0;overflow:auto;background:#f7f9ff}
+.dwr{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 0 45%,#8a96c0 45% 52%,transparent 52% 64%,#8a96c0 64% 71%,transparent 71% 83%,#8a96c0 83% 90%,transparent 90%)}
+.dwin.sizing{user-select:none}
+
+/* workshop window */
+.dwin.max{left:0!important;top:0!important;width:auto!important;height:auto!important;max-width:none;right:0;bottom:38px;border-radius:0;box-shadow:none}
+.dwin.max .dwr{display:none}
+.dwh button.dmax{font-size:15px}
+#wsWin .dwb.wsb{position:relative;scroll-behavior:smooth;background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px;background-attachment:local}
+#wsIn{position:relative;min-height:100%}
+#wsWin{min-width:320px;min-height:220px}
+
+/* browser */
+.brbar{display:flex;align-items:center;gap:6px;padding:7px 8px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
+.brbar .brnav{width:28px;height:28px;padding:0;border:2px solid var(--ink3);border-radius:5px;background:#fff;color:var(--ink3);box-shadow:none;transform:none;font-size:14px;line-height:1;flex:none;cursor:not-allowed}
+.brurl{flex:1;min-width:0;display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:2px solid var(--ink);border-radius:15px;background:#fff;font:13px 'Fira Code',monospace;color:var(--ink);overflow:hidden}
+.brurl input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;color:inherit;padding:0;cursor:default;text-overflow:ellipsis}
+.brurl .lock{flex:none;width:12px;height:12px;display:block}
+.brgo{flex:none;height:30px;padding:0 14px;border:2px solid var(--ink);border-radius:15px;background:#2e9e4f;color:#fff;font-family:var(--pix);font-size:14px;letter-spacing:.04em;box-shadow:2px 2px 0 rgba(22,50,122,.35);transform:none;cursor:pointer}
+.brgo:hover{background:#38b45c}
+.brpage{padding:22px 18px 18px;text-align:center}
+.brlogo{font-family:var(--pix);font-size:34px;line-height:1.1;color:var(--ink);margin:4px 0 6px}
+.brlogo b{color:#2e9e4f;font-weight:400}
+.brpage p{margin:6px auto;max-width:400px;color:var(--ink2);font-size:14.5px}
+.brcard{display:flex;align-items:center;gap:12px;max-width:400px;margin:16px auto 10px;padding:12px 14px;border:3px solid var(--ink);border-radius:10px;background:#fff;text-align:left;box-shadow:4px 4px 0 rgba(22,50,122,.2)}
+.brcard .rpic{width:40px;height:40px;flex:none}
+.brcard .rpic svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
+.brcard b{display:block;font-size:15px;overflow-wrap:anywhere}
+.brcard small{display:block;color:var(--ink2);font-size:12.5px}
+.brmsg{min-height:20px;font-size:13.5px;color:var(--ink2)}
+.brmsg a{color:var(--blue);font-weight:700}
+
+/* drawing notepad */
+.dwb.padb{display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.padtools{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 8px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
+.padgrp{display:flex;align-items:center;gap:4px}
+.padt{padding:3px 9px;font:700 12.5px 'Nunito',sans-serif;letter-spacing:0;border:2px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink);box-shadow:none;transform:none;cursor:pointer}
+.padt:hover{background:var(--sky)}
+.padt.on{background:var(--ink);color:#fff}
+.padt.pads{background:#2e9e4f;border-color:#1f6e36;color:#fff}
+.padt.pads:hover{background:#38b45c}
+.padc{width:22px;height:22px;padding:0;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px var(--ink3);transform:none;cursor:pointer}
+.padc.on{box-shadow:0 0 0 3px var(--ink)}
+.padz{width:28px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink3);border-radius:5px;background:#fff;box-shadow:none;transform:none;cursor:pointer}
+.padz i{display:block;border-radius:50%;background:var(--ink)}
+.padz.on{border-color:var(--ink);background:var(--sky)}
+.padpaper{position:relative;flex:1;min-height:0;background-color:#fffdf6;background-image:linear-gradient(90deg,transparent 38px,#f4a3c0 38px,#f4a3c0 40px,transparent 40px),linear-gradient(#d6e2f8 1px,transparent 1px);background-size:100% 100%,100% 26px;background-position:0 0,0 12px}
+.padpaper canvas{position:absolute;inset:0;touch-action:none;cursor:crosshair;display:block}
+
+/* Bin */
+.bintop{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:2px solid var(--line);background:#e9efff;flex:none;flex-wrap:wrap}
+.bintop span{flex:1;font-size:13.5px;color:var(--ink2);min-width:120px}
+.bintop button,.binrow button{padding:3px 10px;font-size:12.5px;font-weight:700;border:2px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink);box-shadow:2px 2px 0 rgba(22,50,122,.25);transform:none;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:0}
+.bintop button:hover,.binrow button:hover{background:var(--sky)}
+.bintop button.red,.binrow button.red{color:#b3366a;border-color:#b3366a}
+.bintop button.red:hover,.binrow button.red:hover{background:#ffe3ee}
+.bintop button:disabled{opacity:.45;cursor:not-allowed}
+.binrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.binrow .bi{width:28px;height:28px;flex:none}
+.binrow .bi svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
+.binrow div{flex:1;min-width:0}
+.binrow b{display:block;font-size:14px;overflow-wrap:anywhere}
+.binrow small{display:block;color:var(--ink2);font-size:12px;overflow-wrap:anywhere}
+.binempty{padding:30px 16px;text-align:center;color:var(--ink2);font-size:14px}
+
+/* right-click menu */
+.ctxm{position:fixed;z-index:95;min-width:190px;max-width:min(270px,calc(100vw - 8px));padding:4px;background:#fff;border:3px solid var(--ink);border-radius:6px;box-shadow:4px 4px 0 rgba(22,50,122,.35);font-family:'Nunito',system-ui,sans-serif}
+.ctxm hr{border:0;border-top:2px solid var(--line);margin:3px 4px}
+.ctxm button{display:flex;align-items:center;gap:6px;width:100%;padding:5px 8px 5px 4px;background:none;border:0;border-radius:3px;box-shadow:none;transform:none;color:var(--ink);font:600 13.5px/1.3 'Nunito',system-ui,sans-serif;letter-spacing:0;text-align:left;cursor:pointer}
+.ctxm button i{width:16px;flex:none;text-align:center;font-style:normal;font-size:12px}
+.ctxm button span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctxm button small{color:var(--ink3);font-size:11.5px}
+.ctxm button em{font-style:normal;font-size:11px}
+.ctxm button:hover:not(:disabled),.ctxm button:focus-visible{background:var(--tb2);color:#fff;outline:0}
+.ctxm button:hover:not(:disabled) small,.ctxm button:focus-visible small{color:#dfe8ff}
+.ctxm button:disabled{color:#a9b3cf;cursor:default}
+
+/* VS Code explorer: folders */
+.notepad .vstools{display:flex;gap:2px}
+.notepad .vsdir{color:#ccc}
+.notepad .vsdir .vsar{font-style:normal;width:10px;flex:none;font-size:10px;color:#c5c5c5;text-align:center}
+.notepad .vsfile.vsdir.sel{background:#37373d;outline:1px solid #0078d4;outline-offset:-1px}
+.notepad .vsfile.vsdir.sel .vsdel{display:block;opacity:1}
+.notepad .vsfold{cursor:pointer}
+
+@media(max-width:700px){
+  .dico{width:74px;font-size:11.5px}
+  .dico .dic{width:40px;height:40px}
+  .desk.small .dico{width:62px}
+  .desk .dhint{left:10px;right:10px;max-width:none}
+  .dwin{left:8px!important;right:8px;width:auto!important;max-width:none;top:auto!important;bottom:46px;height:min(62vh,440px)!important}
+  #wsWin{left:0!important;right:0;top:0!important;bottom:38px;height:auto!important;border-radius:0;border-width:0;box-shadow:none}
+  #wsWin .dmax{display:none}
+  .dwh{cursor:default}
+  .dwr{display:none}
+  .tk.tkapp{display:flex;padding:3px 8px}
+  .tk.tkapp span{display:none}
+  .brlogo{font-size:28px}
+  .brgo{padding:0 10px}
+}
+@media(prefers-reduced-motion:reduce){.boot{transition:none}.dico{transition:none}.desk.flash,.dwin.flash{animation:none}}
