@@ -977,6 +977,16 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .mmview img{max-width:100%;max-height:100%;object-fit:contain;display:block;border-radius:4px}
 .mmempty{padding:30px;text-align:center;color:var(--ink2)}
 
+/* credits.txt */
+.dwb.crb{background:#fffdf6}
+.crtxt{margin:0;padding:16px 18px;min-height:100%;box-sizing:border-box;background:#fffdf6;border:0;border-radius:0;box-shadow:none;font:14px/1.7 'Fira Code',monospace;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.crtxt b{font-weight:700}
+.crtxt a{color:var(--blue);font-weight:700}
+.crtxt a:hover,.crtxt a:focus-visible{background:var(--sky);outline:0}
+.crtxt i{color:var(--ink3);font-style:normal}
+.crh{color:#e8336d}
+@media(max-width:420px){.crtxt{font-size:12.5px;padding:12px}}
+
 /* Bin */
 .bintop{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:2px solid var(--line);background:#e9efff;flex:none;flex-wrap:wrap}
 .bintop span{flex:1;font-size:13.5px;color:var(--ink2);min-width:120px}
@@ -2817,6 +2827,7 @@ git log --oneline           short history          git push / git pull   sync wi
   var tkDraw=tkBtn('tkDraw','Notepad',I.pad);tkDraw.hidden=true;tbar.insertBefore(tkDraw,tray);
   var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
   var tkMeme=tkBtn('tkMeme','hehehe',I.folder);tkMeme.hidden=true;tbar.insertBefore(tkMeme,tray);
+  var tkCred=tkBtn('tkCred','suspects.txt',I.file);tkCred.hidden=true;tbar.insertBefore(tkCred,tray);
   var tkBin=tkBtn('tkBin','Bin',I.bin);tkBin.hidden=true;tbar.insertBefore(tkBin,tray);
 
   html.classList.add('deskon');
@@ -2830,13 +2841,13 @@ git log --oneline           short history          git push / git pull   sync wi
   function bootGo(hash){if(boot.hidden)return;boot.classList.add('out');html.classList.remove('booting');
     setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360);
     desk.hidden=false;draw(true);
-    if(!wasOn){winOpen('wsWin');var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)}
+    if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)}
     setTimeout(function(){if(location.hash)history.replaceState(null,'',location.pathname+location.search)},50)}
   var wasOn=false;
   /* only START leaves the start screen; Yes, No and the folder just show a pop-up */
   boot.addEventListener('click',function(e){var t=e.target.closest?e.target:e.target.parentNode;
     var a=t.closest('a[href^="#"]');
-    if(a){e.preventDefault();e.stopImmediatePropagation();if(a.classList.contains('start'))bootGo(deepHash||'#p1');return}
+    if(a){e.preventDefault();e.stopImmediatePropagation();if(a.classList.contains('start'))bootGo(deepHash);return}
     if(t.closest('#heroYes')){e.stopImmediatePropagation();popWarn('WARNING','Going back is exactly what Git is for. Every commit is a save point you can go back to.<br><br>Press <b>START</b> to learn how.');return}
     if(t.closest('#heroNo')){e.stopImmediatePropagation();popWarn('WARNING','No going back? Then let\'s go forward!<br><br>Press <b>START</b> to begin.');return}
     if(t.closest('#heroFolder')){e.stopImmediatePropagation();folderPop(false)}},true);
@@ -2922,7 +2933,9 @@ git log --oneline           short history          git push / git pull   sync wi
   var wsIn=document.createElement('div');wsIn.id='wsIn';wsBody.appendChild(wsIn);
   var KEEP={ov:1,startMenu:1,taskbar:1,notepad:1,boot:1,desk:1};
   [].slice.call(document.body.children).forEach(function(el){if(el.tagName==='SCRIPT'||KEEP[el.id]||el.classList.contains('dwin')||el.classList.contains('ctxm')||el.classList.contains('tktip'))return;wsIn.appendChild(el)});
-  WS.place=function(){var c=cell();if(innerWidth<=700){WS.el.style.setProperty('--wsl',(c.x0+c.w+4)+'px');return}var l=Math.min(c.x0+c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
+  /* the workshop sits to the right of every built-in icon column, so no app icon starts hidden behind it */
+  function appCols(){if(desk.hidden||!desk.clientHeight)return 1;var L=layout(items()),m=0;items().forEach(function(it){if(it.app&&L[it.k])m=Math.max(m,L[it.k].col)});return m+1}
+  WS.place=function(){var c=cell(),n=appCols();if(innerWidth<=700){WS.el.style.setProperty('--wsl',Math.min(c.x0+n*c.w+4,Math.round(innerWidth*0.45))+'px');return}var l=Math.min(c.x0+n*c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
   var WSBASE=980;
   function wsZoom(){var w=wsBody.clientWidth,base=innerWidth<=700?innerWidth:WSBASE;wsIn.style.zoom=w&&w<base*0.97?String(Math.round(w/base*1000)/1000):''}
   function wsLw(){var lw=wsIn.querySelector('.loadwrap');wsIn.style.setProperty('--lwh',(lw?lw.offsetHeight:0)+'px')}
@@ -2930,11 +2943,21 @@ git log --oneline           short history          git push / git pull   sync wi
      (so only a few), so fill the whole height of the lessons once the window is open, and again if it grows a lot */
   var DECO=['sp-star','sp-flower','sp-heart','sp-flower2','sp-heartb','sp-sparkle'],decoT=null;
   function decoFill(){var bg=wsIn.querySelector('.bgdeco');if(!bg||WS.el.hidden)return;bg.style.height='0px';var H=wsIn.scrollHeight;if(H<400)return;
-    if(Math.abs(H-(+bg.dataset.h||0))<300){bg.style.height=bg.dataset.h+'px';return}
-    bg.dataset.h=H;bg.style.height=H+'px';bg.innerHTML='';var n=Math.round(H/100);
-    for(var i=0;i<n;i++){var e=document.createElement('i');e.className='sp '+DECO[i%DECO.length]+(i%2?' bob':' bob2');
-      var side=i%5,x=side<2?1+Math.random()*7:side<4?91+Math.random()*6:10+Math.random()*80;
-      e.style.left=x+'%';e.style.top=(i*100+Math.random()*90)+'px';e.style.height=(18+Math.random()*22)+'px';bg.appendChild(e)}}
+    if(Math.abs(H-(+bg.dataset.h||0))<300&&Math.abs((wsIn.clientWidth||0)-(+bg.dataset.w||0))<40){bg.style.height=bg.dataset.h+'px';return}
+    bg.dataset.h=H;bg.style.height=H+'px';bg.innerHTML='';
+    /* an even pattern: one decoration per grid square (~150px, smaller on phones), near the middle of the square,
+       but never behind a lesson card or banner (they are see-through, so it would show as a faint smudge) */
+    var W=wsIn.clientWidth||800,cell=W<600?110:150,cols=Math.max(3,Math.round(W/cell)),cw=W/cols,rows=Math.ceil(H/cell),k=0,
+      z=parseFloat(getComputedStyle(wsIn).zoom)||1,wr=wsIn.getBoundingClientRect(),blocks=[];
+    bg.dataset.w=W;
+    wsIn.querySelectorAll('.card,.banner,.idx,.signoff,.marquee,.icons,footer,.loadwrap').forEach(function(el){var r=el.getBoundingClientRect();if(!r.width)return;
+      var off=el.classList.contains('rv')&&!el.classList.contains('in')?24*z:0; // cards not shown yet sit 24px lower until they slide in
+      blocks.push([(r.left-wr.left)/z-10,(r.top-off-wr.top)/z-10,(r.right-wr.left)/z+10,(r.bottom-off-wr.top)/z+10])});
+    function free(x,y,sz){for(var i=0;i<blocks.length;i++){var b=blocks[i];if(x<b[2]&&x+sz>b[0]&&y<b[3]&&y+sz>b[1])return false}return true}
+    for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){var sz=20+Math.random()*18,x=-1,y=0;
+      for(var t=0;t<4;t++){var tx=c*cw+cw/2-sz/2+(Math.random()-0.5)*cw*0.45,ty=r*cell+cell/2-sz/2+(Math.random()-0.5)*cell*0.45;if(free(tx,ty,sz)){x=tx;y=ty;break}}
+      if(x<0)continue;var e=document.createElement('i');e.className='sp '+DECO[k%DECO.length]+(k%2?' bob':' bob2');k++;
+      e.style.left=(x/W*100)+'%';e.style.top=y+'px';e.style.height=sz+'px';bg.appendChild(e)}}
   function wsFit(){wsZoom();wsLw();clearTimeout(decoT);decoT=setTimeout(decoFill,250)}
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
   addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
@@ -3022,6 +3045,15 @@ git log --oneline           short history          git push / git pull   sync wi
     var b=e.target.closest('[data-mm]');if(!b)return;var a=b.getAttribute('data-mm');if(a==='back')memeGrid();else memeShow(memeAt+(a==='next'?1:-1))});
   MW.el.addEventListener('keydown',function(e){if(memeAt<0)return;if(e.key==='ArrowRight'){e.preventDefault();memeShow(memeAt+1)}else if(e.key==='ArrowLeft'){e.preventDefault();memeShow(memeAt-1)}else if(e.key==='Backspace'){e.preventDefault();memeGrid()}});
 
+
+  /* suspects.txt: the team, with GitHub profile links (add a username here when you have it) */
+  var TEAM=[['Nishita','nishik2811-cell'],['Yashieta','yashibleh'],['Abhinav','Abhinav9897S'],['Aryan','Aryan5x'],['Vasu','VasuMittal2606']];
+  var CW=makeWin('credWin','suspects.txt',I.file,tkCred,440,380);
+  CW.body.classList.add('crb');
+  CW.body.innerHTML='<div class="crtxt">GIT-WORKSHOP.EXE\ndebugged at 2 AM by\n\n'
+    +TEAM.map(function(t){var pad=new Array(Math.max(1,11-t[0].length)).join(' ');return '  <b>'+esc(t[0])+'</b>'+pad+(t[1]?'<a href="https://github.com/'+esc(t[1])+'" target="_blank" rel="noopener" data-focus>github.com/'+esc(t[1])+'</a>':'<i>(link coming soon)</i>')}).join('\n')
+    +'\n\n5 friends &middot; 1 workshop &middot; 0 merge conflicts</div>';
+
   /* Bin window */
   var BW=makeWin('binWin','Bin',I.bin,tkBin,460,330);
   function binDraw(){var b=S().bin||[],h='<div class="bintop"><span>'+(b.length?b.length+' item'+(b.length>1?'s':'')+' in the Bin':'The Bin is empty')+'</span><button type="button" data-bin="all"'+(b.length?'':' disabled')+'>Restore all</button><button type="button" class="red" data-bin="empty"'+(b.length?'':' disabled')+'>Empty Bin</button></div>';
@@ -3043,7 +3075,7 @@ git log --oneline           short history          git push / git pull   sync wi
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:memes',n:'hehehe',ic:I.folder,app:'memes',dir:true},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:memes',n:'hehehe',ic:I.folder,app:'memes',dir:true},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repo&&s.repo.root===d)})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){mine.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
@@ -3053,7 +3085,7 @@ git log --oneline           short history          git push / git pull   sync wi
        (the setup guide counts as a .pdf file); by date created keeps the apps first, then your things oldest first */
     if(sortBy==='name')return o.concat(mine).sort(nm);
     if(sortBy==='date'){mine.sort(function(a,b){return born[a.k]-born[b.k]});return o.concat(mine)}
-    var grp=function(x){return x.app&&x.app!=='guide'&&x.app!=='memes'?0:x.dir?1:2},ord=function(x){return x.app?['ws','vs','br','draw','bin'].indexOf(x.app):0};
+    var grp=function(x){return x.app&&x.app!=='guide'&&x.app!=='memes'&&x.app!=='credits'?0:x.dir?1:2},ord=function(x){return x.app?['ws','vs','br','draw','bin'].indexOf(x.app):0};
     return o.concat(mine).sort(function(a,b){return grp(a)!==grp(b)?grp(a)-grp(b):grp(a)===0?ord(a)-ord(b):ext(a)!==ext(b)?(ext(a)<ext(b)?-1:1):nm(a,b)})}
   var SORTS={name:'name',type:'type',date:'date created'},sortBy=SORTS[store('sort')]?store('sort'):'type',born={},bornN=0;
   function arrange(k){sortBy=k;store('sort',k);pos={};lastSig='';draw(true);say('Arranged the icons by '+SORTS[k]+'.')}
@@ -3082,7 +3114,7 @@ git log --oneline           short history          git push / git pull   sync wi
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
-    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin'}[it.app]].el,open);return}
+    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
     openVS(it.k)}
 
   /* rename right on the icon */
@@ -3168,7 +3200,7 @@ git log --oneline           short history          git push / git pull   sync wi
   desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;
     var it=itemOf(b.getAttribute('data-k'));if(appOpen(it))return;openItem(it)});
   /* once an app's window is open (even minimised), one click on its icon minimises or restores it, like the taskbar */
-  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin'}[it.app]].el):null}
+  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
   function appOpen(it){var el=appEl(it);if(!el)return false;return el.id==='notepad'?el.classList.contains('show'):!el.hidden}
   desk.addEventListener('keydown',function(e){if(e.target.closest('.dren'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k);
     if(e.key==='Enter'&&it){e.preventDefault();openItem(it)}

@@ -1,5 +1,11 @@
-"""Copy src/playground.js, src/desktop.js and src/desktop.css into index.html.
-Run from the repo root:  python3 src/sync.py"""
+"""Copy src/playground.js, src/desktop.js and src/desktop.css into index.html,
+together with docs/setup-guide.pdf and the images in memes/.
+Run from the repo root:  python3 src/sync.py
+
+Lesson text and layout live in index.html itself: edit it directly.
+The other files in src/ (gen4.py, build4.py, pixart.py and friends) built the very
+first version of the page and are out of date. Do not run them: they would
+overwrite index.html and lose the desktop."""
 import re
 h=open('index.html',encoding='utf-8').read()
 pg=open('src/playground.js',encoding='utf-8').read()

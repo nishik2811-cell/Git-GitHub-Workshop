@@ -1,85 +1,62 @@
+<div align="center">
+
 # Git & GitHub Workshop
 
-A visual, hands-on beginner guide to Git and GitHub. One HTML file, no install, works offline.
+**Warning: may cause sudden confidence.**
 
-**Live:** https://gitgithubworkshop-ten.vercel.app/
+<img src="docs/screenshots/start-screen.jpg" alt="The start screen: a pixel-art window called GIT-WORKSHOP.EXE with a big green START button" width="420">
 
-Made for our workshop by **Nishita, Vasu, Yashieta, Abhinav and Aryan**.
+</div>
 
-## Quick start
+Most people meet Git as a black window full of words like *rebase*, *HEAD* and *detached*. Then they close it and email themselves `report_FINAL_v3.docx`.
 
-Download or clone this repo and open `index.html` in Chrome or Edge. That's it.
+This workshop starts somewhere friendlier: a tiny pixel computer in your browser. Press **START** and you get a desktop with a terminal, a code editor and a set of lessons that explain everything from zero. Whatever you read about, you can try straight away, on a computer you can't break.
 
-```bash
-git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
-```
+<div align="center">
+<img src="docs/screenshots/mini-laptop.jpg" alt="The Mini laptop desktop: the workshop window shows a guided story in the middle of a merge conflict, with the Git Bash terminal, the branch graph and a VS Code window showing the conflict" width="100%">
+</div>
 
-## What you'll learn
+## How you learn
 
-| # | Topic | Covers |
-|---|-------|--------|
-| 1 | Introduction | What Git and GitHub are, and why they matter |
-| 2 | Repository management | What a repo is (hands-on toy), core commands, push, pull, clone, remotes |
-| 3 | Branching & collaboration | Branches, merging, pull requests, conflicts, forking |
-| 4 | Repository maintenance | `.gitignore`, READMEs, best practices |
-| 5 | Practice lab | A terminal you can type real Git commands into |
+1. **Read a little.** Every idea gets one plain sentence, a picture and something to click.
+2. **Try it for real.** Type the actual Git commands in the built-in Git Bash, or click the same buttons you'd use in VS Code.
+3. **Break things on purpose.** Cause a merge conflict, delete a file, undo it. Nothing leaves your browser unless you want it to.
 
-### The practice lab
+## What's inside
 
-- **Git Bash terminal:** type real commands like `git init`, `add`, `commit`, `switch`, `merge` and `push`.
-- **Guided stories:** the pasta recipe (branching and a merge conflict), deleting files, and using `.gitignore`.
-- **17 free practice missions** with a "Type it for me" button when you get stuck.
-- **VS Code window:** a small floating editor that stays with you as you scroll. Drag it, resize it from the corner, or press `_` to minimise it to the taskbar at the bottom (click its icon there to bring it back). Works on phones too.
-  - Click the **New File** or **New Folder** icon next to EXPLORER, name it, and type your code straight into it. Folders open and close with the arrow, and new files go into the folder you selected.
-  - Right-click (or long-press on a phone) in the Explorer for **New File, New Folder, Rename and Delete**.
-  - Delete a file or folder with the trash icon. It goes to the **Bin** on the desktop, and Git shows it as deleted, ready to `git add` and commit.
-  - Then use the terminal to `git add`, `git commit` and `git push` what you wrote.
-  - The Explorer colours files like VS Code: green **U** for new, orange **M** for changed, red **!** for a conflict.
-  - During a merge conflict it shows VS Code's conflict view: **Accept Current / Incoming / Both Changes**.
-  - **Resolve in Merge Editor** opens VS Code's 3-pane Merge Editor (Incoming, Current, Result) with **Complete Merge**.
-  - **Source Control panel** (branch icon on the left): Initialize Repository, stage with **+**, unstage with **−**, type a message and **✓ Commit**, and **Merge Branch...**. Click the branch name in the blue status bar to switch or create a branch. Every click shows the matching git command in the terminal, so you can do the whole flow in VS Code or in the terminal.
-- **Real GitHub mode (optional):** send your commands to an actual GitHub repo.
+**Five lessons**, from "what even is Git?" to working in a team:
 
-### The Mini laptop desktop
+| | Lesson | You'll learn |
+|---|---|---|
+| 1 | Introduction | What Git and GitHub are, why everyone uses them, and how to install Git |
+| 2 | Repositories | Repos, commits, the staging area, remotes, push, pull and clone |
+| 3 | Branching and teamwork | Branches, merging, pull requests, conflicts and forks |
+| 4 | Keeping it tidy | `.gitignore`, READMEs and good habits |
+| 5 | Practice lab | Everything above, hands-on |
 
-- **Start screen:** the site opens on the GIT-WORKSHOP.EXE screen. Press **START** to turn on the Mini laptop.
-- **Workshop window:** the lessons open in a window on the right, with the desktop icons still visible on the left. Use **_** to minimise it, **□** for full screen (double-clicking the title bar works too), and drag the title bar or the bottom-right corner to move or resize it. Click it on the taskbar to bring it back. On phones it also opens beside the icon column; press **□** to make it fill the screen.
-- **Desktop icons:** Workshop, VS Code, Browser, Notepad and Bin, plus every file and folder in the Mini laptop's home folder (`~`). Make a folder in the terminal, in VS Code or on the desktop and it shows up in all three. A Git repo folder gets a pink **git** badge.
-- **Open things:** double-click (double-tap on a phone) a folder or file to open it in VS Code. Drag icons around, drop one on a folder to move it, on the Bin to delete it, or on VS Code to open it.
-- **Right-click the desktop** (long-press on a phone): New folder, New file, Paste, Refresh, Arrange icons (by name, by type or by date created), View (large or small icons), Change wallpaper (day, sunset, night) and Personalise (taskbar and window colour).
-- **Right-click a file or folder:** Open, Open with VS Code, Cut, Copy, Paste into folder, Rename and Delete. Keyboard: F2 renames, Delete deletes, Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste.
-- **Bin:** things deleted on the desktop or in VS Code land here. **Restore** puts them back (a deleted repo comes back with its history), **Empty Bin** removes them for good. `rm` in the terminal deletes for good, just like real Git Bash.
-- **Browser:** the address bar is locked to this repo. **Search** opens it on GitHub in a new tab.
-- **Setup-Guide.pdf:** the full setup guide (install Git, Git Bash and VS Code on Windows or Linux, connect to GitHub, a cheat sheet and troubleshooting). It opens in its own window with **_**, **□** (full screen) and **x** on its title bar, plus **Open in new tab** and **Download** buttons. On phones, which cannot show a PDF inside a page, use those buttons. The file lives in `docs/setup-guide.pdf` and is also packed into `index.html`, so the single file still has it offline.
-- **hehehe folder:** Git and GitHub memes for a laugh. Open it to see them as thumbnails, click one to view it big, and flip through with the arrows (or the arrow keys). The images live in `memes/` and are also packed into `index.html`.
-- **Notepad:** draw with the mouse, a pen or your finger. Pen and eraser, six colours, three sizes, Undo, Clear, and **Save** to download your drawing as a picture.
-- **Desktop app icons and taskbar buttons:** double-click an app's icon to open it. Once it is open, one click on its icon (or its taskbar button) brings it to the front, and clicking again when it is already in front minimises it. The thin strip at the far right of the taskbar minimises everything (show desktop).
-- **Power button:** in the Start menu. It goes back to the start screen, and START picks up where you left off. Reloading the page always shows the start screen.
+**The practice lab**, where it clicks:
 
-## Real GitHub mode
+- **Guided stories** play out step by step while you watch: a pasta recipe that ends in a merge conflict, a deleted file you bring back, and a password you keep out of GitHub with `.gitignore`.
+- **17 missions** to try on your own, with a *Type it for me* button for when you're stuck.
+- **A VS Code window** with the Explorer, Source Control and the merge conflict buttons, so the first time you open the real thing, it already looks familiar.
+- **A live picture** of your working folder, staging area, history and GitHub, updating with every command you type.
 
-> ⚠️ Use a separate demo repo you don't mind wiping. Never use it on a repo with real work.
+**The Mini laptop** around it all: open apps, drag files into folders, change the wallpaper, rescue things from the Bin. There's also a setup guide for installing the real tools afterwards, and a folder of memes.
 
-1. Create an empty demo repo on GitHub.
-2. Create a [classic token](https://github.com/settings/tokens/new): tick the **repo** box, click **Generate token** and copy it. (Fine-grained tokens can fail here, so use a classic one.)
-3. Open `index.html` from your computer (some embedded previews block GitHub requests).
-4. Paste the repo link and token into the practice lab. The token stays in the tab's memory and is never saved.
-5. **Delete everything in this repo** resets the demo repo so you can run it again.
+**Real GitHub mode** for when you're ready: connect a throwaway repo, and your `git push` lands on GitHub for real. Use a token you delete straight after the workshop.
 
-Never commit a token, and revoke it after the workshop.
+## Running a workshop with it
 
-## Host your own copy
+- Everyone opens the same link. It works on laptops, tablets and phones, with no accounts and nothing to install.
+- It's one HTML file, so it also works offline: hand it out on a USB stick if the Wi-Fi gives up.
+- The **Setup-Guide.pdf** on the desktop walks people through installing Git, Git Bash and VS Code and connecting to GitHub, on Windows or Linux, for when they go home.
 
-It's a single static file, so any static host works.
+---
 
-- **Vercel:** import the repo at [vercel.com/new](https://vercel.com/new) and deploy with the default settings. Every push to `main` redeploys.
-- **GitHub Pages:** **Settings → Pages → Source: Deploy from a branch → `main` / `(root)` → Save**. It goes live at `https://<your-username>.github.io/<repo-name>/`.
+<div align="center">
 
-Don't see your changes? Press **Ctrl + Shift + R** to skip the browser cache.
+Made by **Nishita, Yashieta, Abhinav, Aryan and Vasu**.
 
-## Making changes
+*5 friends, 1 workshop, 0 merge conflicts.*
 
-- **Lesson text and layout:** edit `index.html` directly.
-- **The Mini laptop** (terminal, VS Code window, desktop, apps): edit `src/playground.js`, `src/desktop.js` or `src/desktop.css`, then run `python3 src/sync.py`. It copies them into `index.html`, together with `docs/setup-guide.pdf` and the images in `memes/`.
-
-The other files in `src/` (`gen4.py`, `build4.py`, `pixart.py` and friends) built the very first version of the page and are out of date. Don't run them: they would overwrite `index.html` and lose the desktop.
+</div>
