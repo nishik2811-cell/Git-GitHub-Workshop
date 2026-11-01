@@ -53,7 +53,7 @@ if os.path.isdir('memes'):
 # tiny head script: hide the lessons until the start screen is ready
 h=re.sub(r'<script id="preboot">.*?</script>','',h,flags=re.S)
 i=h.index('</head>')
-h=h[:i]+'<script id="preboot">document.documentElement.classList.add(\'preboot\');addEventListener(\'load\',function(){if(!document.getElementById(\'boot\'))document.documentElement.classList.remove(\'preboot\')})</script>'+h[i:]
+h=h[:i]+'<script id="preboot">document.documentElement.classList.add(\'preboot\');try{var nv=performance.getEntriesByType(\'navigation\')[0];if(nv&&nv.type===\'reload\'&&sessionStorage.getItem(\'mlStarted\')===\'1\')document.documentElement.classList.add(\'skipboot\')}catch(e){};addEventListener(\'load\',function(){if(!document.getElementById(\'boot\'))document.documentElement.classList.remove(\'preboot\')})</script>'+h[i:]
 
 open('index.html','w',encoding='utf-8').write(h)
 print('index.html updated:',len(h)//1024,'KB')

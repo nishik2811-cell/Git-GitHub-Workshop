@@ -809,6 +809,9 @@ html.preboot .wrap>*:not(header){display:none!important}
 html.preboot header>*:not(.heroframe){display:none!important}
 html.preboot header{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;box-sizing:border-box;background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px}
 html.preboot header .heroframe{margin:auto;width:100%;max-width:660px}
+/* refreshing after START: no start screen flash, just the sky until the desktop is ready */
+html.skipboot header,html.skipboot .boot{display:none!important}
+html.skipboot body{background:#a9d4ff}
 
 
 /* boot screen */
@@ -1042,7 +1045,7 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 @media(prefers-reduced-motion:reduce){.boot{transition:none}.dico{transition:none}.desk.flash,.dwin.flash{animation:none}}
 /* ---------- end Mini laptop desktop css ---------- */
 </style>
-<script id="preboot">document.documentElement.classList.add('preboot');addEventListener('load',function(){if(!document.getElementById('boot'))document.documentElement.classList.remove('preboot')})</script></head>
+<script id="preboot">document.documentElement.classList.add('preboot');try{var nv=performance.getEntriesByType('navigation')[0];if(nv&&nv.type==='reload'&&sessionStorage.getItem('mlStarted')==='1')document.documentElement.classList.add('skipboot')}catch(e){};addEventListener('load',function(){if(!document.getElementById('boot'))document.documentElement.classList.remove('preboot')})</script></head>
 <body>
 <div class="marquee"><div class="mq"><span>GIT AND GITHUB WORKSHOP ★ COMMIT ★ PUSH ★ PULL ★ BRANCH ★ MERGE ★ CLONE ★ FORK ★ GIT AND GITHUB WORKSHOP ★ COMMIT ★ PUSH ★ PULL ★ BRANCH ★ MERGE ★ CLONE ★ FORK ★ GIT AND GITHUB WORKSHOP ★ COMMIT ★ PUSH ★ PULL ★ BRANCH ★ MERGE ★ CLONE ★ FORK ★ </span><span>GIT AND GITHUB WORKSHOP ★ COMMIT ★ PUSH ★ PULL ★ BRANCH ★ MERGE ★ CLONE ★ FORK ★ GIT AND GITHUB WORKSHOP ★ COMMIT ★ PUSH ★ PULL ★ BRANCH ★ MERGE ★ CLONE ★ FORK ★ GIT AND GITHUB WORKSHOP ★ COMMIT ★ PUSH ★ PULL ★ BRANCH ★ MERGE ★ CLONE ★ FORK ★ </span></div></div>
 <div class="loadwrap"><span class="lbl" id="loadLbl">LOADING... 0%</span><div class="loadbar"><i id="loadFill"></i></div></div>
@@ -2837,9 +2840,9 @@ git log --oneline           short history          git push / git pull   sync wi
   var hf=document.querySelector('.heroframe');
   if(hf){boot.appendChild(hf);boot.insertAdjacentHTML('beforeend','<p class="bootnote">Press START</p>')}
   document.body.appendChild(boot);html.classList.remove('preboot');
-  function bootShow(){ML.ctxClose();var sm=$('startMenu');if(sm)sm.hidden=true;boot.hidden=false;boot.classList.remove('out');html.classList.add('booting');var s=boot.querySelector('.start');if(s)s.focus({preventScroll:true})}
-  function bootGo(hash){if(boot.hidden)return;boot.classList.add('out');html.classList.remove('booting');
-    setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360);
+  function bootShow(){ML.ctxClose();try{sessionStorage.removeItem('mlStarted')}catch(z){}var sm=$('startMenu');if(sm)sm.hidden=true;boot.hidden=false;boot.classList.remove('out');html.classList.add('booting');var s=boot.querySelector('.start');if(s)s.focus({preventScroll:true})}
+  function bootGo(hash,instant){if(boot.hidden)return;html.classList.remove('booting');try{sessionStorage.setItem('mlStarted','1')}catch(z){}
+    if(instant)boot.hidden=true;else{boot.classList.add('out');setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360)}
     desk.hidden=false;draw(true);
     if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)}
     setTimeout(function(){if(location.hash)history.replaceState(null,'',location.pathname+location.search)},50)}
@@ -2854,6 +2857,8 @@ git log --oneline           short history          git push / git pull   sync wi
   /* a page address like #p3 is remembered: the start screen still shows, and START jumps there */
   var deepHash=null;try{if(location.hash.length>1&&document.querySelector(location.hash))deepHash=location.hash}catch(z){}
   html.classList.add('booting');if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+  /* the start screen shows when you open the site or press Power; refreshing after START goes straight back to the desktop */
+  if(html.classList.contains('skipboot'))setTimeout(function(){bootGo(deepHash,true);html.classList.remove('skipboot')},0);
   /* the folder on the start screen: a tiny file explorer of a Git repo */
   function folderPop(hid){var row=function(ic,n,d,h){return '<div class="fxr'+(h?' fxh':'')+'"><span class="fxi">'+ic+'</span><b>'+n+'</b><small>'+d+'</small></div>'};
     var body='<div class="fexp"><div class="fxp">&#128193; recipes</div>'

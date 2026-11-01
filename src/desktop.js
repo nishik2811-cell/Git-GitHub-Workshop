@@ -69,9 +69,9 @@
   var hf=document.querySelector('.heroframe');
   if(hf){boot.appendChild(hf);boot.insertAdjacentHTML('beforeend','<p class="bootnote">Press START</p>')}
   document.body.appendChild(boot);html.classList.remove('preboot');
-  function bootShow(){ML.ctxClose();var sm=$('startMenu');if(sm)sm.hidden=true;boot.hidden=false;boot.classList.remove('out');html.classList.add('booting');var s=boot.querySelector('.start');if(s)s.focus({preventScroll:true})}
-  function bootGo(hash){if(boot.hidden)return;boot.classList.add('out');html.classList.remove('booting');
-    setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360);
+  function bootShow(){ML.ctxClose();try{sessionStorage.removeItem('mlStarted')}catch(z){}var sm=$('startMenu');if(sm)sm.hidden=true;boot.hidden=false;boot.classList.remove('out');html.classList.add('booting');var s=boot.querySelector('.start');if(s)s.focus({preventScroll:true})}
+  function bootGo(hash,instant){if(boot.hidden)return;html.classList.remove('booting');try{sessionStorage.setItem('mlStarted','1')}catch(z){}
+    if(instant)boot.hidden=true;else{boot.classList.add('out');setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360)}
     desk.hidden=false;draw(true);
     if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)}
     setTimeout(function(){if(location.hash)history.replaceState(null,'',location.pathname+location.search)},50)}
@@ -86,6 +86,8 @@
   /* a page address like #p3 is remembered: the start screen still shows, and START jumps there */
   var deepHash=null;try{if(location.hash.length>1&&document.querySelector(location.hash))deepHash=location.hash}catch(z){}
   html.classList.add('booting');if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+  /* the start screen shows when you open the site or press Power; refreshing after START goes straight back to the desktop */
+  if(html.classList.contains('skipboot'))setTimeout(function(){bootGo(deepHash,true);html.classList.remove('skipboot')},0);
   /* the folder on the start screen: a tiny file explorer of a Git repo */
   function folderPop(hid){var row=function(ic,n,d,h){return '<div class="fxr'+(h?' fxh':'')+'"><span class="fxi">'+ic+'</span><b>'+n+'</b><small>'+d+'</small></div>'};
     var body='<div class="fexp"><div class="fxp">&#128193; recipes</div>'

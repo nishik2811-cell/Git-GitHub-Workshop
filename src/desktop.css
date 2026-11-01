@@ -15,6 +15,9 @@ html.preboot .wrap>*:not(header){display:none!important}
 html.preboot header>*:not(.heroframe){display:none!important}
 html.preboot header{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;box-sizing:border-box;background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px}
 html.preboot header .heroframe{margin:auto;width:100%;max-width:660px}
+/* refreshing after START: no start screen flash, just the sky until the desktop is ready */
+html.skipboot header,html.skipboot .boot{display:none!important}
+html.skipboot body{background:#a9d4ff}
 
 
 /* boot screen */
