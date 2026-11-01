@@ -2,8 +2,6 @@
 
 A visual, hands-on beginner guide to Git and GitHub. One HTML file, no install, works offline.
 
-**Live:** https://nishik2811-cell.github.io/Git-GitHub-Workshop/
-
 Made for our workshop by **Nishita, Vasu, Yashieta, Abhinav and Aryan**.
 
 ## Quick start
