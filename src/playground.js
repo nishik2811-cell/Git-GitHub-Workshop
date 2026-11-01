@@ -14,8 +14,14 @@
       g.addEventListener('pointermove',function(e){if(!on)return;var r=np.getBoundingClientRect();np.style.width=Math.max(220,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';np.style.height=Math.max(90,Math.min(innerHeight-r.top-6,sh+e.clientY-sy))+'px'});
       g.addEventListener('pointerup',function(){on=false;np.classList.remove('sizing')});
     })();
-    $('npMin').onclick=function(){np.classList.toggle('min')};
-    if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){np.classList.add('show');io.disconnect()}},{threshold:0});io.observe($('pg'))}else np.classList.add('show');
+    var tkb=document.createElement('button');tkb.className='tk tkvs';tkb.id='tkVS';tkb.hidden=true;tkb.title='Visual Studio Code';
+    tkb.innerHTML='<i aria-hidden="true"></i><span>Visual Studio Code</span>';
+    var tbar=document.getElementById('taskbar'),tray=tbar&&tbar.querySelector('.tray');if(tbar)tbar.insertBefore(tkb,tray);
+    window.vsDock=function(on){np.classList.toggle('docked',on);tkb.classList.toggle('on',!on);if(!on){np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}};
+    $('npMin').onclick=function(){vsDock(true)};
+    np.querySelector('.vdots i:nth-child(2)').onclick=function(e){e.stopPropagation();vsDock(true)};
+    tkb.onclick=function(){vsDock(!np.classList.contains('docked'))};
+    if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){np.classList.add('show');tkb.hidden=false;tkb.classList.add('on');io.disconnect()}},{threshold:0});io.observe($('pg'))}else{np.classList.add('show');tkb.hidden=false;tkb.classList.add('on')}
   })();
   var out=$('pgOut'),inp=$('pgIn'),ps=$('pgPs'),HOME='/home/you',S,busy=false,queue=[],pend=false,scripting=false;
   function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repo:null,hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1}
@@ -363,7 +369,7 @@
   function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
     return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
   function vsPop(title,text,btns){
-    var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');
+    var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);
     var d=document.createElement('div');d.className='vsdlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
     d.innerHTML='<div class="vsdb"><div class="vsdt"><i>!</i><div><b>'+title+'</b><p>'+text+'</p></div></div><div class="vsdbtn"></div></div>';
     var bb=d.querySelector('.vsdbtn'),prev=document.activeElement;
@@ -407,7 +413,7 @@
     var state=conf?'merge conflict':({U:'new file, not tracked',M:(w[S.fvf]!==R().index[S.fvf]?'changed, not staged':'staged'),A:'staged',C:'merge conflict'})[st(S.fvf)]||'saved';
     T.textContent=S.fvf+' - '+folder+' - Visual Studio Code';
     np.classList.toggle('bad',conf);
-    if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+    if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
     if(!conf)S.conflShown=0;
     var nc=conf?((w[S.fvf].match(/^<<<<<<</gm)||[]).length):0;
     B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();

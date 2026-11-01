@@ -29,7 +29,7 @@ git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
 - **Git Bash terminal:** type real commands like `git init`, `add`, `commit`, `switch`, `merge` and `push`.
 - **Guided stories:** the pasta recipe (branching and a merge conflict), deleting files, and using `.gitignore`.
 - **17 free practice missions** with a "Type it for me" button when you get stuck.
-- **VS Code window:** a small floating editor that stays with you as you scroll. Drag it, resize it from the corner, or press `_` to tuck it away.
+- **VS Code window:** a small floating editor that stays with you as you scroll. Drag it, resize it from the corner, or press `_` to minimise it to the taskbar at the bottom (click its icon there to bring it back). Works on phones too.
   - Click the **New File** icon next to EXPLORER, name the file, and type your code straight into it.
   - Delete a file with the trash icon next to its name. Git then shows it as deleted, ready to `git add` and commit.
   - Then use the terminal to `git add`, `git commit` and `git push` what you wrote.

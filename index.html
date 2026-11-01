@@ -647,7 +647,7 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .vsstat.nof{background:#68217a}
 .vsstat svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2;vertical-align:-2px;margin-right:4px}
 .vsstat .vsr{margin-left:auto;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:700px){.vsmain{grid-template-columns:34px 1fr}.vsside{display:none}}
+
 .vsconf{background:#5a1d1d;color:#f0c0c0;font-size:11.5px;padding:3px 12px;border-bottom:1px solid #be1100}
 .notepad .lens{font-family:'Segoe UI','Nunito',sans-serif;font-size:11px;color:#999;padding:3px 12px 1px 36px}
 .notepad .fl.cur{background:rgba(64,200,174,.5)}.notepad .fl.cur2{background:rgba(64,200,174,.2)}
@@ -681,6 +681,39 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .notepad .vsdbtn button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#3a3d41;color:#fff;border:1px solid #4a4a4a;border-radius:2px;box-shadow:none;padding:4px 14px;transform:none}
 .notepad .vsdbtn button.pri{background:#0e639c;border-color:#0e639c}.notepad .vsdbtn button:hover{filter:brightness(1.15)}
 .notepad .vsdbtn button:focus-visible{outline:1px solid #007fd4;outline-offset:1px}
+/* VS Code in the taskbar */
+.notepad.docked{display:none!important}
+.tk.tkvs{display:flex;align-items:center;gap:7px;font-family:var(--pix);font-weight:400;letter-spacing:.02em;cursor:pointer;box-shadow:none;transform:none;max-width:200px}
+.tk.tkvs[hidden]{display:none}
+.tk.tkvs:hover{background:rgba(255,255,255,.28)}
+.tk.tkvs.on{background:rgba(0,0,0,.22);border-color:rgba(0,0,0,.3);box-shadow:inset 1px 1px 3px rgba(0,0,0,.35)}
+.tk.tkvs i{flex:none;width:16px;height:16px;border-radius:3px;background:#007acc;position:relative}
+.tk.tkvs i:after{content:"";position:absolute;inset:3px 3px 3px 5px;border:2.5px solid #fff;border-left:0;border-radius:0 2px 2px 0;transform:skewY(-12deg)}
+.tk.tkvs span{overflow:hidden;text-overflow:ellipsis}
+.nph .vdots i:nth-child(2){cursor:pointer}
+@media(max-width:560px){.tk.tkvs{display:flex}.tk.tkvs span{display:none}}
+/* VS Code window on phones */
+@media(max-width:700px){
+.notepad{left:8px;right:8px;width:auto;max-width:none;bottom:46px;max-height:52vh;min-width:0}
+.vsmain{grid-template-columns:30px 104px 1fr;min-height:170px}
+.vsact i{width:30px;height:30px}.vsact svg{width:16px;height:16px}
+.vsside{font-size:11.5px}.vsfile{padding:5px 6px 5px 10px}
+.notepad .vsdel,.notepad .vsnew{padding:5px;margin:-4px -4px -4px 0}.vsdel svg,.vsnew svg{width:15px;height:15px}
+.vscrumb{display:none}.notepad .vstab{padding:7px 8px}
+.notepad .vsstat .vsr{display:none}
+.nph{padding:7px 8px}.nph button{padding:2px 12px}.nph .vdots i{width:12px;height:12px}
+.npr{width:26px;height:26px}
+#vsTa,.vsedit{font-size:13px}
+.vsname input{font-size:16px}
+}
+@media(max-width:380px){.vsmain{grid-template-columns:28px 88px 1fr}}
+@media(hover:none) and (pointer:coarse){#vsTa,.vsedit,.vsname input{font-size:16px}}
+@media(max-width:700px){.trio.t2{grid-template-columns:1fr}}.trio .t{min-width:0;overflow-wrap:anywhere}
+html,body{overflow-x:clip}
+.notepad .vsgut{border:0;border-radius:0;box-shadow:none;max-width:none;width:auto;overflow:visible}
+.notepad .vsstat svg{display:inline-block}
+@media(max-width:700px){.vsmain{grid-template-columns:30px 118px 1fr}.vsfile b{display:none}}
+@media(hover:none){.vsfile:not(.on) .vsdel{display:none}}
 .sp-heart{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA40lEQVR42u2awQ2DMAxFY9QZyh5MwIUxukPPTMEOjMGFdZgCrj00LTjGEeH5iETCk5+sTxR5Nn0ovapwg7oF5EPxzpqwn5ywDp1E15iiy6tVb1aPs/k6e9RF11JKfoQBE7XOrnqc/05ddAUSSCCzh4FjE/XdfX8+TG4An98ZCwnoWqquos6ZjooSBtBVU5kUpZNAAgnkpaerWB9AeQYAdAUSSCAvkV2zT9qjExVd+dVyVjdFUXRFVwd1rRRFV3RVqBviR/om11foJLoaqptyNYVOAumjq9vkpJNAAgkkkEACmVYb0sM/hPjzsaUAAAAASUVORK5CYII=);aspect-ratio:19/19}
 .sp-heartb{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA5UlEQVR42u2asQ2DMBBFfREz0LJDxBapswIDUGYIBmAFarZgiUxCWoSAgH02xrwrkbD1dE9fJ9uSPz8m9XqYG9QtIDOLf0aH/cTDOnQSXdcULV+V9WZD36qvs0dddE2lZGMYUFHLdw19+zd10RVIIIE8PV0PJWr9Lha/N903qqRF11RnV7GdM2NTlHTlZCASRekkkEACeemTgWhPCfYMAOgKJJBAXiJdT0/ao4mKrugaWF0XRdEVXcNc1Kooiq7o6vgMZqrxTEt1RdEVXXU1FjoJpAl3TeD74R+dBBJIIIEEEkj/9QMxBzyVsEic8QAAAABJRU5ErkJggg==);aspect-ratio:19/19}
 .sp-sparkle{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAtCAYAAAA6GuKaAAAAZ0lEQVR42u3WsQ2AIBAF0MM5dEWdRVfUPbDTysQCiJj3Kiruh/xciAAAaCfVuDTvc74GTFvxGUOPLy200H8LnWpsjMdhhTaJeny2Hm9qEON6n48lStdGPWwP9fA1VQ+hhe42NABASydKlxYmpxxlGwAAAABJRU5ErkJggg==);aspect-ratio:15/15}
@@ -1444,8 +1477,14 @@ git log --oneline           short history          git push / git pull   sync wi
       g.addEventListener('pointermove',function(e){if(!on)return;var r=np.getBoundingClientRect();np.style.width=Math.max(220,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';np.style.height=Math.max(90,Math.min(innerHeight-r.top-6,sh+e.clientY-sy))+'px'});
       g.addEventListener('pointerup',function(){on=false;np.classList.remove('sizing')});
     })();
-    $('npMin').onclick=function(){np.classList.toggle('min')};
-    if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){np.classList.add('show');io.disconnect()}},{threshold:0});io.observe($('pg'))}else np.classList.add('show');
+    var tkb=document.createElement('button');tkb.className='tk tkvs';tkb.id='tkVS';tkb.hidden=true;tkb.title='Visual Studio Code';
+    tkb.innerHTML='<i aria-hidden="true"></i><span>Visual Studio Code</span>';
+    var tbar=document.getElementById('taskbar'),tray=tbar&&tbar.querySelector('.tray');if(tbar)tbar.insertBefore(tkb,tray);
+    window.vsDock=function(on){np.classList.toggle('docked',on);tkb.classList.toggle('on',!on);if(!on){np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}};
+    $('npMin').onclick=function(){vsDock(true)};
+    np.querySelector('.vdots i:nth-child(2)').onclick=function(e){e.stopPropagation();vsDock(true)};
+    tkb.onclick=function(){vsDock(!np.classList.contains('docked'))};
+    if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){np.classList.add('show');tkb.hidden=false;tkb.classList.add('on');io.disconnect()}},{threshold:0});io.observe($('pg'))}else{np.classList.add('show');tkb.hidden=false;tkb.classList.add('on')}
   })();
   var out=$('pgOut'),inp=$('pgIn'),ps=$('pgPs'),HOME='/home/you',S,busy=false,queue=[],pend=false,scripting=false;
   function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repo:null,hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1}
@@ -1793,7 +1832,7 @@ git log --oneline           short history          git push / git pull   sync wi
   function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
     return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
   function vsPop(title,text,btns){
-    var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');
+    var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);
     var d=document.createElement('div');d.className='vsdlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
     d.innerHTML='<div class="vsdb"><div class="vsdt"><i>!</i><div><b>'+title+'</b><p>'+text+'</p></div></div><div class="vsdbtn"></div></div>';
     var bb=d.querySelector('.vsdbtn'),prev=document.activeElement;
@@ -1837,7 +1876,7 @@ git log --oneline           short history          git push / git pull   sync wi
     var state=conf?'merge conflict':({U:'new file, not tracked',M:(w[S.fvf]!==R().index[S.fvf]?'changed, not staged':'staged'),A:'staged',C:'merge conflict'})[st(S.fvf)]||'saved';
     T.textContent=S.fvf+' - '+folder+' - Visual Studio Code';
     np.classList.toggle('bad',conf);
-    if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+    if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
     if(!conf)S.conflShown=0;
     var nc=conf?((w[S.fvf].match(/^<<<<<<</gm)||[]).length):0;
     B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();
