@@ -2945,19 +2945,25 @@ git log --oneline           short history          git push / git pull   sync wi
   function decoFill(){var bg=wsIn.querySelector('.bgdeco');if(!bg||WS.el.hidden)return;bg.style.height='0px';var H=wsIn.scrollHeight;if(H<400)return;
     if(Math.abs(H-(+bg.dataset.h||0))<300&&Math.abs((wsIn.clientWidth||0)-(+bg.dataset.w||0))<40){bg.style.height=bg.dataset.h+'px';return}
     bg.dataset.h=H;bg.style.height=H+'px';bg.innerHTML='';
-    /* an even pattern: one decoration per grid square (~150px, smaller on phones), near the middle of the square,
-       but never behind a lesson card or banner (they are see-through, so it would show as a faint smudge) */
-    var W=wsIn.clientWidth||800,cell=W<600?110:150,cols=Math.max(3,Math.round(W/cell)),cw=W/cols,rows=Math.ceil(H/cell),k=0,
+    /* a natural-looking scatter ("blue noise"): random spots, but never too close to each other, so there are no
+       clumps and no grid pattern. Never behind a lesson card or banner (they are see-through and it would smudge). */
+    var W=wsIn.clientWidth||800,minD=W<600?125:180,k=0,
       z=parseFloat(getComputedStyle(wsIn).zoom)||1,wr=wsIn.getBoundingClientRect(),blocks=[];
     bg.dataset.w=W;
     wsIn.querySelectorAll('.card,.banner,.idx,.signoff,.marquee,.icons,footer,.loadwrap').forEach(function(el){var r=el.getBoundingClientRect();if(!r.width)return;
       var off=el.classList.contains('rv')&&!el.classList.contains('in')?24*z:0; // cards not shown yet sit 24px lower until they slide in
       blocks.push([(r.left-wr.left)/z-10,(r.top-off-wr.top)/z-10,(r.right-wr.left)/z+10,(r.bottom-off-wr.top)/z+10])});
-    function free(x,y,sz){for(var i=0;i<blocks.length;i++){var b=blocks[i];if(x<b[2]&&x+sz>b[0]&&y<b[3]&&y+sz>b[1])return false}return true}
-    for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){var sz=20+Math.random()*18,x=-1,y=0;
-      for(var t=0;t<4;t++){var tx=c*cw+cw/2-sz/2+(Math.random()-0.5)*cw*0.45,ty=r*cell+cell/2-sz/2+(Math.random()-0.5)*cell*0.45;if(free(tx,ty,sz)){x=tx;y=ty;break}}
-      if(x<0)continue;var e=document.createElement('i');e.className='sp '+DECO[k%DECO.length]+(k%2?' bob':' bob2');k++;
-      e.style.left=(x/W*100)+'%';e.style.top=y+'px';e.style.height=sz+'px';bg.appendChild(e)}}
+    function free(x,y,sz){if(x<6||x+sz>W-6)return false;for(var i=0;i<blocks.length;i++){var b=blocks[i];if(x<b[2]&&x+sz>b[0]&&y<b[3]&&y+sz>b[1])return false}return true}
+    /* which decoration: small sparkles most often, the bigger ones less */
+    var KINDS=[['sp-sparkle',26,12,20],['sp-star',20,18,28],['sp-heart',14,18,28],['sp-heartb',14,18,28],['sp-flower',13,20,32],['sp-flower2',13,20,32]],tot=0;
+    KINDS.forEach(function(q){tot+=q[1]});
+    function kind(){var r=Math.random()*tot;for(var i=0;i<KINDS.length;i++){r-=KINDS[i][1];if(r<0)return KINDS[i]}return KINDS[0]}
+    var cs=minD/Math.SQRT2,gw=Math.ceil(W/cs),grid={},tries=Math.round(W*H/(minD*minD)*14);
+    function near(x,y){var gx=Math.floor(x/cs),gy=Math.floor(y/cs);for(var a=gx-2;a<=gx+2;a++)for(var b=gy-2;b<=gy+2;b++){var q=grid[a+','+b];if(q&&(q[0]-x)*(q[0]-x)+(q[1]-y)*(q[1]-y)<minD*minD)return true}return false}
+    for(var t=0;t<tries;t++){var q=kind(),sz=q[2]+Math.random()*(q[3]-q[2]),x=Math.random()*W,y=Math.random()*(H-sz),cx=x+sz/2,cy=y+sz/2;
+      if(!free(x,y,sz)||near(cx,cy))continue;grid[Math.floor(cx/cs)+','+Math.floor(cy/cs)]=[cx,cy];
+      var e=document.createElement('i');e.className='sp '+q[0]+(Math.random()<0.5?' bob':' bob2');
+      e.style.left=(x/W*100)+'%';e.style.top=y+'px';e.style.height=sz+'px';e.style.animationDelay=(-Math.random()*4).toFixed(2)+'s';bg.appendChild(e);k++}}
   function wsFit(){wsZoom();wsLw();clearTimeout(decoT);decoT=setTimeout(decoFill,250)}
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
   addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
