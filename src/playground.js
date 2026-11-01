@@ -924,7 +924,8 @@
   /* ---------- REAL GitHub mode ---------- */
   var RL={on:false,repo:'',tok:'',def:'main',view:'main',seen:{},timer:null,known:{},fresh:{},blobs:{}};
   /* known[branch]: the real GitHub commit our pretend copy matches. fresh[branch]: GitHub's commit right after "Delete everything" (empty repo). */
-  function realTree(sha){return gh('GET','/repos/'+RL.repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read files ('+t.s+')');
+  var EMPTY_TREE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'; // Git's id for "no files at all"; GitHub answers 404 for it
+  function realTree(sha){if(sha===EMPTY_TREE)return Promise.resolve({});return gh('GET','/repos/'+RL.repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read the files of one commit ('+t.s+')');
     var fl=t.j.tree.filter(function(x){return x.type==='blob'}).slice(0,200),files={};
     return seq(fl,function(f){if(RL.blobs[f.sha]!==undefined){files[f.path]=RL.blobs[f.sha];return}
       return gh('GET','/repos/'+RL.repo+'/git/blobs/'+f.sha).then(function(b){var txt;try{txt=decodeURIComponent(escape(atob(((b.j&&b.j.content)||'').replace(/\n/g,''))))}catch(e){txt='(binary file)\n'}RL.blobs[f.sha]=txt;files[f.path]=txt})}).then(function(){return files})})}
@@ -938,6 +939,7 @@
       return gh('GET','/repos/'+RL.repo+'/commits?sha='+encodeURIComponent(br)+'&per_page=30').then(function(cl){
         if(cl.s!==200)throw new Error('GitHub said '+cl.s);
         var list=[];for(var i=0;i<cl.j.length;i++){var c=cl.j[i];if(c.sha===RL.known[br]||c.sha===RL.fresh[br])break;list.push(c)}
+        if(!RL.known[br])list=list.slice(0,10); // first time we talk to this repo: its 10 latest commits are plenty
         list.reverse();var parent=RL.known[br]&&r.remote.br[br]?r.remote.br[br]:null;
         return seq(list,function(c){return realTree(c.commit.tree.sha).then(function(files){
           var sc={id:rid(),msg:(c.commit.message||'').split('\n')[0],p:parent?[parent]:[],files:files,br:br,n:++S.n,who:(c.commit.author&&c.commit.author.name)||'GitHub',hidden:true};
