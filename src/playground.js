@@ -540,7 +540,7 @@
    function(){return !!S.ran.log}
   ];
   var TT,PR,ST;
-  function prog(){var k=0;while(k<PR.length&&PR[k]())k++;return k}
+  function prog(){var k=0;while(k<PR.length&&PR[k]())k++;if(k<(S.best||0)){k=S.best;while(k<PR.length&&PR[k]())k++}S.best=k;return k}
   function render(){
     fvDraw();
     var z=zones(),ids=['z1','z2','z3','z4'];
@@ -567,13 +567,17 @@
   $('fvB').addEventListener('click',showFile);
   $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */
+  var sGen=0;
+  function stopScripts(){sGen++;busy=false;scripting=false;inp.disabled=false;inp.value='';sBusy=false;holdCap=false;sAuto=false;clearTimeout(sTimer);$('stNext').disabled=false}
   function scriptRun(cmds,gap,done,speed){
-    if(busy)return;busy=true;scripting=true;inp.disabled=true;
+    if(busy)return false;busy=true;scripting=true;inp.disabled=true;var g=sGen;
     (function next(){
+      if(g!==sGen)return;
       if(!cmds.length){busy=false;scripting=false;inp.disabled=false;try{inp.focus({preventScroll:true})}catch(z){}if(done)done();return}
       var c=cmds.shift(),i=0;inp.value='';
-      var iv=setInterval(function(){i++;inp.value=c.slice(0,i);if(i>=c.length){clearInterval(iv);setTimeout(function(){inp.value='';run(c);setTimeout(function w(){if(pend)setTimeout(w,300);else next()},gap||420)},speed?500:260)}},speed||22);
+      var iv=setInterval(function(){if(g!==sGen){clearInterval(iv);return}i++;inp.value=c.slice(0,i);if(i>=c.length){clearInterval(iv);setTimeout(function(){if(g!==sGen)return;inp.value='';run(c);setTimeout(function w(){if(g!==sGen)return;if(pend)setTimeout(w,300);else next()},gap||420)},speed?500:260)}},speed||22);
     })();
+    return true;
   }
   function reset(){fresh();out.innerHTML='';pl('Welcome to your pretend computer! Type  help  to see what you can do.','y');setPrompt();S.sig={};render()}
   inp.addEventListener('keydown',function(e){
@@ -586,8 +590,8 @@
     var t=(e.clipboardData||window.clipboardData).getData('text');if(!/[\r\n]/.test(t))return;
     e.preventDefault();if(busy)return;
     var lines=(inp.value+t).split(/\r?\n/).filter(function(l){return l.trim()});inp.value='';
-    busy=true;scripting=true;inp.disabled=true;
-    (function next(){if(pend){setTimeout(next,300);return}
+    busy=true;scripting=true;inp.disabled=true;var g=sGen;
+    (function next(){if(g!==sGen)return;if(pend){setTimeout(next,300);return}
       if(!lines.length){busy=false;scripting=false;inp.disabled=false;inp.focus({preventScroll:true});return}
       run(lines.shift());setTimeout(next,120)})();
   });
@@ -604,7 +608,7 @@
         .then(function(){pl('Done. The repo is empty and ready for a fresh demo.','y')});
     }).catch(function(){perr('Could not reach GitHub.')}).then(function(){busy=false;inp.disabled=false;inp.focus({preventScroll:true});refreshLive()});
   }
-  $('pgReset').onclick=function(){if(busy)return;
+  $('pgReset').onclick=function(){if(pend)return;stopScripts();
     if(RL.on&&window.gitPop)window.gitPop('err','CLEAR EVERYTHING?','This clears the terminal, deletes your pretend files and starts over.<br><br>Also delete every file in <b>github.com/'+esc(RL.repo)+'</b>?',[{t:'Laptop only',fn:reset},{t:'Laptop + GitHub',fn:wipeReal},{t:'Cancel'}]);
     else reset()};
   $('pgReadme').onclick=function(){if(busy)return;
@@ -682,7 +686,7 @@
   STORIES[2].h='GUIDED STORY: THE .gitignore FILE';
   ST=ST1;TT=TT1;PR=PR1;
   (function(){var h='';STORIES.forEach(function(s,k){h+='<button data-k="'+k+'" class="'+(k===0?'on':'')+'">'+s.n+'</button>'});$('stTabs').innerHTML=h;
-    $('stTabs').onclick=function(e){var b=e.target.closest('button');if(!b||busy||sBusy)return;var k=+b.getAttribute('data-k');if(k===cs)return;
+    $('stTabs').onclick=function(e){var b=e.target.closest('button');if(!b||pend)return;var k=+b.getAttribute('data-k');if(k===cs)return;stopScripts();
       cs=k;ST=STORIES[k].ST;TT=STORIES[k].TT;PR=STORIES[k].PR;sAuto=false;clearTimeout(sTimer);holdCap=false;
       Array.prototype.forEach.call($('stTabs').children,function(x,i){x.className=i===k?'on':''});$('stH').textContent=STORIES[k].h;reset()}})();
   function sDraw(){
@@ -699,7 +703,8 @@
   window.sDraw=sDraw;
   var CH={red:['Pasta with red sauce','keep red sauce'],white:['Pasta with white sauce','keep white sauce'],both:['Pasta with red and white sauce','use both sauces']};
   function sStep(){
-    if(sBusy||busy)return;clearTimeout(sTimer);
+    if(sBusy)return;clearTimeout(sTimer);
+    if(busy){sTimer=setTimeout(sStep,400);return}
     if(si>=ST.length){reset();si=0}
     var k=si,st=ST[k];
     if(st.choose){
@@ -716,19 +721,22 @@
     $('stNext').disabled=true;
     var ch=CH[S.choice||'both'];
     var cmds=st.cmds.map(function(c){return c.replace('@URL@',ghUrl()).replace('@FIX@','echo "'+ch[0]+'" > pasta.txt').replace('@CH@',ch[1])});
-    setTimeout(function(){
-      scriptRun(cmds,1100,function(){
+    var g=sGen;
+    sTimer=setTimeout(function(){
+      if(g!==sGen)return;
+      var ok=scriptRun(cmds,1100,function(){
         sBusy=false;$('stNext').disabled=false;render();
         var adv=si>k;
         if(si>=ST.length){sAuto=false;holdCap=false;sDraw();return}
         if(sAuto&&adv&&!st.stop)sTimer=setTimeout(sStep,3600);
         else if(sAuto){sAuto=false;sDraw();if(st.stop)$('stSay').innerHTML+=' <b>Press Next step to continue.</b>'}
       },true);
+      if(!ok){sBusy=false;holdCap=false;$('stNext').disabled=false;sDraw()}
     },900);
   }
   $('stNext').onclick=function(){sStep()};
   $('stAuto').onclick=function(){sAuto=!sAuto;sDraw();if(sAuto&&!sBusy)sStep();else if(!sAuto)clearTimeout(sTimer)};
-  $('stRestart').onclick=function(){if(busy||sBusy)return;sAuto=false;clearTimeout(sTimer);holdCap=false;reset();sDraw()};
+  $('stRestart').onclick=function(){if(pend)return;stopScripts();reset();sDraw()};
   $('pgMate').onclick=function(){
     if(busy)return;var r=S.repo;
     if(!r||!r.remote||!r.remote.br[r.head]){window.gitPop&&window.gitPop('warn','NOT YET','Push something to GitHub first. Finish the missions up to <b>git push</b>, or press Watch a demo then push.');return}
