@@ -304,7 +304,7 @@ p5+=card('t2-3b','c','P5_PRACTICE-TERMINAL.EXE','Practice lab: type real Git com
  +'<div class="pgm"><div class="pgmh"><span>FREE PRACTICE MISSIONS</span><b id="pgCount">0 / 12 missions</b></div><div id="pgMission"></div><details class="pgall"><summary>See all missions</summary><ol id="pgList"></ol></details></div>'
  +'</div></div>'
  +'<div class="btns pgb"><button id="pgReadme">Add a README</button><button id="pgReal" class="greenbtn">Real GitHub mode</button><button id="pgMate">A teammate pushes</button><button id="pgReset" class="redbtn">Clear all &amp; start over</button></div><i id="pgBar" hidden></i>'
- +'<p class="note">Tip: a small VS Code window floats at the bottom right and stays with you as you scroll. Press _ to tuck it away. Drag its title bar to move it, or its bottom-right corner to resize it. It shows what is written inside your files. Click a file name in the boxes to open it there. Press the up arrow to repeat a command. Errors show up as pop-ups, just like real life.</p>')
+ +'<p class="note">Tip: VS Code has its own window on the desktop. Press _ to tuck it away, drag its title bar to move it, or drag its bottom-right corner to resize it. It shows what is written inside your files: click a file name in the boxes to open it there. Press the up arrow to repeat a command. Errors show up as pop-ups, just like real life.</p>')
 
 
 phases=''

@@ -112,6 +112,7 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .dwh button.dmax{font-size:15px}
 #wsWin .dwb.wsb{position:relative;scroll-behavior:smooth;background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px;background-attachment:local}
 #wsIn{position:relative;min-height:100%}
+#wsIn p.note{margin-left:auto;margin-right:auto}
 #wsWin .dwb.wsb{overflow-x:hidden}
 /* the step-by-step guides: their sticky bars now sit inside the window (no taskbar gap, below the loading bar) */
 #wsIn .wiz .wbtns{bottom:0}
