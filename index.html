@@ -670,6 +670,17 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .vsfile:hover .vsdel,.vsfile.on .vsdel,.vsdel:focus{opacity:1}.notepad .vsdel:hover{background:#4b4b4b}
 .vsdel svg{width:13px;height:13px;fill:none;stroke:#ccc;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(hover:none){.vsdel{opacity:1}}
+/* in-window VS Code dialog */
+.vsdlg{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding-top:44px}
+.vsdb{background:#252526;color:#ccc;border:1px solid #454545;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.6);width:min(330px,88%);padding:14px 14px 12px;font-family:'Segoe UI','Nunito',sans-serif;font-size:12.5px}
+.vsdt{display:flex;gap:10px;align-items:flex-start}
+.vsdt i{flex:none;width:28px;height:28px;border-radius:50%;background:#cca700;color:#1e1e1e;font-style:normal;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center}
+.vsdt b{display:block;color:#fff;font-weight:600;font-size:13px;margin:3px 0 4px;word-break:break-word}
+.vsdt p{margin:0;color:#bbb;line-height:1.45}.vsdt code{background:#3c3c3c;color:#ce9178;padding:0 4px;border-radius:3px}
+.vsdbtn{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.notepad .vsdbtn button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#3a3d41;color:#fff;border:1px solid #4a4a4a;border-radius:2px;box-shadow:none;padding:4px 14px;transform:none}
+.notepad .vsdbtn button.pri{background:#0e639c;border-color:#0e639c}.notepad .vsdbtn button:hover{filter:brightness(1.15)}
+.notepad .vsdbtn button:focus-visible{outline:1px solid #007fd4;outline-offset:1px}
 .sp-heart{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA40lEQVR42u2awQ2DMAxFY9QZyh5MwIUxukPPTMEOjMGFdZgCrj00LTjGEeH5iETCk5+sTxR5Nn0ovapwg7oF5EPxzpqwn5ywDp1E15iiy6tVb1aPs/k6e9RF11JKfoQBE7XOrnqc/05ddAUSSCCzh4FjE/XdfX8+TG4An98ZCwnoWqquos6ZjooSBtBVU5kUpZNAAgnkpaerWB9AeQYAdAUSSCAvkV2zT9qjExVd+dVyVjdFUXRFVwd1rRRFV3RVqBviR/om11foJLoaqptyNYVOAumjq9vkpJNAAgkkkEACmVYb0sM/hPjzsaUAAAAASUVORK5CYII=);aspect-ratio:19/19}
 .sp-heartb{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA5UlEQVR42u2asQ2DMBBFfREz0LJDxBapswIDUGYIBmAFarZgiUxCWoSAgH02xrwrkbD1dE9fJ9uSPz8m9XqYG9QtIDOLf0aH/cTDOnQSXdcULV+V9WZD36qvs0dddE2lZGMYUFHLdw19+zd10RVIIIE8PV0PJWr9Lha/N903qqRF11RnV7GdM2NTlHTlZCASRekkkEACeemTgWhPCfYMAOgKJJBAXiJdT0/ao4mKrugaWF0XRdEVXcNc1Kooiq7o6vgMZqrxTEt1RdEVXXU1FjoJpAl3TeD74R+dBBJIIIEEEkj/9QMxBzyVsEic8QAAAABJRU5ErkJggg==);aspect-ratio:19/19}
 .sp-sparkle{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAtCAYAAAA6GuKaAAAAZ0lEQVR42u3WsQ2AIBAF0MM5dEWdRVfUPbDTysQCiJj3Kiruh/xciAAAaCfVuDTvc74GTFvxGUOPLy200H8LnWpsjMdhhTaJeny2Hm9qEON6n48lStdGPWwP9fA1VQ+hhe42NABASydKlxYmpxxlGwAAAABJRU5ErkJggg==);aspect-ratio:15/15}
@@ -1781,6 +1792,16 @@ git log --oneline           short history          git push / git pull   sync wi
     return '<div class="vsmain">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
   function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
     return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
+  function vsPop(title,text,btns){
+    var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');
+    var d=document.createElement('div');d.className='vsdlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+    d.innerHTML='<div class="vsdb"><div class="vsdt"><i>!</i><div><b>'+title+'</b><p>'+text+'</p></div></div><div class="vsdbtn"></div></div>';
+    var bb=d.querySelector('.vsdbtn'),prev=document.activeElement;
+    function close(){d.remove();if(prev&&prev.focus&&document.contains(prev))prev.focus({preventScroll:true})}
+    (btns||[{t:'OK'}]).forEach(function(b,i){var x=document.createElement('button');x.textContent=b.t;if(i===0)x.className='pri';x.onclick=function(){close();if(b.fn)b.fn()};bb.appendChild(x)});
+    d.addEventListener('keydown',function(e){if(e.key==='Escape'){e.stopPropagation();close()}});
+    d.addEventListener('pointerdown',function(e){e.stopPropagation()});
+    np.appendChild(d);bb.firstChild.focus({preventScroll:true})}
   function vsPath(){return S.repo?R().root+'/'+S.fvf:S.fvf}
   var vsSel=null;
   function vsKeep(){var ta=$('vsTa'),nm=$('vsName');if(nm){nm.focus();return}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);ta.scrollTop=vsSel.t;ta.scrollLeft=vsSel.l}vsSel=null}
@@ -1794,10 +1815,10 @@ git log --oneline           short history          git push / git pull   sync wi
     if(e.key!=='Enter')return;e.preventDefault();var nm=e.target.value.trim();
     if(!/^[A-Za-z0-9_.-]+$/.test(nm)||nm==='.'||nm==='..'){e.target.classList.add('bad');e.target.title='Use letters, numbers, dots, dashes or underscores. No spaces.';return}
     var abs=S.cwd+'/'+nm;S.vsNaming=0;
-    if(S.dirs[abs]){window.gitPop&&window.gitPop('err','Cannot create file','A folder called <b>'+esc(nm)+'</b> already exists here.');fvDraw();return}
+    if(S.dirs[abs]){vsPop('Cannot create file','A folder called <b>'+esc(nm)+'</b> already exists here.');fvDraw();return}
     if(!(abs in S.files))S.files[abs]='';
     var rp=S.repo?rel(abs):abs;
-    if(S.repo&&rp===null){window.gitPop&&window.gitPop('err','Outside the repo','The terminal is in a folder outside your repo. <code>cd</code> into the repo first.');render();return}
+    if(S.repo&&rp===null){vsPop('This file is outside the repo','The terminal is in a folder outside your repo. <code>cd</code> into the repo first.');render();return}
     S.fvf=rp;pr('<span class="c">[VS Code] Created '+esc(nm)+'. Type in it, then use git add and git commit here.</span>');render();var ta=$('vsTa');if(ta)ta.focus({preventScroll:true})});
   $('fvB').addEventListener('focusout',function(e){if(e.target.id==='vsName'&&S.vsNaming){setTimeout(function(){if(S.vsNaming&&document.activeElement.id!=='vsName'){S.vsNaming=0;fvDraw()}},150)}});
   function fvDraw(){
@@ -1873,7 +1894,7 @@ git log --oneline           short history          git push / git pull   sync wi
   }
   function showFile(e){if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming=1;fvDraw();return}
     var dl=e.target.closest&&e.target.closest('[data-del]');if(dl){var f=dl.closest('[data-f]').getAttribute('data-f'),abs=S.repo?R().root+'/'+f:f,nm=base(abs);
-      window.gitPop&&window.gitPop('warn','Delete '+esc(nm)+'?','The file is removed from your folder.'+(S.repo?'<br>Git will show it as <b>deleted</b>. Run <code>git add '+esc(nm)+'</code> and <code>git commit</code> to save the deletion.':''),[{t:'Move to Trash',fn:function(){delete S.files[abs];if(S.fvf===f)S.fvf=null;pr('<span class="c">[VS Code] Deleted '+esc(nm)+'.'+(S.repo?' Next: git add '+esc(nm)+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}]);return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){window.gitPop&&window.gitPop('warn','Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+      vsPop('Are you sure you want to delete \''+esc(nm)+'\'?','You can restore this file from the Trash.'+(S.repo?'<br>Git will then show it as <b>deleted</b>. Run <code>git add '+esc(nm)+'</code> and <code>git commit</code> to save that.':''),[{t:'Move to Trash',fn:function(){delete S.files[abs];if(S.fvf===f)S.fvf=null;pr('<span class="c">[VS Code] Deleted '+esc(nm)+'.'+(S.repo?' Next: git add '+esc(nm)+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}]);return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){vsPop('Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
   $('fvB').addEventListener('click',showFile);
   $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */

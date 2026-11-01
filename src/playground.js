@@ -362,6 +362,16 @@
     return '<div class="vsmain">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
   function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
     return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
+  function vsPop(title,text,btns){
+    var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');
+    var d=document.createElement('div');d.className='vsdlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+    d.innerHTML='<div class="vsdb"><div class="vsdt"><i>!</i><div><b>'+title+'</b><p>'+text+'</p></div></div><div class="vsdbtn"></div></div>';
+    var bb=d.querySelector('.vsdbtn'),prev=document.activeElement;
+    function close(){d.remove();if(prev&&prev.focus&&document.contains(prev))prev.focus({preventScroll:true})}
+    (btns||[{t:'OK'}]).forEach(function(b,i){var x=document.createElement('button');x.textContent=b.t;if(i===0)x.className='pri';x.onclick=function(){close();if(b.fn)b.fn()};bb.appendChild(x)});
+    d.addEventListener('keydown',function(e){if(e.key==='Escape'){e.stopPropagation();close()}});
+    d.addEventListener('pointerdown',function(e){e.stopPropagation()});
+    np.appendChild(d);bb.firstChild.focus({preventScroll:true})}
   function vsPath(){return S.repo?R().root+'/'+S.fvf:S.fvf}
   var vsSel=null;
   function vsKeep(){var ta=$('vsTa'),nm=$('vsName');if(nm){nm.focus();return}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);ta.scrollTop=vsSel.t;ta.scrollLeft=vsSel.l}vsSel=null}
@@ -375,10 +385,10 @@
     if(e.key!=='Enter')return;e.preventDefault();var nm=e.target.value.trim();
     if(!/^[A-Za-z0-9_.-]+$/.test(nm)||nm==='.'||nm==='..'){e.target.classList.add('bad');e.target.title='Use letters, numbers, dots, dashes or underscores. No spaces.';return}
     var abs=S.cwd+'/'+nm;S.vsNaming=0;
-    if(S.dirs[abs]){window.gitPop&&window.gitPop('err','Cannot create file','A folder called <b>'+esc(nm)+'</b> already exists here.');fvDraw();return}
+    if(S.dirs[abs]){vsPop('Cannot create file','A folder called <b>'+esc(nm)+'</b> already exists here.');fvDraw();return}
     if(!(abs in S.files))S.files[abs]='';
     var rp=S.repo?rel(abs):abs;
-    if(S.repo&&rp===null){window.gitPop&&window.gitPop('err','Outside the repo','The terminal is in a folder outside your repo. <code>cd</code> into the repo first.');render();return}
+    if(S.repo&&rp===null){vsPop('This file is outside the repo','The terminal is in a folder outside your repo. <code>cd</code> into the repo first.');render();return}
     S.fvf=rp;pr('<span class="c">[VS Code] Created '+esc(nm)+'. Type in it, then use git add and git commit here.</span>');render();var ta=$('vsTa');if(ta)ta.focus({preventScroll:true})});
   $('fvB').addEventListener('focusout',function(e){if(e.target.id==='vsName'&&S.vsNaming){setTimeout(function(){if(S.vsNaming&&document.activeElement.id!=='vsName'){S.vsNaming=0;fvDraw()}},150)}});
   function fvDraw(){
@@ -454,7 +464,7 @@
   }
   function showFile(e){if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming=1;fvDraw();return}
     var dl=e.target.closest&&e.target.closest('[data-del]');if(dl){var f=dl.closest('[data-f]').getAttribute('data-f'),abs=S.repo?R().root+'/'+f:f,nm=base(abs);
-      window.gitPop&&window.gitPop('warn','Delete '+esc(nm)+'?','The file is removed from your folder.'+(S.repo?'<br>Git will show it as <b>deleted</b>. Run <code>git add '+esc(nm)+'</code> and <code>git commit</code> to save the deletion.':''),[{t:'Move to Trash',fn:function(){delete S.files[abs];if(S.fvf===f)S.fvf=null;pr('<span class="c">[VS Code] Deleted '+esc(nm)+'.'+(S.repo?' Next: git add '+esc(nm)+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}]);return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){window.gitPop&&window.gitPop('warn','Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+      vsPop('Are you sure you want to delete \''+esc(nm)+'\'?','You can restore this file from the Trash.'+(S.repo?'<br>Git will then show it as <b>deleted</b>. Run <code>git add '+esc(nm)+'</code> and <code>git commit</code> to save that.':''),[{t:'Move to Trash',fn:function(){delete S.files[abs];if(S.fvf===f)S.fvf=null;pr('<span class="c">[VS Code] Deleted '+esc(nm)+'.'+(S.repo?' Next: git add '+esc(nm)+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}]);return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){vsPop('Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
   $('fvB').addEventListener('click',showFile);
   $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */
