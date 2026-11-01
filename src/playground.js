@@ -8,6 +8,7 @@
     h.addEventListener('pointerdown',function(e){if(e.target.id==='npMin')return;drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;h.setPointerCapture(e.pointerId)});
     h.addEventListener('pointermove',function(e){if(!drag)return;np.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';np.style.top=Math.max(0,Math.min(innerHeight-60,e.clientY-oy))+'px';np.style.right='auto';np.style.bottom='auto'});
     h.addEventListener('pointerup',function(){drag=false});
+    np.addEventListener('pointerdown',function(){var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.width=r.width+'px';np.style.right='auto';np.style.bottom='auto'});
     $('npMin').onclick=function(){np.classList.toggle('min')};
     if('IntersectionObserver' in window){new IntersectionObserver(function(es){np.classList.toggle('show',es[0].isIntersecting)},{threshold:0}).observe($('pg'))}else np.classList.add('show');
   })();

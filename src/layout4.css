@@ -154,7 +154,7 @@ body{padding-bottom:46px}
 .pgline #pgPs{flex:none;white-space:nowrap}
 .pgline input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font:inherit;padding:0;caret-color:#ffe36e}
 .pgterm .g,.pgout .g{color:#8fe39a}.pgterm .y{color:#ffe36e}.pgterm .r{color:#ff8fa3}.pgterm .b{color:#7db4ff}.pgterm .c{color:#6fe0e8}.pgterm .p{color:#d7a8ff}
-.pgb{justify-content:flex-start}.pgb button{font-size:13px;padding:6px 12px}
+.pgb{justify-content:flex-start;margin:-4px 0 12px}.pgb button{font-size:13px;padding:6px 12px}
 .pgrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .pz{background:#fff;border:3px solid var(--ink);border-radius:12px;overflow:hidden;min-width:0}
 .pz.gh{background:#f1f5ff}
@@ -236,6 +236,8 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .nph .npt{flex:1;text-align:center}
 .nph button{background:transparent;color:#ccc;border:1px solid #666;box-shadow:none}
 .notepad .npb{background:#1e1e1e;color:#d4d4d4;padding:0!important}
+.notepad{resize:both;min-width:220px;min-height:90px;max-width:92vw;max-height:88vh}.notepad .npb{flex:1}
+.notepad.min{resize:none;height:auto!important;min-height:0}
 .vstabs{display:flex;background:#252526;overflow-x:auto}.vstab{padding:6px 14px;font-family:'Nunito',sans-serif;font-size:12.5px;color:#999;border-right:1px solid #1e1e1e;white-space:nowrap;cursor:pointer}.vstab.on{background:#1e1e1e;color:#fff;border-top:2px solid #3794ff}.vstab.cf{color:#f48771}
 .notepad .fl{padding:1px 12px;font-size:13.5px;color:#d4d4d4}.notepad .fl .ln2{color:#6e7681}
 .notepad .fl.mk{background:#3a3a4a;color:#aaa;font-weight:400}

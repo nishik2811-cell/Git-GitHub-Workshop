@@ -292,16 +292,16 @@ p5+=card('t2-3b','c','P5_PRACTICE-TERMINAL.EXE','Practice lab: type real Git com
  +'<div class="pg" id="pg"><div class="pgl">'
  +'<div class="story" id="story"><div class="stabs" id="stTabs"></div><div class="sth"><span id="stH">GUIDED STORY: PASTA, BRANCH, CONFLICT</span><b id="stC">0 / 0</b></div><div class="stsay" id="stSay">Press <b>Start the story</b>. You will watch every command get typed, and a line under it will explain what it does. You can go one step at a time, or press Auto-play.</div><div class="sdots" id="sDots"></div><div class="btns"><button id="stNext" class="greenbtn">Start the story</button><button id="stAuto">Auto-play</button><button id="stRestart">Restart story</button></div></div>'
  +'<div class="pgterm" id="pgTerm"><div class="bar"><i></i><span>GIT BASH / TERMINAL</span></div><div class="pgout" id="pgOut"></div><div class="pgline"><div id="pgPs"></div><div class="pgin"><span>$&nbsp;</span><input id="pgIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a Git command here"></div></div></div>'
- +'<div class="btns pgb"><button id="pgReadme">Add a README</button><button id="pgReal" class="greenbtn">Real GitHub mode</button><button id="pgMate">A teammate pushes</button><button id="pgReset" class="redbtn">Clear all &amp; start over</button></div><i id="pgBar" hidden></i>'
- +'<div class="pgm"><div class="pgmh"><span>FREE PRACTICE MISSIONS</span><b id="pgCount">0 / 12 missions</b></div><div id="pgMission"></div><details class="pgall"><summary>See all missions</summary><ol id="pgList"></ol></details></div>'
  +'</div><div class="pgr">'
  +'<div class="pgrow"><div class="pz"><div class="pzh">1. Working folder</div><div class="pzb" id="z1"></div></div><div class="pz"><div class="pzh">2. Staging area</div><div class="pzb" id="z2"></div></div></div>'
  +'<div class="pz"><div class="pzh">3. Local repo (your saved history)</div><div class="pzb gr" id="z3"></div></div>'
  +'<div class="pz gh" id="z4w"><div class="pzh">4. GitHub (the online copy)</div><div class="pzb" id="z4"></div></div>'
  +'<div class="pz livegh" id="realBox" hidden><div class="pzh">4. REAL GitHub, live</div><div class="pzb rl" id="realB"></div></div>'
  +'<div class="pglg"><span class="fchip untracked"><b>?</b>new file</span><span class="fchip mod"><b>M</b>changed</span><span class="fchip new"><b>A</b>staged</span><span class="fchip clean"><b>&#10003;</b>saved</span><span class="fchip conf"><b>!</b>conflict</span></div>'
+ +'<div class="pgm"><div class="pgmh"><span>FREE PRACTICE MISSIONS</span><b id="pgCount">0 / 12 missions</b></div><div id="pgMission"></div><details class="pgall"><summary>See all missions</summary><ol id="pgList"></ol></details></div>'
  +'</div></div>'
- +'<p class="note">Tip: a small Notepad window floats at the bottom right while you practise. It shows what is written inside your files. Click a file name in the boxes to open it there. Press the up arrow to repeat a command. Errors show up as pop-ups, just like real life.</p>')
+ +'<div class="btns pgb"><button id="pgReadme">Add a README</button><button id="pgReal" class="greenbtn">Real GitHub mode</button><button id="pgMate">A teammate pushes</button><button id="pgReset" class="redbtn">Clear all &amp; start over</button></div><i id="pgBar" hidden></i>'
+ +'<p class="note">Tip: a small VS Code window floats at the bottom right while you practise. Drag its title bar to move it, or its bottom-right corner to resize it. It shows what is written inside your files. Click a file name in the boxes to open it there. Press the up arrow to repeat a command. Errors show up as pop-ups, just like real life.</p>')
 
 
 phases=''
