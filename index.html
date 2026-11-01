@@ -551,8 +551,10 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .nph .npt{flex:1;text-align:center}
 .nph button{background:transparent;color:#ccc;border:1px solid #666;box-shadow:none}
 .notepad .npb{background:#1e1e1e;color:#d4d4d4;padding:0!important}
-.notepad{resize:both;min-width:220px;min-height:90px;max-width:92vw;max-height:88vh}.notepad .npb{flex:1}
-.notepad.min{resize:none;height:auto!important;min-height:0}
+.notepad{min-width:220px;min-height:90px;max-width:96vw;max-height:none}.notepad.sizing{user-select:none}
+.npr{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;z-index:2;background:linear-gradient(135deg,transparent 0 45%,#8a96c0 45% 52%,transparent 52% 64%,#8a96c0 64% 71%,transparent 71% 83%,#8a96c0 83% 90%,transparent 90%)}
+.notepad.min .npr{display:none}.notepad .npb{flex:1}
+.notepad.min{height:auto!important;min-height:0}
 .vstabs{display:flex;background:#252526;overflow-x:auto}.vstab{padding:6px 14px;font-family:'Nunito',sans-serif;font-size:12.5px;color:#999;border-right:1px solid #1e1e1e;white-space:nowrap;cursor:pointer}.vstab.on{background:#1e1e1e;color:#fff;border-top:2px solid #3794ff}.vstab.cf{color:#f48771}
 .notepad .fl{padding:1px 12px;font-size:13.5px;color:#d4d4d4}.notepad .fl .ln2{color:#6e7681}
 .notepad .fl.mk{background:#3a3a4a;color:#aaa;font-weight:400}
@@ -612,6 +614,49 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .rp-say{margin:4px 0 2px;font-size:15.5px;font-weight:600;min-height:46px}
 .rp .flash{animation:fl .7s}
 @media(prefers-reduced-motion:reduce){.rp-git.on,.rp-snap{animation:none}}
+
+/* VS Code look */
+.notepad{width:460px;max-height:60vh}
+.notepad .npb.fvb{display:flex;flex-direction:column;min-height:0;font-family:'Segoe UI','Nunito',sans-serif}
+.vsmain{flex:1;display:grid;grid-template-columns:34px 128px 1fr;min-height:150px;overflow:hidden}
+.vsact{background:#333333;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:4px}
+.vsact i{position:relative;width:34px;height:32px;display:flex;align-items:center;justify-content:center;border-left:2px solid transparent}
+.vsact i.on{border-left-color:#fff}
+.vsact svg{width:18px;height:18px;fill:none;stroke:#858585;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.vsact i.on svg{stroke:#fff}
+.vsact em{position:absolute;right:3px;bottom:3px;background:#0078d4;color:#fff;font-style:normal;font-size:9px;font-weight:700;min-width:13px;height:13px;border-radius:7px;text-align:center;line-height:13px;padding:0 2px}
+.vsside{background:#252526;color:#ccc;font-size:12px;overflow:auto;border-right:1px solid #1b1b1b}
+.vssh{font-size:10.5px;letter-spacing:.06em;color:#bbb;padding:7px 10px 5px}
+.vsfold{font-size:11px;font-weight:700;color:#ccc;padding:2px 6px;letter-spacing:.03em}
+.vsfile{display:flex;align-items:center;gap:5px;padding:2px 8px 2px 16px;cursor:pointer;white-space:nowrap;color:#ccc}
+.vsfile span{flex:1;overflow:hidden;text-overflow:ellipsis}
+.vsfile b{font-size:10.5px;font-weight:700}
+.vsfile:hover{background:#2a2d2e}.vsfile.on{background:#37373d;outline:1px solid #0078d4;outline-offset:-1px}
+.vsfile.gU,.vsfile.gA{color:#73c991}.vsfile.gM{color:#e2c08d}.vsfile.gC{color:#f48771}
+.vsnone{color:#888;padding:4px 16px;font-style:italic}
+.vsi{font-style:normal;font-weight:700;font-size:10px;width:14px;text-align:center;flex:none;font-family:'Fira Code',monospace}
+.vsed{display:flex;flex-direction:column;min-width:0;background:#1e1e1e}
+.notepad .vstabs{display:flex;background:#252526;overflow:hidden;flex:none}
+.notepad .vstab{display:flex;align-items:center;gap:5px;padding:6px 8px 6px 10px;font-size:12px;color:#969696;background:#2d2d2d;border-right:1px solid #252526;border-top:1px solid transparent;white-space:nowrap;cursor:pointer}
+.notepad .vstab.on{background:#1e1e1e;color:#fff;border-top-color:#0078d4}
+.vstab u{text-decoration:none;color:transparent;margin-left:4px;font-size:13px}.vstab.on u,.vstab:hover u{color:#ccc}
+.vscrumb{font-size:11.5px;color:#a9a9a9;padding:3px 12px;display:flex;align-items:center;gap:4px;flex:none}
+.vscode{flex:1;overflow:auto;padding-bottom:6px;min-height:0}
+.notepad .fl{font-family:'Fira Code',monospace;font-size:12.5px}
+.notepad .fl:first-child{background:#282828}
+.notepad .vsstat{display:flex;gap:12px;align-items:center;background:#007acc;color:#fff;font-size:11px;padding:2px 8px;margin:0;flex:none;white-space:nowrap;overflow:hidden}
+.vsstat.nof{background:#68217a}
+.vsstat svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2;vertical-align:-2px;margin-right:4px}
+.vsstat .vsr{margin-left:auto;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:700px){.vsmain{grid-template-columns:34px 1fr}.vsside{display:none}}
+.vsconf{background:#5a1d1d;color:#f0c0c0;font-size:11.5px;padding:3px 12px;border-bottom:1px solid #be1100}
+.notepad .lens{font-family:'Segoe UI','Nunito',sans-serif;font-size:11px;color:#999;padding:3px 12px 1px 36px}
+.notepad .fl.cur{background:rgba(64,200,174,.5)}.notepad .fl.cur2{background:rgba(64,200,174,.2)}
+.notepad .fl.inc{background:rgba(64,166,255,.5)}.notepad .fl.inc2{background:rgba(64,166,255,.2)}
+.notepad .fl.mid{background:#1e1e1e;color:#888}
+.vsme{display:flex;justify-content:flex-end;padding:8px 10px}
+.vsme button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#0e639c;color:#fff;border:0;border-radius:2px;box-shadow:none;padding:4px 12px}
+.vsme button:hover{background:#1177bb}
+.notepad .vsstat span{white-space:nowrap;flex:none}.notepad .vsstat .vsr{flex:0 1 auto}
 .sp-heart{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA40lEQVR42u2awQ2DMAxFY9QZyh5MwIUxukPPTMEOjMGFdZgCrj00LTjGEeH5iETCk5+sTxR5Nn0ovapwg7oF5EPxzpqwn5ywDp1E15iiy6tVb1aPs/k6e9RF11JKfoQBE7XOrnqc/05ddAUSSCCzh4FjE/XdfX8+TG4An98ZCwnoWqquos6ZjooSBtBVU5kUpZNAAgnkpaerWB9AeQYAdAUSSCAvkV2zT9qjExVd+dVyVjdFUXRFVwd1rRRFV3RVqBviR/om11foJLoaqptyNYVOAumjq9vkpJNAAgkkkEACmVYb0sM/hPjzsaUAAAAASUVORK5CYII=);aspect-ratio:19/19}
 .sp-heartb{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA5UlEQVR42u2asQ2DMBBFfREz0LJDxBapswIDUGYIBmAFarZgiUxCWoSAgH02xrwrkbD1dE9fJ9uSPz8m9XqYG9QtIDOLf0aH/cTDOnQSXdcULV+V9WZD36qvs0dddE2lZGMYUFHLdw19+zd10RVIIIE8PV0PJWr9Lha/N903qqRF11RnV7GdM2NTlHTlZCASRekkkEACeemTgWhPCfYMAOgKJJBAXiJdT0/ao4mKrugaWF0XRdEVXcNc1Kooiq7o6vgMZqrxTEt1RdEVXXU1FjoJpAl3TeD74R+dBBJIIIEEEkj/9QMxBzyVsEic8QAAAABJRU5ErkJggg==);aspect-ratio:19/19}
 .sp-sparkle{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAtCAYAAAA6GuKaAAAAZ0lEQVR42u3WsQ2AIBAF0MM5dEWdRVfUPbDTysQCiJj3Kiruh/xciAAAaCfVuDTvc74GTFvxGUOPLy200H8LnWpsjMdhhTaJeny2Hm9qEON6n48lStdGPWwP9fA1VQ+hhe42NABASydKlxYmpxxlGwAAAABJRU5ErkJggg==);aspect-ratio:15/15}
@@ -1363,13 +1408,18 @@ git log --oneline           short history          git push / git pull   sync wi
   if(!document.getElementById('pg'))return;
   var $=function(i){return document.getElementById(i)};
   var np=document.createElement('div');np.className='notepad';np.id='notepad';
-  np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div>';
+  np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div><span class="npr" id="npR" title="Drag to resize" aria-hidden="true"></span>';
   document.body.appendChild(np);
   (function(){var h=$('nph'),ox,oy,drag=false;
     h.addEventListener('pointerdown',function(e){if(e.target.id==='npMin')return;drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;h.setPointerCapture(e.pointerId)});
     h.addEventListener('pointermove',function(e){if(!drag)return;np.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';np.style.top=Math.max(0,Math.min(innerHeight-60,e.clientY-oy))+'px';np.style.right='auto';np.style.bottom='auto'});
     h.addEventListener('pointerup',function(){drag=false});
     np.addEventListener('pointerdown',function(){var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.width=r.width+'px';np.style.right='auto';np.style.bottom='auto'});
+    (function(){var g=$('npR'),sx,sy,sw,sh,on=false;
+      g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.right='auto';np.style.bottom='auto';sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;np.classList.add('sizing');g.setPointerCapture(e.pointerId)});
+      g.addEventListener('pointermove',function(e){if(!on)return;var r=np.getBoundingClientRect();np.style.width=Math.max(220,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';np.style.height=Math.max(90,Math.min(innerHeight-r.top-6,sh+e.clientY-sy))+'px'});
+      g.addEventListener('pointerup',function(){on=false;np.classList.remove('sizing')});
+    })();
     $('npMin').onclick=function(){np.classList.toggle('min')};
     if('IntersectionObserver' in window){new IntersectionObserver(function(es){np.classList.toggle('show',es[0].isIntersecting)},{threshold:0}).observe($('pg'))}else np.classList.add('show');
   })();
@@ -1706,23 +1756,36 @@ git log --oneline           short history          git push / git pull   sync wi
     });
     return s+'</svg><div class="glg">Pink tag = where you are now. Cloud = this commit is also on GitHub.</div>'}
   /* missions */
+  var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
+  function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
+  function flang(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase();return {md:'Markdown',html:'HTML',css:'CSS',js:'JavaScript',json:'JSON',py:'Python',gitignore:'Ignore'}[e]||'Plain Text'}
+  function vsShell(folder,list,cur,editor,branch,state){
+    var dirty=list.filter(function(x){return x[1]}).length;
+    var side='<div class="vsside"><div class="vssh">EXPLORER</div><div class="vsfold">&#8964; '+esc(folder.toUpperCase())+'</div>'+(list.length?list.map(function(x){return '<div class="vsfile'+(x[0]===cur?' on':'')+(x[1]?' g'+x[1]:'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+'<span>'+esc(x[0])+'</span>'+(x[1]?'<b>'+(x[1]==='C'?'!':x[1])+'</b>':'')+'</div>'}).join(''):'<div class="vsnone">empty folder</div>')+'</div>';
+    var act='<div class="vsact"><i class="on" title="Explorer">'+VI.files+'</i><i title="Search">'+VI.search+'</i><i title="Source Control">'+VI.scm+(dirty?'<em>'+dirty+'</em>':'')+'</i><i title="Extensions">'+VI.ext+'</i></div>';
+    var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(x[0])+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+ficon(cur)+esc(cur)+'</div>':'';
+    var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?VI.br+esc(branch)+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
+    return '<div class="vsmain">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
   function fvDraw(){
-    var T=$('fvT'),B=$('fvB'),tabs='',w,ks,conf=false;
-    if(!S.repo){var fl=keys(S.files).filter(function(f){return dirname(f)===S.cwd});
-      if(!fl.length){T.textContent='Visual Studio Code';B.innerHTML='<div class="vsempty">No files yet. Create one, for example:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';np.classList.remove('bad');return}
-      S.fvf=S.fvf&&S.files[S.fvf]!==undefined?S.fvf:fl[0];T.textContent=base(S.fvf)+' - Visual Studio Code';
-      B.innerHTML=fvHtml(S.files[S.fvf]);return}
+    var T=$('fvT'),B=$('fvB'),w,ks,conf=false,folder=base(S.repo?S.repo.root:S.cwd)||'/',empty='<div class="vsempty">No files yet. Create one in the terminal, for example:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';
+    if(!S.repo){var fl=keys(S.files).filter(function(f){return dirname(f)===S.cwd});np.classList.remove('bad');
+      if(!fl.length){T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,null);return}
+      S.fvf=S.fvf&&S.files[S.fvf]!==undefined?S.fvf:fl[0];T.textContent=base(S.fvf)+' - '+folder+' - Visual Studio Code';
+      B.innerHTML=vsShell(folder,fl.sort().map(function(f){return [base(f),'']}),base(S.fvf),fvHtml(S.files[S.fvf]),null);
+      B.querySelectorAll('[data-f]').forEach(function(e){e.setAttribute('data-f',S.cwd+'/'+e.getAttribute('data-f'))});return}
     w=work();ks=keys(w).sort();
-    if(!ks.length){T.textContent='Visual Studio Code';B.innerHTML='<div class="vsempty">No files yet. Create one, for example:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';np.classList.remove('bad');return}
+    if(!ks.length){np.classList.remove('bad');T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,R().head);return}
     if(!S.fvf||!(S.fvf in w))S.fvf=ks[0];
     conf=!!R().conf[S.fvf];
-    var hT=headTree(),state=conf?'merge conflict':(!(S.fvf in R().index)?'new file, not tracked':(w[S.fvf]!==R().index[S.fvf]?'changed, not staged':(R().index[S.fvf]!==hT[S.fvf]?'staged':'saved')));
-    T.textContent=S.fvf+' - Visual Studio Code';
+    var hT=headTree();
+    function st(f){return R().conf[f]?'C':!(f in R().index)?'U':w[f]!==R().index[f]?'M':R().index[f]!==hT[f]?(f in hT?'M':'A'):''}
+    var state=conf?'merge conflict':({U:'new file, not tracked',M:(w[S.fvf]!==R().index[S.fvf]?'changed, not staged':'staged'),A:'staged',C:'merge conflict'})[st(S.fvf)]||'saved';
+    T.textContent=S.fvf+' - '+folder+' - Visual Studio Code';
     np.classList.toggle('bad',conf);
     if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
     if(!conf)S.conflShown=0;
-    tabs='<div class="vstabs">'+ks.map(function(k){var cf=R().conf[k];return '<span class="vstab'+(k===S.fvf?' on':'')+(cf?' cf':'')+'" data-f="'+esc(k)+'">'+esc(k)+(cf?' &#9888;':'')+'</span>'}).join('')+'</div>';
-    B.innerHTML=tabs+fvHtml(w[S.fvf])+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+'<div class="vsstat"><span>branch '+esc(R().head)+'</span><span>'+state+'</span></div>';
+    var nc=conf?((w[S.fvf].match(/^<<<<<<</gm)||[]).length):0;
+    B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>':'')+fvHtml(w[S.fvf])+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);
   }
   function mdPrev(t){var h='<div class="mdp"><div class="mdh">How GitHub shows it</div>';t.replace(/\n$/,'').split('\n').forEach(function(l){
       if(/^## /.test(l))h+='<h4>'+esc(l.replace(/^#+ /,''))+'</h4>';else if(/^# /.test(l))h+='<h3>'+esc(l.slice(2))+'</h3>';else if(l.trim())h+='<p>'+esc(l)+'</p>'});return h+'</div>'}
@@ -1774,7 +1837,7 @@ git log --oneline           short history          git push / git pull   sync wi
     var l='';TT.forEach(function(t,i){l+='<li class="'+(i<si?'d':i===cur?'c':'')+'">'+t+'</li>'});$('pgList').innerHTML=l;
     if(window.sDraw)sDraw();
   }
-  function showFile(e){var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+  function showFile(e){var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){window.gitPop&&window.gitPop('warn','Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
   $('fvB').addEventListener('click',showFile);
   $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */
