@@ -11,7 +11,7 @@ head=('<div class="marquee"><div class="mq"><span>'+txt*3+'</span><span>'+txt*3+
  '<div class="loadwrap"><span class="lbl" id="loadLbl">LOADING... 0%</span><div class="loadbar"><i id="loadFill"></i></div></div>\n'
  '<div class="wrap">\n<header>\n<div class="heroframe">\n'
  '<div class="card hero"><div class="tbar t-a"><span>GIT-WORKSHOP.EXE</span><span class="xbtn"></span></div>\n'
- '<div class="scene"><h1>Git and GitHub</h1><div class="tag">A beginner guide for people who have never used Git</div>\n'
+ '<div class="scene"><h1>Git and GitHub</h1><div class="tag">Warning: may cause sudden confidence</div>\n'
  '<a class="start" href="#p1">START</a><i class="sp sp-hand bob"></i>\n'
  '<i class="sp sp-sparkle bob" style="right:12%;top:3%;height:72px"></i><i class="sp sp-sparkle bob2" style="right:4%;top:14%;height:44px"></i><i class="sp sp-sparkle bob2" style="right:22%;top:20%;height:34px"></i>\n'
  '<i class="sp sp-cursor c1"></i><i class="sp sp-cursor c2"></i><i class="sp sp-cursor c3"></i><i class="sp sp-heart bob2" style="left:36%;top:57%;height:26px"></i><i class="sp sp-heart bob" style="left:46%;top:62%;height:18px"></i><i class="sp sp-heartb bob2" style="left:31%;bottom:12%;height:48px"></i><i class="sp sp-rock" style="left:0;bottom:0;height:120px"></i><i class="sp sp-flower" style="left:17%;bottom:3%;height:46px"></i><i class="sp sp-tuft" style="left:21%;bottom:0;height:60px"></i>\n'
