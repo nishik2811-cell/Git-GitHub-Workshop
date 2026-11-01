@@ -2906,7 +2906,16 @@ git log --oneline           short history          git push / git pull   sync wi
   var WSBASE=980;
   function wsZoom(){var w=wsBody.clientWidth,base=innerWidth<=700?innerWidth:WSBASE;wsIn.style.zoom=w&&w<base*0.97?String(Math.round(w/base*1000)/1000):''}
   function wsLw(){var lw=wsIn.querySelector('.loadwrap');wsIn.style.setProperty('--lwh',(lw?lw.offsetHeight:0)+'px')}
-  function wsFit(){wsZoom();wsLw()}
+  /* the little flowers, hearts and stars behind the lessons: the page made them while it was still hidden
+     (so only a few), so fill the whole height of the lessons once the window is open, and again if it grows a lot */
+  var DECO=['sp-star','sp-flower','sp-heart','sp-flower2','sp-heartb','sp-sparkle'],decoT=null;
+  function decoFill(){var bg=wsIn.querySelector('.bgdeco');if(!bg||WS.el.hidden)return;bg.style.height='0px';var H=wsIn.scrollHeight;if(H<400)return;
+    if(Math.abs(H-(+bg.dataset.h||0))<300){bg.style.height=bg.dataset.h+'px';return}
+    bg.dataset.h=H;bg.style.height=H+'px';bg.innerHTML='';var n=Math.round(H/100);
+    for(var i=0;i<n;i++){var e=document.createElement('i');e.className='sp '+DECO[i%DECO.length]+(i%2?' bob':' bob2');
+      var side=i%5,x=side<2?1+Math.random()*7:side<4?91+Math.random()*6:10+Math.random()*80;
+      e.style.left=x+'%';e.style.top=(i*100+Math.random()*90)+'px';e.style.height=(18+Math.random()*22)+'px';bg.appendChild(e)}}
+  function wsFit(){wsZoom();wsLw();clearTimeout(decoT);decoT=setTimeout(decoFill,250)}
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
   addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
 
@@ -2995,8 +3004,12 @@ git log --oneline           short history          git push / git pull   sync wi
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){mine.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
     mine.forEach(function(x){if(!born[x.k])born[x.k]=++bornN});
     var nm=function(a,b){var x=a.n.toLowerCase(),y=b.n.toLowerCase();return x<y?-1:x>y?1:0},ext=function(x){var m=x.n.match(/\.([^.]+)$/);return m?m[1].toLowerCase():''};
-    mine.sort(sortBy==='name'?nm:sortBy==='date'?function(a,b){return born[a.k]-born[b.k]}:function(a,b){return a.dir!==b.dir?(a.dir?-1:1):ext(a)!==ext(b)?(ext(a)<ext(b)?-1:1):nm(a,b)});
-    return o.concat(mine)}
+    /* Arrange icons: by name sorts every icon A to Z; by type puts apps, then folders, then files grouped by type
+       (the setup guide counts as a .pdf file); by date created keeps the apps first, then your things oldest first */
+    if(sortBy==='name')return o.concat(mine).sort(nm);
+    if(sortBy==='date'){mine.sort(function(a,b){return born[a.k]-born[b.k]});return o.concat(mine)}
+    var grp=function(x){return x.app&&x.app!=='guide'?0:x.dir?1:2},ord=function(x){return x.app?['ws','vs','br','draw','bin'].indexOf(x.app):0};
+    return o.concat(mine).sort(function(a,b){return grp(a)!==grp(b)?grp(a)-grp(b):grp(a)===0?ord(a)-ord(b):ext(a)!==ext(b)?(ext(a)<ext(b)?-1:1):nm(a,b)})}
   var SORTS={name:'name',type:'type',date:'date created'},sortBy=SORTS[store('sort')]?store('sort'):'type',born={},bornN=0;
   function arrange(k){sortBy=k;store('sort',k);pos={};lastSig='';draw(true);say('Arranged the icons by '+SORTS[k]+'.')}
   function cell(){var sm=view==='small',ph=innerWidth<=700;return {w:sm?(ph?66:74):(ph?80:92),h:sm?(ph?66:72):(ph?84:96),x0:8,y0:8}}
