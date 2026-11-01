@@ -350,22 +350,43 @@
     });
     return s+'</svg><div class="glg">Pink tag = where you are now. Cloud = this commit is also on GitHub.</div>'}
   /* missions */
-  var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
+  var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
   function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
   function flang(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase();return {md:'Markdown',html:'HTML',css:'CSS',js:'JavaScript',json:'JSON',py:'Python',gitignore:'Ignore'}[e]||'Plain Text'}
   function vsShell(folder,list,cur,editor,branch,state){
     var dirty=list.filter(function(x){return x[1]}).length;
-    var side='<div class="vsside"><div class="vssh">EXPLORER</div><div class="vsfold">&#8964; '+esc(folder.toUpperCase())+'</div>'+(list.length?list.map(function(x){return '<div class="vsfile'+(x[0]===cur?' on':'')+(x[1]?' g'+x[1]:'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+'<span>'+esc(x[0])+'</span>'+(x[1]?'<b>'+(x[1]==='C'?'!':x[1])+'</b>':'')+'</div>'}).join(''):'<div class="vsnone">empty folder</div>')+'</div>';
+    var side='<div class="vsside"><div class="vssh"><span>EXPLORER</span><button class="vsnew" data-new="1" title="New File" aria-label="New File">'+VI.nf+'</button></div><div class="vsfold">&#8964; '+esc(folder.toUpperCase())+'</div>'+(S.vsNaming?'<div class="vsname"><input id="vsName" placeholder="name.txt" spellcheck="false" autocomplete="off"></div>':'')+(list.length?list.map(function(x){return '<div class="vsfile'+(x[0]===cur?' on':'')+(x[1]?' g'+x[1]:'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+'<span>'+esc(x[0])+'</span>'+(x[1]?'<b>'+(x[1]==='C'?'!':x[1])+'</b>':'')+'</div>'}).join(''):'<div class="vsnone">empty folder</div>')+'</div>';
     var act='<div class="vsact"><i class="on" title="Explorer">'+VI.files+'</i><i title="Search">'+VI.search+'</i><i title="Source Control">'+VI.scm+(dirty?'<em>'+dirty+'</em>':'')+'</i><i title="Extensions">'+VI.ext+'</i></div>';
     var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(x[0])+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+ficon(cur)+esc(cur)+'</div>':'';
     var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?VI.br+esc(branch)+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
     return '<div class="vsmain">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
+  function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
+    return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
+  function vsPath(){return S.repo?R().root+'/'+S.fvf:S.fvf}
+  var vsSel=null;
+  function vsKeep(){var ta=$('vsTa'),nm=$('vsName');if(nm){nm.focus();return}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);ta.scrollTop=vsSel.t;ta.scrollLeft=vsSel.l}vsSel=null}
+  $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
+    S.files[vsPath()]=v===''||/\n$/.test(v)?v:v+'\n';
+    vsSel={f:S.fvf,s:ta.selectionStart,e:ta.selectionEnd,t:ta.scrollTop,l:ta.scrollLeft};render()});
+  $('fvB').addEventListener('keydown',function(e){
+    if(e.target.id==='vsTa'&&e.key==='Tab'){e.preventDefault();var ta=e.target,s=ta.selectionStart;ta.setRangeText('  ',s,ta.selectionEnd,'end');ta.dispatchEvent(new Event('input',{bubbles:true}))}
+    if(e.target.id!=='vsName')return;
+    if(e.key==='Escape'){S.vsNaming=0;fvDraw();return}
+    if(e.key!=='Enter')return;e.preventDefault();var nm=e.target.value.trim();
+    if(!/^[A-Za-z0-9_.-]+$/.test(nm)||nm==='.'||nm==='..'){e.target.classList.add('bad');e.target.title='Use letters, numbers, dots, dashes or underscores. No spaces.';return}
+    var abs=S.cwd+'/'+nm;S.vsNaming=0;
+    if(S.dirs[abs]){window.gitPop&&window.gitPop('err','Cannot create file','A folder called <b>'+esc(nm)+'</b> already exists here.');fvDraw();return}
+    if(!(abs in S.files))S.files[abs]='';
+    var rp=S.repo?rel(abs):abs;
+    if(S.repo&&rp===null){window.gitPop&&window.gitPop('err','Outside the repo','The terminal is in a folder outside your repo. <code>cd</code> into the repo first.');render();return}
+    S.fvf=rp;pr('<span class="c">[VS Code] Created '+esc(nm)+'. Type in it, then use git add and git commit here.</span>');render();var ta=$('vsTa');if(ta)ta.focus({preventScroll:true})});
+  $('fvB').addEventListener('focusout',function(e){if(e.target.id==='vsName'&&S.vsNaming){setTimeout(function(){if(S.vsNaming&&document.activeElement.id!=='vsName'){S.vsNaming=0;fvDraw()}},150)}});
   function fvDraw(){
-    var T=$('fvT'),B=$('fvB'),w,ks,conf=false,folder=base(S.repo?S.repo.root:S.cwd)||'/',empty='<div class="vsempty">No files yet. Create one in the terminal, for example:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';
+    var T=$('fvT'),B=$('fvB'),w,ks,conf=false,folder=base(S.repo?S.repo.root:S.cwd)||'/',empty='<div class="vsempty">No files yet. Click the <b>New File</b> icon next to EXPLORER, or type in the terminal:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';
     if(!S.repo){var fl=keys(S.files).filter(function(f){return dirname(f)===S.cwd});np.classList.remove('bad');
       if(!fl.length){T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,null);return}
       S.fvf=S.fvf&&S.files[S.fvf]!==undefined?S.fvf:fl[0];T.textContent=base(S.fvf)+' - '+folder+' - Visual Studio Code';
-      B.innerHTML=vsShell(folder,fl.sort().map(function(f){return [base(f),'']}),base(S.fvf),fvHtml(S.files[S.fvf]),null);
+      B.innerHTML=vsShell(folder,fl.sort().map(function(f){return [base(f),'']}),base(S.fvf),vsEdit(S.files[S.fvf]),null);vsKeep();
       B.querySelectorAll('[data-f]').forEach(function(e){e.setAttribute('data-f',S.cwd+'/'+e.getAttribute('data-f'))});return}
     w=work();ks=keys(w).sort();
     if(!ks.length){np.classList.remove('bad');T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,R().head);return}
@@ -379,7 +400,7 @@
     if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
     if(!conf)S.conflShown=0;
     var nc=conf?((w[S.fvf].match(/^<<<<<<</gm)||[]).length):0;
-    B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>':'')+fvHtml(w[S.fvf])+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);
+    B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();
   }
   function mdPrev(t){var h='<div class="mdp"><div class="mdh">How GitHub shows it</div>';t.replace(/\n$/,'').split('\n').forEach(function(l){
       if(/^## /.test(l))h+='<h4>'+esc(l.replace(/^#+ /,''))+'</h4>';else if(/^# /.test(l))h+='<h3>'+esc(l.slice(2))+'</h3>';else if(l.trim())h+='<p>'+esc(l)+'</p>'});return h+'</div>'}
@@ -431,7 +452,7 @@
     var l='';TT.forEach(function(t,i){l+='<li class="'+(i<si?'d':i===cur?'c':'')+'">'+t+'</li>'});$('pgList').innerHTML=l;
     if(window.sDraw)sDraw();
   }
-  function showFile(e){var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){window.gitPop&&window.gitPop('warn','Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+  function showFile(e){if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming=1;fvDraw();return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){window.gitPop&&window.gitPop('warn','Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
   $('fvB').addEventListener('click',showFile);
   $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */

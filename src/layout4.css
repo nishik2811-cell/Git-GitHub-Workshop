@@ -342,3 +342,12 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .vsme button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#0e639c;color:#fff;border:0;border-radius:2px;box-shadow:none;padding:4px 12px}
 .vsme button:hover{background:#1177bb}
 .notepad .vsstat span{white-space:nowrap;flex:none}.notepad .vsstat .vsr{flex:0 1 auto}
+
+.vssh{display:flex;justify-content:space-between;align-items:center}
+.notepad .vsnew{background:none;border:0;box-shadow:none;padding:2px;margin:-2px 2px -2px 0;border-radius:4px;line-height:0;cursor:pointer;transform:none}
+.vsnew svg{width:15px;height:15px;fill:none;stroke:#ccc;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.notepad .vsnew:hover{background:#3c3c3c}
+.vsname{padding:2px 8px 2px 16px}.vsname input{width:100%;box-sizing:border-box;background:#3c3c3c;color:#fff;border:1px solid #0078d4;font:12px 'Fira Code',monospace;padding:2px 4px;outline:0}.vsname input.bad{border-color:#be1100}
+.vsedit{display:flex;min-height:100%;font-family:'Fira Code',monospace;font-size:12.5px;line-height:1.55}
+.vsgut{margin:0;padding:4px 8px 4px 6px;color:#6e7681;text-align:right;user-select:none;min-width:22px;font:inherit;line-height:inherit;background:#1e1e1e}
+#vsTa{flex:1;min-width:0;background:#1e1e1e;color:#d4d4d4;border:0;outline:0;resize:none;padding:4px 8px;font:inherit;line-height:inherit;white-space:pre;overflow-y:hidden;overflow-x:auto;caret-color:#aeafad;tab-size:2}
+#vsTa::placeholder{color:#5a5a5a}

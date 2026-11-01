@@ -2,6 +2,8 @@
 
 A visual, hands-on beginner guide to Git and GitHub. One HTML file, no install, works offline.
 
+**Live:** https://gitgithubworkshop-ten.vercel.app/
+
 Made for our workshop by **Nishita, Vasu, Yashieta, Abhinav and Aryan**.
 
 ## Quick start
@@ -17,15 +19,21 @@ git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
 | # | Topic | Covers |
 |---|-------|--------|
 | 1 | Introduction | What Git and GitHub are, and why they matter |
-| 2 | Repository management | Core commands, push, pull, clone, remotes |
+| 2 | Repository management | What a repo is (hands-on toy), core commands, push, pull, clone, remotes |
 | 3 | Branching & collaboration | Branches, merging, pull requests, conflicts, forking |
 | 4 | Repository maintenance | `.gitignore`, READMEs, best practices |
 | 5 | Practice lab | A terminal you can type real Git commands into |
 
 ### The practice lab
 
+- **Git Bash terminal:** type real commands like `git init`, `add`, `commit`, `switch`, `merge` and `push`.
 - **Guided stories:** the pasta recipe (branching and a merge conflict), deleting files, and using `.gitignore`.
-- **VS Code-style window:** see your files change as you run commands.
+- **17 free practice missions** with a "Type it for me" button when you get stuck.
+- **VS Code window:** a small floating editor that stays with you as you scroll. Drag it, resize it from the corner, or press `_` to tuck it away.
+  - Click the **New File** icon next to EXPLORER, name the file, and type your code straight into it.
+  - Then use the terminal to `git add`, `git commit` and `git push` what you wrote.
+  - The Explorer colours files like VS Code: green **U** for new, orange **M** for changed, red **!** for a conflict.
+  - During a merge conflict it shows VS Code's conflict view: **Accept Current / Incoming / Both Changes**.
 - **Real GitHub mode (optional):** send your commands to an actual GitHub repo.
 
 ## Real GitHub mode
@@ -42,9 +50,12 @@ Never commit a token, and revoke it after the workshop.
 
 ## Host your own copy
 
-1. Fork or push this repo to your GitHub account.
-2. Go to **Settings → Pages → Source: Deploy from a branch → `main` / `(root)` → Save**.
-3. After a minute it's live at `https://<your-username>.github.io/<repo-name>/`.
+It's a single static file, so any static host works.
+
+- **Vercel:** import the repo at [vercel.com/new](https://vercel.com/new) and deploy with the default settings. Every push to `main` redeploys.
+- **GitHub Pages:** **Settings → Pages → Source: Deploy from a branch → `main` / `(root)` → Save**. It goes live at `https://<your-username>.github.io/<repo-name>/`.
+
+Don't see your changes? Press **Ctrl + Shift + R** to skip the browser cache.
 
 ## Rebuilding from source
 
