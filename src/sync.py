@@ -19,11 +19,25 @@ if CS in h:
     a=h.index(CS);b=h.index('/* ---------- end Mini laptop desktop css ---------- */',a)
     h=h[:a]+h[b+len('/* ---------- end Mini laptop desktop css ---------- */'):]
 i=h.index('</style>')
-h=h[:i]+dc.strip()+'\n/* ---------- end Mini laptop desktop css ---------- */\n'+h[i:]
+h=h[:i].rstrip('\n')+'\n\n'+dc.strip()+'\n/* ---------- end Mini laptop desktop css ---------- */\n'+h[i:]
 
 # desktop js: its own <script id="deskjs"> just before </body>
 h=re.sub(r'<script id="deskjs">.*?</script>\n?','',h,flags=re.S)
 i=h.rindex('</body>')
 h=h[:i]+'<script id="deskjs">\n'+dj.strip()+'\n</script>\n'+h[i:]
+# the setup guide PDF, packed in as base64 so the page still works as one file
+import base64,os
+h=re.sub(r'<script type="text/plain" id="guidePdf">.*?</script>\n?','',h,flags=re.S)
+if os.path.exists('docs/setup-guide.pdf'):
+    b64=base64.b64encode(open('docs/setup-guide.pdf','rb').read()).decode()
+    b64='\n'.join(b64[i:i+120] for i in range(0,len(b64),120))
+    i=h.rindex('</body>')
+    h=h[:i]+'<script type="text/plain" id="guidePdf">\n'+b64+'\n</script>\n'+h[i:]
+
+# tiny head script: hide the lessons until the start screen is ready
+h=re.sub(r'<script id="preboot">.*?</script>','',h,flags=re.S)
+i=h.index('</head>')
+h=h[:i]+'<script id="preboot">document.documentElement.classList.add(\'preboot\');addEventListener(\'load\',function(){if(!document.getElementById(\'boot\'))document.documentElement.classList.remove(\'preboot\')})</script>'+h[i:]
+
 open('index.html','w',encoding='utf-8').write(h)
 print('index.html updated:',len(h)//1024,'KB')

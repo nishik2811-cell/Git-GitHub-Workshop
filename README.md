@@ -50,8 +50,10 @@ git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
 - **Right-click a file or folder:** Open, Open with VS Code, Cut, Copy, Paste into folder, Rename and Delete. Keyboard: F2 renames, Delete deletes, Ctrl+C / Ctrl+X / Ctrl+V copy, cut and paste.
 - **Bin:** things deleted on the desktop or in VS Code land here. **Restore** puts them back (a deleted repo comes back with its history), **Empty Bin** removes them for good. `rm` in the terminal deletes for good, just like real Git Bash.
 - **Browser:** the address bar is locked to this repo. **Search** opens it on GitHub in a new tab.
+- **Setup-Guide.pdf:** the full setup guide (install Git, Git Bash and VS Code on Windows or Linux, connect to GitHub, a cheat sheet and troubleshooting). It opens in its own window, with **Open in new tab** and **Download** buttons. On phones, which cannot show a PDF inside a page, use those buttons. The file lives in `docs/setup-guide.pdf` and is also packed into `index.html`, so the single file still has it offline.
 - **Notepad:** draw with the mouse, a pen or your finger. Pen and eraser, six colours, three sizes, Undo, Clear, and **Save** to download your drawing as a picture.
-- **Power button:** in the Start menu. It goes back to the start screen, and START picks up where you left off.
+- **Desktop app icons and taskbar buttons:** a click opens the app or brings it to the front; clicking again when it is already in front minimises it. The thin strip at the far right of the taskbar minimises everything (show desktop).
+- **Power button:** in the Start menu. It goes back to the start screen, and START picks up where you left off. Reloading the page always shows the start screen.
 
 ## Real GitHub mode
 

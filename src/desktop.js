@@ -21,6 +21,7 @@
     binf:px(['....W.KKKKP.....','..KKKKSSSSKKKK..','..KSWSPSSWSPSK..','..KKKKKKKKKKKK..','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGLGLGLGLK...','...KGGGGGGGGK...','....KKKKKKKK....','................'],{K:'#16327a',S:'#c9d2e8',G:'#9aa7c7',L:'#dfe5f3',W:'#ffffff',P:'#ff8fba'}),
     repo:px(['................','..KKKKKKKKKKK...','..KBBBBBBBBBBK..','..KBWWWWWWWWBK..','..KBBBBBBBBBBK..','..KBWWWWWBBBBK..','..KBBBBBBBBBBK..','..KBWWWWWWWBBK..','..KBBBBBBBBBBK..','..KBBBBBBBBBBK..','..KKKKKKKKKKKK..','....KPPK........','....KPPK........','....KPKPK.......','................','................'],{K:'#16327a',B:'#1d4ba6',W:'#cfe3ff',P:'#e8336d'}),
     pad:px(['..K.K.K.K.K.....','.KWKWKWKWKWK....','.KWWWWWWWWWK..KK','.KWBBBBBBBWK.KOK','.KWWWWWWWWWKKOOK','.KWBBBBBBWWKOOK.','.KWWWWWWWWKOOK..','.KWPPWWWWKOOKK..','.KWPWPWWWKKKK...','.KWWPWPWKKKKK...','.KWWWWPPWWWWK...','.KWWWWWWWWWWK...','.KWBBBBBBBWWK...','.KWWWWWWWWWWK...','.KKKKKKKKKKKK...','................'],{K:'#16327a',W:'#ffffff',B:'#a9c4f0',P:'#e8336d',O:'#ffb74d'}),
+    pdf:px(['..KKKKKKKKK.....','..KWWWWWWWKK....','..KWWWWWWWKGK...','..KWWWWWWWKKKK..','..KWBBBBBBWWWK..','..KWWWWWWWWWWK..','..KWBBBBBBBWWK..','.KRRRRRRRRRRRK..','.KRWWRWWRRWWRK..','.KRWRRWRWRWRRK..','.KRWWRWRWRWWRK..','.KRWRRWWRRWRRK..','.KRRRRRRRRRRRK..','..KWWWWWWWWWWK..','..KKKKKKKKKKKK..','................'],{K:'#16327a',W:'#ffffff',G:'#cfd8ee',B:'#7fa3e0',R:'#d93a3a'}),
     power:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 7.2a8 8 0 1 0 11.4 0"/></svg>',
     lock:'<svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" fill="#2e9e4f"/><path d="M3.5 5V3.6a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#2e9e4f" stroke-width="1.5"/></svg>'
   };
@@ -50,21 +51,22 @@
 
   var tbar=$('taskbar'),tray=tbar.querySelector('.tray'),oldTk=tbar.querySelector('span.tk');
   function tkBtn(id,title,icon){var b=document.createElement('button');b.className='tk tkapp';b.id=id;b.title=title;b.type='button';b.innerHTML='<i>'+icon+'</i><span>'+esc(title)+'</span>';return b}
+  var tkShow=document.createElement('button');tkShow.className='tkshow';tkShow.type='button';tkShow.title='Show desktop';tkShow.setAttribute('aria-label','Show desktop');tray.appendChild(tkShow);
+  tkShow.onclick=function(){minAll()};
   var tkWS=tkBtn('tkWS','git-and-github-workshop.exe',I.ws);tkWS.classList.add('on');
   if(oldTk)oldTk.replaceWith(tkWS);else tbar.insertBefore(tkWS,tray);
   var tkBR=tkBtn('tkBR','Browser',I.br);tkBR.hidden=true;tbar.insertBefore(tkBR,tray);
   var tkDraw=tkBtn('tkDraw','Notepad',I.pad);tkDraw.hidden=true;tbar.insertBefore(tkDraw,tray);
+  var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
   var tkBin=tkBtn('tkBin','Bin',I.bin);tkBin.hidden=true;tbar.insertBefore(tkBin,tray);
-  var tkShow=document.createElement('button');tkShow.className='tkshow';tkShow.type='button';tkShow.title='Show desktop';tkShow.setAttribute('aria-label','Show desktop');tray.appendChild(tkShow);
 
-  tkShow.onclick=function(){minAll()};
   html.classList.add('deskon');
 
   /* ---------- boot screen ---------- */
   var boot=document.createElement('div');boot.className='boot';boot.id='boot';boot.setAttribute('role','dialog');boot.setAttribute('aria-label','Git workshop start screen');
   var hf=document.querySelector('.heroframe');
   if(hf){boot.appendChild(hf);boot.insertAdjacentHTML('beforeend','<p class="bootnote">Press START</p>')}
-  document.body.appendChild(boot);
+  document.body.appendChild(boot);html.classList.remove('preboot');
   function bootShow(){ML.ctxClose();var sm=$('startMenu');if(sm)sm.hidden=true;boot.hidden=false;boot.classList.remove('out');html.classList.add('booting');var s=boot.querySelector('.start');if(s)s.focus({preventScroll:true})}
   function bootGo(hash){if(boot.hidden)return;boot.classList.add('out');html.classList.remove('booting');
     setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360);
@@ -72,12 +74,25 @@
     if(!wasOn){winOpen('wsWin');var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)}
     setTimeout(function(){if(location.hash)history.replaceState(null,'',location.pathname+location.search)},50)}
   var wasOn=false;
-  boot.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]');if(a){e.preventDefault();bootGo(a.getAttribute('href'));return}
-    if(e.target.id==='heroNo'){e.stopImmediatePropagation();bootGo('#p1')}},true);
-  // the hero's other pop-ups ("Yes", the folder) still work; their "Start learning" buttons jump to #p1
-  addEventListener('hashchange',function(){if(!boot.hidden)bootGo(location.hash)});
-  var deep=null;try{deep=location.hash&&location.hash.length>1&&document.querySelector(location.hash)}catch(z){deep=null}
-  if(deep){boot.hidden=true;wasOn=true;setTimeout(function(){desk.hidden=false;draw(true);winOpen('wsWin');deep.scrollIntoView({behavior:'instant',block:'start'})},0)}else{html.classList.add('booting');if(location.hash)history.replaceState(null,'',location.pathname+location.search)}
+  /* only START leaves the start screen; Yes, No and the folder just show a pop-up */
+  boot.addEventListener('click',function(e){var t=e.target.closest?e.target:e.target.parentNode;
+    var a=t.closest('a[href^="#"]');
+    if(a){e.preventDefault();e.stopImmediatePropagation();if(a.classList.contains('start'))bootGo(deepHash||'#p1');return}
+    if(t.closest('#heroYes')){e.stopImmediatePropagation();popWarn('WARNING','Going back is exactly what Git is for. Every commit is a save point you can go back to.<br><br>Press <b>START</b> to learn how.');return}
+    if(t.closest('#heroNo')){e.stopImmediatePropagation();popWarn('WARNING','No going back? Then let\'s go forward!<br><br>Press <b>START</b> to begin.');return}
+    if(t.closest('#heroFolder')){e.stopImmediatePropagation();folderPop(false)}},true);
+  /* a page address like #p3 is remembered: the start screen still shows, and START jumps there */
+  var deepHash=null;try{if(location.hash.length>1&&document.querySelector(location.hash))deepHash=location.hash}catch(z){}
+  html.classList.add('booting');if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+  /* the folder on the start screen: a tiny file explorer of a Git repo */
+  function folderPop(hid){var row=function(ic,n,d,h){return '<div class="fxr'+(h?' fxh':'')+'"><span class="fxi">'+ic+'</span><b>'+n+'</b><small>'+d+'</small></div>'};
+    var body='<div class="fexp"><div class="fxp">&#128193; recipes</div>'
+      +(hid?row(I.folder,'.git','Git\'s memory. All 3 saves (commits) live in here. Delete it and Git forgets everything.',1):'')
+      +row(I.file,'README.md','The front page. Says what this project is.')
+      +row(I.file,'pasta.txt','A recipe.')+row(I.file,'pizza.txt','Another recipe.')
+      +'<div class="fxf">'+(hid?'4 items':'3 items, 1 hidden')+'</div></div>'
+      +(hid?'<p class="fxn">That hidden <b>.git</b> folder is what makes <b>recipes</b> a Git repo. Never edit it by hand.</p>':'<p class="fxn">This folder is a <b>Git repo</b>. Git hides one folder in here. Can you find it?</p>');
+    window.gitPop('warn','recipes (folder)',body,[{t:hid?'Hide hidden files':'Show hidden files',fn:function(){setTimeout(function(){folderPop(!hid)},0)}},{t:'Close'}])}
 
   /* topics in the start menu bring the workshop back */
   var smn=$('startMenu');if(smn)smn.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]');var W=wins.wsWin;if(a&&W&&(W.el.hidden||W.el.classList.contains('docked')))winOpen('wsWin')},true);
@@ -97,9 +112,18 @@
   /* ---------- floating windows (browser, Bin) ---------- */
   var wins={};
   function zOrder(w){var all=[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).filter(Boolean);
-    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);all.forEach(function(x,i){x.style.zIndex=51+i})}
+    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);all.forEach(function(x,i){x.style.zIndex=51+i});tkSync()}
+  /* which windows are on screen, which one is in front, and what a click on its taskbar button or desktop icon does */
+  function isVis(el){if(!el)return false;if(el.id==='notepad')return el.classList.contains('show')&&!el.classList.contains('docked');return !el.hidden&&!el.classList.contains('docked')}
+  function topWin(){var t=null,tz=-1;[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).forEach(function(el){if(!isVis(el))return;var z=+el.style.zIndex||55;if(z>=tz){tz=z;t=el}});return t}
+  function tkSync(){var t=topWin();Object.keys(wins).forEach(function(k){wins[k].tk.classList.toggle('on',wins[k].el===t)});var tv=$('tkVS');if(tv)tv.classList.toggle('on',!!t&&t.id==='notepad')}
+  function activate(el,open){if(!el)return;var isNp=el.id==='notepad',id=el.id;
+    if(!isVis(el)){if(isNp){ML.showVS();zOrder(el)}else{winOpen(id);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit()}return}
+    if(open||topWin()!==el){zOrder(el);return}
+    if(isNp)window.vsDock(true);else winDock(id,true)}
   var np=$('notepad');if(np){np.addEventListener('pointerdown',function(){zOrder(np)},true);
-    var npWas=false;new MutationObserver(function(){var vis=np.classList.contains('show')&&!np.classList.contains('docked');if(vis&&!npWas)zOrder(np);npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
+    var tkv=$('tkVS');if(tkv)tkv.onclick=function(){activate(np)};
+    var npWas=false;new MutationObserver(function(){var vis=isVis(np);if(vis&&!npWas)zOrder(np);else tkSync();npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
   function makeWin(id,title,icon,tk,w,h,o){o=o||{};var el=document.createElement('div');el.className='dwin';el.id=id;el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label',title);
     el.innerHTML='<div class="dwh"><i>'+icon+'</i><span>'+esc(title)+'</span><button type="button" class="dmin" title="Minimise" aria-label="Minimise">_</button>'+(o.max?'<button type="button" class="dmax" title="Full screen" aria-label="Full screen">&#9633;</button>':'')+(o.noClose?'':'<button type="button" class="dx" title="Close" aria-label="Close">x</button>')+'</div><div class="dwb"></div><span class="dwr" aria-hidden="true"></span>';
     document.body.appendChild(el);var W={el:el,body:el.querySelector('.dwb'),tk:tk,placed:false,w:w,h:h};wins[id]=W;
@@ -116,18 +140,19 @@
     if(!o.noClose){el.querySelector('.dx').onclick=function(){winClose(id)};
       el.addEventListener('keydown',function(e){if(e.key==='Escape'&&!e.defaultPrevented&&!document.querySelector('.ctxm')){winClose(id)}})}
     if(o.max){el.querySelector('.dmax').onclick=function(){winMax(id)};hd.addEventListener('dblclick',function(e){if(!e.target.closest('button')&&innerWidth>700)winMax(id)})}
-    tk.onclick=function(){var d=el.classList.contains('docked');if(d)winDock(id,false);else if(+el.style.zIndex<maxZ())zOrder(el);else winDock(id,true)};
+    tk.onclick=function(){activate(el)};
     return W}
-  function maxZ(){var m=0;document.querySelectorAll('.dwin:not([hidden]),.notepad').forEach(function(x){m=Math.max(m,+x.style.zIndex||55)});return m}
-  function winOpen(id){var W=wins[id],el=W.el;el.hidden=false;el.classList.remove('docked');W.tk.hidden=false;W.tk.classList.add('on');
+  function vsFront(){if(np)zOrder(np)}
+  function openVS(k){ML.openInVS(k);vsFront()}
+  function winOpen(id){var W=wins[id],el=W.el,was=isVis(el);el.hidden=false;el.classList.remove('docked');W.tk.hidden=false;
     if(!W.placed&&W.place){W.placed=true;W.place()}
     if(!W.placed){W.placed=true;var w=Math.min(W.w,innerWidth-24),h=Math.min(W.h,innerHeight-110);el.style.width=w+'px';el.style.height=h+'px';
       var n=Object.keys(wins).indexOf(id);el.style.left=Math.max(8,Math.round((innerWidth-w)/2)+n*28)+'px';el.style.top=Math.max(8,Math.round((innerHeight-38-h)/2)-20+n*24)+'px'}
-    zOrder(el);el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');var f=el.querySelector('[data-focus]')||el.querySelector('.dx');if(f)f.focus({preventScroll:true})}
+    zOrder(el);if(was)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');var f=el.querySelector('[data-focus]')||el.querySelector('.dx');if(f)f.focus({preventScroll:true})}
   function winMax(id,on){var el=wins[id].el;if(on==null)on=!el.classList.contains('max');el.classList.toggle('max',on);var b=el.querySelector('.dmax');
     if(b){b.innerHTML=on?'&#10064;':'&#9633;';b.title=on?'Restore down':'Full screen';b.setAttribute('aria-label',b.title)}}
-  function winDock(id,on){var W=wins[id];if(on){W.el.classList.add('docked');W.tk.classList.remove('on')}else winOpen(id)}
-  function winClose(id){var W=wins[id];W.el.hidden=true;W.el.classList.remove('docked');W.tk.hidden=true;W.tk.classList.remove('on')}
+  function winDock(id,on){var W=wins[id];if(on){W.el.classList.add('docked');tkSync()}else winOpen(id)}
+  function winClose(id){var W=wins[id];W.el.hidden=true;W.el.classList.remove('docked');W.tk.hidden=true;tkSync()}
   function anyWinOpen(){var o=Object.keys(wins).some(function(k){var e=wins[k].el;return !e.hidden&&!e.classList.contains('docked')});return o||(np&&np.classList.contains('show')&&!np.classList.contains('docked'))}
   function minAll(){Object.keys(wins).forEach(function(k){if(!wins[k].el.hidden)winDock(k,true)});if(np&&np.classList.contains('show')&&window.vsDock)window.vsDock(true)}
 
@@ -141,7 +166,9 @@
   WS.place=function(){var c=cell(),l=Math.min(c.x0+c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
   var WSBASE=980;
   function wsZoom(){var w=wsBody.clientWidth;wsIn.style.zoom=innerWidth>700&&w&&w<WSBASE?String(Math.round(w/WSBASE*1000)/1000):''}
-  if(window.ResizeObserver)new ResizeObserver(wsZoom).observe(wsBody);else addEventListener('resize',wsZoom);
+  function wsLw(){var lw=wsIn.querySelector('.loadwrap');wsIn.style.setProperty('--lwh',(lw?lw.offsetHeight:0)+'px')}
+  function wsFit(){wsZoom();wsLw()}
+  if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
   addEventListener('resize',function(){if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
 
   /* browser: the address is locked to the workshop repo; Search opens it in a new tab */
@@ -189,6 +216,19 @@
   DW.el.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();strokes.pop();padRedraw()}});
   if(window.ResizeObserver)new ResizeObserver(function(){padFit()}).observe(cv.parentNode);else addEventListener('resize',padFit);
 
+
+  /* the setup guide PDF (packed into the page by src/sync.py from docs/setup-guide.pdf) */
+  var GW=makeWin('guideWin','Setup-Guide.pdf',I.pdf,tkGuide,800,600),gUrl=null;
+  GW.body.classList.add('gdb');
+  function guideInit(){if(gUrl!==null)return;var src=document.getElementById('guidePdf');gUrl='';
+    if(src){try{var b=atob(src.textContent.replace(/\s+/g,'')),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);gUrl=URL.createObjectURL(new Blob([a],{type:'application/pdf'}))}catch(e){gUrl=''}}
+    if(!gUrl){GW.body.innerHTML='<div class="gdmsg"><span class="gdi">'+I.pdf+'</span><p>The setup guide is not in this copy of the page.</p><p><a href="docs/setup-guide.pdf" target="_blank" rel="noopener">Try docs/setup-guide.pdf</a></p></div>';return}
+    var inline=navigator.pdfViewerEnabled!==false&&!(innerWidth<=700&&/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent));
+    GW.body.innerHTML='<div class="gdbar"><span>Git, Git Bash, VS Code &amp; GitHub: Complete Setup Guide</span><a class="gdbtn" href="'+gUrl+'" target="_blank" rel="noopener" data-focus>Open in new tab</a><a class="gdbtn" href="'+gUrl+'" download="Git-GitHub-Setup-Guide.pdf">Download</a></div>'
+      +(inline?'<iframe class="gdf" title="Setup guide PDF" src="'+gUrl+'"></iframe>':'<div class="gdmsg"><span class="gdi">'+I.pdf+'</span><p><b>Git, Git Bash, VS Code &amp; GitHub: Complete Setup Guide</b></p><p>13 pages: install everything on Windows or Linux, connect to GitHub, a command cheat sheet and troubleshooting.</p><p>This browser cannot show PDFs inside a page. Use <b>Open in new tab</b> or <b>Download</b> above.</p></div>')}
+  // clicks inside the PDF do not reach the page, so bring the window forward when the PDF gets focus
+  addEventListener('blur',function(){setTimeout(function(){var f=GW.el.querySelector('iframe');if(f&&document.activeElement===f&&topWin()!==GW.el)zOrder(GW.el)},0)});
+
   /* Bin window */
   var BW=makeWin('binWin','Bin',I.bin,tkBin,460,330);
   function binDraw(){var b=S().bin||[],h='<div class="bintop"><span>'+(b.length?b.length+' item'+(b.length>1?'s':'')+' in the Bin':'The Bin is empty')+'</span><button type="button" data-bin="all"'+(b.length?'':' disabled')+'>Restore all</button><button type="button" class="red" data-bin="empty"'+(b.length?'':' disabled')+'>Empty Bin</button></div>';
@@ -210,7 +250,7 @@
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).sort().forEach(function(d){o.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repo&&s.repo.root===d)})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).sort().forEach(function(f){o.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
     return o}
@@ -236,13 +276,9 @@
   addEventListener('resize',function(){lastSig='';draw()});
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
-  function openItem(it){if(!it)return;
-    if(it.app==='ws'){winOpen('wsWin');return}
-    if(it.app==='vs'){ML.showVS();return}
-    if(it.app==='br'){winOpen('brWin');return}
-    if(it.app==='bin'){binDraw();winOpen('binWin');return}
-    if(it.app==='draw'){winOpen('drawWin');padFit();return}
-    ML.openInVS(it.k)}
+  function openItem(it,open){if(!it)return;
+    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin'}[it.app]].el,open);return}
+    openVS(it.k)}
 
   /* rename right on the icon */
   function startRename(k,isNew){var b=icons.querySelector('.dico[data-k="'+cssq(k)+'"]');if(!b)return;renaming=k;sel=k;b.classList.add('sel');
@@ -279,10 +315,10 @@
       {t:'Change wallpaper',sub:Object.keys(WP).map(function(k){return {t:WP[k].n,on:wp===k,fn:function(){wp=k;store('wp',k);applyLook()}}})},
       {t:'Personalise',sub:['blue','green','pink','purple','orange'].map(function(k){return {t:k[0].toUpperCase()+k.slice(1),on:theme===k,fn:function(){theme=k;store('theme',k);applyLook()}}})}])}
   function itemMenu(it,x,y){sel=it.k;markSel();
-    if(it.app){var m=[{t:'Open',fn:function(){openItem(it)}}];if(it.app==='bin'){var n=(S().bin||[]).length;m.push('-',{t:'Empty Bin',dis:!n,fn:function(){confirmPop('Empty the Bin?','Everything in the Bin will be gone for good.',function(){ML.binEmpty();say('Emptied the Bin.');ML.render()})}})}
+    if(it.app){var m=[{t:'Open',fn:function(){openItem(it,true)}}];if(it.app==='bin'){var n=(S().bin||[]).length;m.push('-',{t:'Empty Bin',dis:!n,fn:function(){confirmPop('Empty the Bin?','Everything in the Bin will be gone for good.',function(){ML.binEmpty();say('Emptied the Bin.');ML.render()})}})}
       ML.ctxMenu(x,y,m);return}
     var canPaste=it.dir&&clip&&ML.exists(clip.abs);
-    ML.ctxMenu(x,y,[{t:'Open',fn:function(){openItem(it)}},{t:'Open with VS Code',fn:function(){ML.openInVS(it.k)}},'-',
+    ML.ctxMenu(x,y,[{t:'Open',fn:function(){openItem(it)}},{t:'Open with VS Code',fn:function(){openVS(it.k)}},'-',
       {t:'Cut',k:'Ctrl+X',fn:function(){clip={mode:'cut',abs:it.k};lastSig='';draw(true)}},{t:'Copy',k:'Ctrl+C',fn:function(){clip={mode:'copy',abs:it.k};lastSig='';draw(true)}},
       {t:'Paste into folder',dis:!canPaste,fn:function(){paste(it.k)}},'-',
       {t:'Rename',k:'F2',fn:function(){startRename(it.k)}},{t:'Delete',k:'Del',fn:function(){del(it.k)}}])}
@@ -294,7 +330,8 @@
     if(b){var it=itemOf(b.getAttribute('data-k'));if(it){itemMenu(it,e.clientX,e.clientY);return}}sel=null;markSel();deskMenu(e.clientX,e.clientY)});
 
   /* click, double-click, drag */
-  var drag=null,lastTap={k:null,t:0};
+  var drag=null,lastTap={k:null,t:0},lastPtr='mouse';
+  desk.addEventListener('pointerdown',function(e){lastPtr=e.pointerType},true);
   desk.addEventListener('pointerdown',function(e){if(e.button!==0&&e.pointerType==='mouse')return;var b=e.target.closest('.dico');if(renaming&&(!b||b.getAttribute('data-k')!==renaming))return;
     if(!b){sel=null;markSel();return}
     if(b.querySelector('.dren'))return;
@@ -314,13 +351,13 @@
     var t=dropTarget(d,e.clientX,e.clientY);icons.querySelectorAll('.dico.drop').forEach(function(x){x.classList.remove('drop')});
     if(t){var it2=itemOf(t.getAttribute('data-k'));
       if(it2.app==='bin'){del(d.k);lastSig='';draw(true);return}
-      if(it2.app==='vs'){lastSig='';draw(true);ML.openInVS(d.k);return}
+      if(it2.app==='vs'){lastSig='';draw(true);openVS(d.k);return}
       if(it2.dir){var r=ML.fsMove(d.k,it2.k);if(r.err){popWarn('Cannot move',r.err);lastSig='';draw(true);return}delete pos[d.k];if(clip&&clip.abs===d.k)clip=null;sel=null;say('Moved '+esc(base(d.k))+' into '+esc(base(it2.k))+'.');lastSig='';ML.render();return}}
     var c=cell(),g=slots(),col=Math.max(0,Math.min(g.cols-1,Math.round((d.b.offsetLeft-c.x0)/c.w))),row=Math.max(0,Math.min(g.rows-1,Math.round((d.b.offsetTop-c.y0)/c.h)));
     var L=layout(items()),taken=null;Object.keys(L).forEach(function(k){if(k!==d.k&&L[k].col===col&&L[k].row===row)taken=k});
     if(taken){pos[taken]=L[d.k]}pos[d.k]={col:col,row:row};lastSig='';draw(true)}
   desk.addEventListener('pointerup',endDrag);desk.addEventListener('pointercancel',endDrag);
-  desk.addEventListener('dblclick',function(e){var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;openItem(itemOf(b.getAttribute('data-k')))});
+  desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;openItem(itemOf(b.getAttribute('data-k')))});
   desk.addEventListener('keydown',function(e){if(e.target.closest('.dren'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k);
     if(e.key==='Enter'&&it){e.preventDefault();openItem(it)}
     else if(e.key==='F2'&&it&&!it.app){e.preventDefault();startRename(k)}

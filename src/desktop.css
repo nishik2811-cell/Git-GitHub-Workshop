@@ -8,6 +8,15 @@ html.th-orange{--tb1:#f5a04a;--tb2:#e07f22;--tb3:#c96d17;--tb4:#9c520e;--tbl:#ff
 .startmenu{border-color:var(--tb2)}
 .startmenu .smh{background:linear-gradient(var(--tb1),var(--tb2))}
 
+/* before the scripts run, show only the start screen (no flash of the lessons) */
+html.preboot,html.preboot body{overflow:hidden}
+html.preboot body>*:not(.wrap):not(script){display:none!important}
+html.preboot .wrap>*:not(header){display:none!important}
+html.preboot header>*:not(.heroframe){display:none!important}
+html.preboot header{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;box-sizing:border-box;background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px}
+html.preboot header .heroframe{margin:auto;width:100%;max-width:660px}
+
+
 /* boot screen */
 .boot{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;box-sizing:border-box;
   background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px;transition:opacity .35s}
@@ -50,11 +59,26 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .tk.tkapp i{flex:none;width:16px;height:16px;display:block}
 .tk.tkapp i svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
 .tk.tkapp span{overflow:hidden;text-overflow:ellipsis}
-.tkshow{align-self:stretch;width:10px;margin-left:2px;padding:0;border:0;border-left:1px solid rgba(255,255,255,.35);border-radius:0;background:rgba(255,255,255,.12);box-shadow:none;transform:none;cursor:pointer}
+.taskbar .tray{padding-right:0}
+.tkshow{align-self:stretch;width:10px;margin-left:14px;padding:0;border:0;border-left:1px solid rgba(255,255,255,.35);border-radius:0;background:rgba(255,255,255,.12);box-shadow:none;transform:none;cursor:pointer}
 .tkshow:hover{background:rgba(255,255,255,.3)}
 .tktip{position:fixed;left:8px;bottom:46px;z-index:62;max-width:270px;background:#fff8d6;color:var(--ink);border:3px solid var(--ink);border-radius:8px;padding:8px 30px 8px 12px;font-size:13.5px;line-height:1.4;box-shadow:4px 4px 0 rgba(22,50,122,.35)}
 .tktip:after{content:"";position:absolute;left:var(--ax,40px);bottom:-10px;width:14px;height:14px;background:#fff8d6;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:rotate(45deg)}
 .tktip button{position:absolute;right:4px;top:4px;padding:0 6px;font-size:12px;line-height:1.4;border:2px solid var(--ink);border-radius:3px;background:#fff;color:var(--ink);box-shadow:none;transform:none;cursor:pointer}
+
+/* the folder pop-up on the start screen */
+.fexp{text-align:left;border:3px solid var(--ink);border-radius:6px;background:#fff;margin:0 0 10px;overflow:hidden}
+.fxp{background:#e9efff;border-bottom:2px solid var(--line);padding:5px 10px;font:700 13px 'Fira Code',monospace;color:var(--ink)}
+.fxr{display:grid;grid-template-columns:24px auto 1fr;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line)}
+.fxr .fxi{width:22px;height:22px;display:block}
+.fxr .fxi svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
+.fxr b{font:700 13.5px 'Fira Code',monospace;color:var(--ink)}
+.fxr small{font-size:13px;line-height:1.35;color:var(--ink2)}
+.fxr.fxh{background:#fff1b0}
+.fxr.fxh .fxi{opacity:.6}
+.fxf{padding:4px 10px;font-size:12px;color:var(--ink3);background:#f7f9ff}
+.fxn{margin:0;font-size:15px!important}
+@media(max-width:560px){.fxr{grid-template-columns:22px 1fr}.fxr small{grid-column:2}}
 
 /* power button in the start menu */
 .smfoot{display:flex;align-items:stretch}
@@ -85,6 +109,9 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .dwh button.dmax{font-size:15px}
 #wsWin .dwb.wsb{position:relative;scroll-behavior:smooth;background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px;background-attachment:local}
 #wsIn{position:relative;min-height:100%}
+/* the step-by-step guides: their sticky bars now sit inside the window (no taskbar gap, below the loading bar) */
+#wsIn .wiz .wbtns{bottom:0}
+#wsIn .wiz .wnav{top:var(--lwh,0px)}
 #wsWin{min-width:320px;min-height:220px}
 
 /* browser */
@@ -123,6 +150,18 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .padz.on{border-color:var(--ink);background:var(--sky)}
 .padpaper{position:relative;flex:1;min-height:0;background-color:#fffdf6;background-image:linear-gradient(90deg,transparent 38px,#f4a3c0 38px,#f4a3c0 40px,transparent 40px),linear-gradient(#d6e2f8 1px,transparent 1px);background-size:100% 100%,100% 26px;background-position:0 0,0 12px}
 .padpaper canvas{position:absolute;inset:0;touch-action:none;cursor:crosshair;display:block}
+
+/* setup guide PDF */
+.dwb.gdb{display:flex;flex-direction:column;overflow:hidden;background:#525659}
+.gdbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
+.gdbar span{flex:1;min-width:150px;font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gdbtn{padding:3px 10px;font:700 12.5px 'Nunito',sans-serif;border:2px solid var(--ink);border-radius:5px;background:#fff;color:var(--ink);text-decoration:none;white-space:nowrap}
+.gdbtn:hover,.gdbtn:focus-visible{background:var(--sky)}
+.gdf{flex:1;min-height:0;width:100%;border:0;display:block;background:#525659}
+.gdmsg{flex:1;padding:24px 18px;text-align:center;background:#f7f9ff;color:var(--ink2);font-size:14.5px;overflow:auto}
+.gdmsg p{margin:8px auto;max-width:380px}
+.gdi{display:block;width:56px;height:56px;margin:0 auto 6px}
+.gdi svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
 
 /* Bin */
 .bintop{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:2px solid var(--line);background:#e9efff;flex:none;flex-wrap:wrap}
