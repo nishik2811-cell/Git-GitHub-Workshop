@@ -15,7 +15,7 @@
       g.addEventListener('pointerup',function(){on=false;np.classList.remove('sizing')});
     })();
     $('npMin').onclick=function(){np.classList.toggle('min')};
-    if('IntersectionObserver' in window){new IntersectionObserver(function(es){np.classList.toggle('show',es[0].isIntersecting)},{threshold:0}).observe($('pg'))}else np.classList.add('show');
+    if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){np.classList.add('show');io.disconnect()}},{threshold:0});io.observe($('pg'))}else np.classList.add('show');
   })();
   var out=$('pgOut'),inp=$('pgIn'),ps=$('pgPs'),HOME='/home/you',S,busy=false,queue=[],pend=false,scripting=false;
   function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repo:null,hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1}
