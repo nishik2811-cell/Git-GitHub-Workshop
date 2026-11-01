@@ -104,7 +104,7 @@
   /* one-time tip on the taskbar button */
   var tip=null;
   function showTip(){var W=wins.wsWin;if(store('tip')||!W||W.el.hidden||W.el.classList.contains('docked'))return;tip=document.createElement('div');tip.className='tktip';tip.setAttribute('role','status');
-    tip.innerHTML=(innerWidth<=700?'The workshop is a window. Press <b>_</b> (top right) to see the desktop. Tap it down here to bring it back.':'The workshop is a window. Use <b>_</b> to minimise it, <b>&#9633;</b> for full screen, or drag its corner to resize it. Click it down here to bring it back.')+'<button type="button" aria-label="Close tip">x</button>';
+    tip.innerHTML=(innerWidth<=700?'The workshop is a window. Press <b>&#9633;</b> for full screen, or <b>_</b> to minimise it and see the desktop. Tap it down here to bring it back.':'The workshop is a window. Use <b>_</b> to minimise it, <b>&#9633;</b> for full screen, or drag its corner to resize it. Click it down here to bring it back.')+'<button type="button" aria-label="Close tip">x</button>';
     document.body.appendChild(tip);var r=tkWS.getBoundingClientRect();tip.style.left=Math.max(8,Math.min(r.left,innerWidth-tip.offsetWidth-8))+'px';tip.style.setProperty('--ax',Math.max(12,r.left+r.width/2-parseFloat(tip.style.left)-7)+'px');
     tip.querySelector('button').onclick=hideTip;setTimeout(hideTip,12000)}
   function hideTip(){if(tip){tip.remove();tip=null;store('tip','1')}}
@@ -163,13 +163,13 @@
   var wsIn=document.createElement('div');wsIn.id='wsIn';wsBody.appendChild(wsIn);
   var KEEP={ov:1,startMenu:1,taskbar:1,notepad:1,boot:1,desk:1};
   [].slice.call(document.body.children).forEach(function(el){if(el.tagName==='SCRIPT'||KEEP[el.id]||el.classList.contains('dwin')||el.classList.contains('ctxm')||el.classList.contains('tktip'))return;wsIn.appendChild(el)});
-  WS.place=function(){var c=cell(),l=Math.min(c.x0+c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
+  WS.place=function(){var c=cell();if(innerWidth<=700){WS.el.style.setProperty('--wsl',(c.x0+c.w+4)+'px');return}var l=Math.min(c.x0+c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
   var WSBASE=980;
-  function wsZoom(){var w=wsBody.clientWidth;wsIn.style.zoom=innerWidth>700&&w&&w<WSBASE?String(Math.round(w/WSBASE*1000)/1000):''}
+  function wsZoom(){var w=wsBody.clientWidth,base=innerWidth<=700?innerWidth:WSBASE;wsIn.style.zoom=w&&w<base*0.97?String(Math.round(w/base*1000)/1000):''}
   function wsLw(){var lw=wsIn.querySelector('.loadwrap');wsIn.style.setProperty('--lwh',(lw?lw.offsetHeight:0)+'px')}
   function wsFit(){wsZoom();wsLw()}
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
-  addEventListener('resize',function(){if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
+  addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
 
   /* browser: the address is locked to the workshop repo; Search opens it in a new tab */
   var BR=makeWin('brWin','Browser',I.br,tkBR,560,400);
@@ -218,7 +218,7 @@
 
 
   /* the setup guide PDF (packed into the page by src/sync.py from docs/setup-guide.pdf) */
-  var GW=makeWin('guideWin','Setup-Guide.pdf',I.pdf,tkGuide,800,600),gUrl=null;
+  var GW=makeWin('guideWin','Setup-Guide.pdf',I.pdf,tkGuide,800,600,{max:true}),gUrl=null;
   GW.body.classList.add('gdb');
   function guideInit(){if(gUrl!==null)return;var src=document.getElementById('guidePdf');gUrl='';
     if(src){try{var b=atob(src.textContent.replace(/\s+/g,'')),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);gUrl=URL.createObjectURL(new Blob([a],{type:'application/pdf'}))}catch(e){gUrl=''}}
@@ -251,9 +251,15 @@
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
   function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
-    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).sort().forEach(function(d){o.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repo&&s.repo.root===d)})});
-    Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).sort().forEach(function(f){o.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
-    return o}
+    var mine=[];
+    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repo&&s.repo.root===d)})});
+    Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){mine.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
+    mine.forEach(function(x){if(!born[x.k])born[x.k]=++bornN});
+    var nm=function(a,b){var x=a.n.toLowerCase(),y=b.n.toLowerCase();return x<y?-1:x>y?1:0},ext=function(x){var m=x.n.match(/\.([^.]+)$/);return m?m[1].toLowerCase():''};
+    mine.sort(sortBy==='name'?nm:sortBy==='date'?function(a,b){return born[a.k]-born[b.k]}:function(a,b){return a.dir!==b.dir?(a.dir?-1:1):ext(a)!==ext(b)?(ext(a)<ext(b)?-1:1):nm(a,b)});
+    return o.concat(mine)}
+  var SORTS={name:'name',type:'type',date:'date created'},sortBy=SORTS[store('sort')]?store('sort'):'type',born={},bornN=0;
+  function arrange(k){sortBy=k;store('sort',k);pos={};lastSig='';draw(true);say('Arranged the icons by '+SORTS[k]+'.')}
   function cell(){var sm=view==='small',ph=innerWidth<=700;return {w:sm?(ph?66:74):(ph?80:92),h:sm?(ph?66:72):(ph?84:96),x0:8,y0:8}}
   function slots(n){var c=cell(),rows=Math.max(1,Math.floor((desk.clientHeight-c.y0)/c.h)),cols=Math.max(1,Math.floor((desk.clientWidth-c.x0)/c.w));return {c:c,rows:rows,cols:cols}}
   function layout(list){var g=slots(),c=g.c,used={},out={};
@@ -272,7 +278,9 @@
     if(fk){var nf=icons.querySelector('[data-k="'+cssq(fk)+'"]');if(nf)nf.focus({preventScroll:true})}
     if(!BW.el.hidden)binDraw();else tkBin.querySelector('i').innerHTML=(s.bin||[]).length?I.binf:I.bin}
   function cssq(v){return v.replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
-  window.deskDraw=function(){if(!BW.el.hidden)binDraw();draw()};
+  /* remember the order things appear in ~ (for "Arrange icons by date created"); runs after every change */
+  function noteNew(){var s=S();Object.keys(s.dirs).concat(Object.keys(s.files)).forEach(function(k){if(k!==HOME&&dirname(k)===HOME&&!born[k])born[k]=++bornN})}
+  window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw()};
   addEventListener('resize',function(){lastSig='';draw()});
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
@@ -288,7 +296,7 @@
     function finish(ok){if(done)return;var v=inp.value.trim();
       if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
         var r=ML.fsRename(k,HOME+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
-        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
+        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}if(born[k]){born[r.abs]=born[k];delete born[k]}sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
       done=true;renaming=null;lastSig='';draw(true)}
     inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
     inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&renaming===k)finish(true)},0)});
@@ -310,7 +318,7 @@
   function deskMenu(x,y){var canPaste=!!(clip&&ML.exists(clip.abs));
     ML.ctxMenu(x,y,[{t:'New folder',fn:function(){newThing(true)}},{t:'New file',fn:function(){newThing(false)}},'-',
       {t:'Paste',k:'Ctrl+V',dis:!canPaste,fn:function(){paste(HOME)}},{t:'Refresh',k:'F5',fn:refresh},'-',
-      {t:'Arrange icons',fn:function(){pos={};lastSig='';draw(true);say('Arranged the icons.')}},
+      {t:'Arrange icons',sub:Object.keys(SORTS).map(function(k){return {t:'By '+SORTS[k],on:sortBy===k,fn:function(){arrange(k)}}})},
       {t:'View',sub:[{t:'Large icons',on:view==='large',fn:function(){setView('large')}},{t:'Small icons',on:view==='small',fn:function(){setView('small')}}]},'-',
       {t:'Change wallpaper',sub:Object.keys(WP).map(function(k){return {t:WP[k].n,on:wp===k,fn:function(){wp=k;store('wp',k);applyLook()}}})},
       {t:'Personalise',sub:['blue','green','pink','purple','orange'].map(function(k){return {t:k[0].toUpperCase()+k.slice(1),on:theme===k,fn:function(){theme=k;store('theme',k);applyLook()}}})}])}
@@ -346,6 +354,7 @@
     if(me.app)return null;if(it.app==='bin'||it.app==='vs'||(it.dir&&!(me.dir&&under(it.k,me.k))))return t;return null}
   function endDrag(e){if(!drag)return;var d=drag;drag=null;d.b.classList.remove('drag');
     if(!d.moved){if(e.type==='pointercancel'||(desk._lp&&Date.now()-desk._lp<900))return;var now=Date.now(),it=itemOf(d.k);
+      if(appOpen(it)){lastTap={k:null,t:0};activate(appEl(it));return}
       if(d.type!=='mouse'){if(lastTap.k===d.k&&now-lastTap.t<700){lastTap={k:null,t:0};openItem(it)}else lastTap={k:d.k,t:now}}
       return}
     var t=dropTarget(d,e.clientX,e.clientY);icons.querySelectorAll('.dico.drop').forEach(function(x){x.classList.remove('drop')});
@@ -357,7 +366,11 @@
     var L=layout(items()),taken=null;Object.keys(L).forEach(function(k){if(k!==d.k&&L[k].col===col&&L[k].row===row)taken=k});
     if(taken){pos[taken]=L[d.k]}pos[d.k]={col:col,row:row};lastSig='';draw(true)}
   desk.addEventListener('pointerup',endDrag);desk.addEventListener('pointercancel',endDrag);
-  desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;openItem(itemOf(b.getAttribute('data-k')))});
+  desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;
+    var it=itemOf(b.getAttribute('data-k'));if(appOpen(it))return;openItem(it)});
+  /* once an app's window is open (even minimised), one click on its icon minimises or restores it, like the taskbar */
+  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin'}[it.app]].el):null}
+  function appOpen(it){var el=appEl(it);if(!el)return false;return el.id==='notepad'?el.classList.contains('show'):!el.hidden}
   desk.addEventListener('keydown',function(e){if(e.target.closest('.dren'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k);
     if(e.key==='Enter'&&it){e.preventDefault();openItem(it)}
     else if(e.key==='F2'&&it&&!it.app){e.preventDefault();startRename(k)}
