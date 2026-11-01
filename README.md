@@ -33,7 +33,7 @@ git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
 > ⚠️ Use a separate demo repo you don't mind wiping. Never use it on a repo with real work.
 
 1. Create an empty demo repo on GitHub.
-2. Create a [fine-grained token](https://github.com/settings/tokens/new) for that repo only, with **Contents: Read and write**.
+2. Create a [classic token](https://github.com/settings/tokens/new): tick the **repo** box, click **Generate token** and copy it. (Fine-grained tokens can fail here, so use a classic one.)
 3. Open `index.html` from your computer (some embedded previews block GitHub requests).
 4. Paste the repo link and token into the practice lab. The token stays in the tab's memory and is never saved.
 5. **Delete everything in this repo** resets the demo repo so you can run it again.

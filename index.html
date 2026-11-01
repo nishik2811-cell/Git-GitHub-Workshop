@@ -582,6 +582,36 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .smres{max-height:50vh;overflow:auto}.smres a small{display:block;font-weight:600;opacity:.65;font-size:11.5px}.smres p{padding:12px 16px;margin:0;font-size:13.5px}
 .smfoot{border-top:2px solid #c9d8f6;background:#eef3ff}.smfoot a{border:0!important}
 @media(max-width:700px){.smsub{position:static;border:0;box-shadow:none;background:#f4f8ff;min-width:0}.smi:hover>.smsub{display:none}.smi.open>.smsub{display:block}.smsub a{padding-left:50px!important}.startmenu{width:min(300px,92vw)}}
+
+/* 2.1 repo toy */
+.rvs{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:6px 0 4px}
+.rvs-side{display:flex;flex-direction:column;align-items:flex-start;gap:5px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:10px 14px;min-width:220px}
+.rvs-side small{font-family:var(--pix);letter-spacing:.1em;color:var(--pink-d)}.rvs-side.ok small{color:var(--mint-d)}
+.rvs-side:not(.ok) .fchip{text-decoration:line-through;opacity:.75}.rvs-side:not(.ok) .fchip:last-child{text-decoration:none;opacity:1;background:#ffe3ee}
+.rvs-arrow{font-size:28px;color:var(--ink2)}.rvs-h{font-size:14px;color:var(--ink2);font-weight:700}
+.rp-goal{margin:0 0 12px;font-weight:800;font-size:16px}.rp-goal b{font-family:var(--pix);color:#b3366a;letter-spacing:.06em;margin-right:6px}
+.rp{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;text-align:left}
+@media(max-width:700px){.rp{grid-template-columns:1fr}}
+.rp-box{border:3px solid var(--ink);border-radius:12px;overflow:hidden;background:#fff;min-width:0}
+.rp-h{display:flex;justify-content:space-between;gap:8px;background:var(--blue);color:#fff;font-family:var(--pix);letter-spacing:.08em;font-size:13px;padding:4px 10px}
+.rp-h em{font-style:normal;background:rgba(255,255,255,.18);border-radius:4px;padding:0 6px;letter-spacing:.04em}
+.rp-cloud .rp-h{background:#3a3f4b}.rp-cloud.on .rp-h{background:#24292f}
+.rp-b{padding:10px 12px;min-height:150px}
+.rp-dir{font-family:'Fira Code',monospace;font-weight:700;font-size:14px;margin-bottom:6px}
+.rp-file{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:'Fira Code',monospace;font-size:13px;padding:5px 8px;border:2px solid var(--line);border-radius:7px;margin:4px 0 4px 14px}
+.rp-file.ch{border-color:#e07a2e;background:#fff4e8}
+.rp-file i{font-style:normal;font-size:12px;color:var(--ink2)}
+.rp-git{margin:10px 0 0 14px;border:2.5px dashed var(--ink3);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--ink3);transition:all .3s}
+.rp-git.on{border-color:#6b4fa3;background:var(--lav);color:var(--ink);animation:pin .35s}
+.rp-git .t{font-family:'Fira Code',monospace;font-weight:700;color:#6b4fa3}
+.rp-snaps{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rp-snap{font-family:'Fira Code',monospace;font-size:11.5px;background:#fff;border:2px solid var(--ink);border-radius:6px;padding:2px 7px;animation:pin .35s}
+.rp-snap b{color:#b3366a;margin-right:4px}
+.rp-empty{color:#8a96c0;font-size:14px;text-align:center;padding:36px 8px}
+.rp-cmd{margin:12px 0 4px;text-align:left;background:#0f1c4d;color:#ffe36e;border-radius:8px;padding:8px 12px;font-size:13px;white-space:pre-wrap;min-height:1.6em}
+.rp-say{margin:4px 0 2px;font-size:15.5px;font-weight:600;min-height:46px}
+.rp .flash{animation:fl .7s}
+@media(prefers-reduced-motion:reduce){.rp-git.on,.rp-snap{animation:none}}
 .sp-heart{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA40lEQVR42u2awQ2DMAxFY9QZyh5MwIUxukPPTMEOjMGFdZgCrj00LTjGEeH5iETCk5+sTxR5Nn0ovapwg7oF5EPxzpqwn5ywDp1E15iiy6tVb1aPs/k6e9RF11JKfoQBE7XOrnqc/05ddAUSSCCzh4FjE/XdfX8+TG4An98ZCwnoWqquos6ZjooSBtBVU5kUpZNAAgnkpaerWB9AeQYAdAUSSCAvkV2zT9qjExVd+dVyVjdFUXRFVwd1rRRFV3RVqBviR/om11foJLoaqptyNYVOAumjq9vkpJNAAgkkkEACmVYb0sM/hPjzsaUAAAAASUVORK5CYII=);aspect-ratio:19/19}
 .sp-heartb{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA5UlEQVR42u2asQ2DMBBFfREz0LJDxBapswIDUGYIBmAFarZgiUxCWoSAgH02xrwrkbD1dE9fJ9uSPz8m9XqYG9QtIDOLf0aH/cTDOnQSXdcULV+V9WZD36qvs0dddE2lZGMYUFHLdw19+zd10RVIIIE8PV0PJWr9Lha/N903qqRF11RnV7GdM2NTlHTlZCASRekkkEACeemTgWhPCfYMAOgKJJBAXiJdT0/ao4mKrugaWF0XRdEVXcNc1Kooiq7o6vgMZqrxTEt1RdEVXXU1FjoJpAl3TeD74R+dBBJIIIEEEkj/9QMxBzyVsEic8QAAAABJRU5ErkJggg==);aspect-ratio:19/19}
 .sp-sparkle{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAtCAYAAAA6GuKaAAAAZ0lEQVR42u3WsQ2AIBAF0MM5dEWdRVfUPbDTysQCiJj3Kiruh/xciAAAaCfVuDTvc74GTFvxGUOPLy200H8LnWpsjMdhhTaJeny2Hm9qEON6n48lStdGPWwP9fA1VQ+hhe42NABASydKlxYmpxxlGwAAAABJRU5ErkJggg==);aspect-ratio:15/15}
@@ -720,18 +750,9 @@ init.defaultbranch=main</span></pre></div><div class="note y">Use the same email
 <div class="banner"><div class="pn">2</div><div><h2>Repository management</h2><small>Making a project, saving it, and putting it online</small></div><span class="rule"></span><i class="sp sp-flower bob"></i><i class="sp sp-heart bob2"></i></div>
 <div class="idx"><a href="#t2-1">1. Repositories</a><a href="#t2-2">2. Creating and managing repos</a><a href="#t2-3">3. Basic Git commands</a><a href="#t2-4">4. Push, Pull and Clone</a><a href="#t2-5">5. Remote repositories</a></div>
 <div class="grid">
-<div class="card wide" id="t2-1"><div class="tbar t-b"><span>P2_01_INTRO-TO-REPOSITORIES.TXT</span><i class="sp sp-heartb"></i><span class="dots"><i></i><i></i><i></i></span></div>
+<div class="card wide" id="t2-1"><div class="tbar t-b"><span>P2_01_INTRO-TO-REPOSITORIES.EXE</span><i class="sp sp-heartb"></i><span class="dots"><i></i><i></i><i></i></span></div>
 <div class="topic"><h3>1. Introduction to repositories</h3></div>
-<div class="body"><p class="lead">A repository is <mark>a project folder with a memory</mark>.</p><div class="stage"><svg viewBox="0 0 330 190" role="img" aria-label="A project folder with files and a hidden .git folder that stores history">
-  <path d="M14 36h96l14 18h190v118H14z" fill="#fff1b0" stroke="#16327a" stroke-width="2.5" stroke-linejoin="round"/>
-  <text x="26" y="28" font-family="Pixelify Sans" font-weight="700" font-size="16" fill="#16327a">my-project/</text>
-  <g stroke="#16327a" stroke-width="2" fill="#fff"><rect x="30" y="76" width="84" height="26" rx="5"/><rect x="30" y="112" width="84" height="26" rx="5"/><rect x="30" y="148" width="84" height="20" rx="5"/></g>
-  <g font-size="12" font-family="Fira Code,monospace" fill="#16327a"><text x="40" y="93">index.html</text><text x="40" y="129">style.css</text><text x="40" y="162">app.js</text></g>
-  <rect x="160" y="76" width="140" height="92" rx="8" fill="#e5dcff" stroke="#16327a" stroke-width="2.5" stroke-dasharray="6 4"/>
-  <text x="230" y="100" text-anchor="middle" font-family="Fira Code,monospace" font-size="13" fill="#6b4fa3">.git/</text>
-  <text x="230" y="120" text-anchor="middle" font-size="12" fill="#5b61a0">hidden memory with</text>
-  <text x="230" y="136" text-anchor="middle" font-size="12" fill="#5b61a0">every save point</text>
-</svg></div><div class="trio t2"><div class="t m-sun"><i class="sp sp-folder"></i><b>Local repo</b>The copy on your own computer.</div><div class="t m-sky"><i class="sp sp-cloud"></i><b>Remote repo</b>The copy online, for example on GitHub.</div></div><p class="sub">To turn a normal folder into a repo, open a terminal inside it and run <code>git init</code>. You will do that very soon.</p><div class="note y">Delete the hidden <code>.git</code> folder and your files stay, but the history is gone.</div><div class="remember"><i class="sp sp-folder"></i><span>Repository = your files + the hidden .git memory.</span><i class="sp sp-folder"></i></div></div>
+<div class="body"><p class="lead">A repository is <mark>a folder that remembers</mark>.</p><div class="rvs"><div class="rvs-side"><small>WITHOUT GIT</small><span class="fchip plain">report.docx</span><span class="fchip plain">report_final.docx</span><span class="fchip plain">report_final2.docx</span><span class="fchip plain">report_FINAL_real.docx</span></div><b class="rvs-arrow">&rarr;</b><div class="rvs-side ok"><small>WITH GIT</small><span class="fchip clean"><b>&#10003;</b>report.docx</span><span class="rvs-h">+ every old version, inside <code>.git</code></span></div></div><div class="play"><div class="ph">TRY IT: make a folder remember</div><div class="pb"><p class="rp-goal" id="rpGoal"></p><div class="rp"><div class="rp-box" id="rpLocal"><div class="rp-h"><span>YOUR LAPTOP</span><em id="rpLtag">just a folder</em></div><div class="rp-b"><div class="rp-dir">my-project/</div><div id="rpFiles"></div><div class="rp-git" id="rpGit"></div></div></div><div class="rp-box rp-cloud" id="rpRemote"><div class="rp-h"><span>GITHUB</span><em id="rpRtag">empty</em></div><div class="rp-b" id="rpCloud"></div></div></div><pre class="rp-cmd" id="rpCmd">$ </pre><p class="rp-say" id="rpSay"></p><div class="btns"><button id="rpInit">git init</button><button id="rpEdit">Edit a file</button><button id="rpSave">Save a snapshot</button><button id="rpPush">Push to GitHub</button><button id="rpDel" class="redbtn">Delete .git</button><button id="rpReset">Start over</button></div></div></div><div class="trio t2"><div class="t m-sun"><i class="sp sp-folder"></i><b>Local repo</b>The repo on your laptop. You work here.</div><div class="t m-sky"><i class="sp sp-cloud"></i><b>Remote repo</b>A copy of it online, on GitHub. Your backup and your team's meeting point.</div></div><div class="remember"><i class="sp sp-folder"></i><span>Repository = your files + the hidden <code>.git</code> folder that remembers them.</span><i class="sp sp-folder"></i></div></div>
 </div>
 <div class="card wide" id="t2-2"><div class="tbar t-c"><span>P2_02_CREATING-AND-MANAGING-REPOS.EXE</span><i class="sp sp-folder"></i><span class="dots"><i></i><i></i><i></i></span></div>
 <div class="topic"><h3>2. Creating and managing GitHub repositories</h3></div>
@@ -1272,6 +1293,70 @@ git log --oneline           short history          git push / git pull   sync wi
   tick();setInterval(tick,20000);
   var cols=['#7fb3ea','#ffb74d','#ff8fba','#8fe39a','#c9a6f0','#ffe36e'];
   document.querySelectorAll('.starrow').forEach(function(r){for(var i=0;i<22;i++){r.insertAdjacentHTML('beforeend','<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15,9 22,9.5 16.5,14.5 18.5,22 12,17.8 5.5,22 7.5,14.5 2,9.5 9,9" fill="'+cols[i%6]+'" stroke="#16327a" stroke-width="1.8" stroke-linejoin="round"/></svg>')}});
+
+  /* ---------- 2.1 make a folder remember ---------- */
+  (function(){
+    if(!$('rpFiles'))return;
+    var R,goals=[
+      ['Edit a file. What happens to the old version?',function(){return R.edits>0}],
+      ['Turn the folder into a repo with git init.',function(){return R.git}],
+      ['Edit a file, then save a snapshot.',function(){return R.snaps.length>0}],
+      ['Push your snapshots to GitHub.',function(){return R.cloud.length>0}],
+      ['Now delete .git. What survives?',function(){return R.deleted}]
+    ];
+    var drafts=['first draft','added a menu','fixed the colours','new photo','typo fix','bigger title'];
+    function reset(){R={git:false,edits:0,dirty:{},snaps:[],cloud:[],deleted:false,n:0,ver:{'index.html':1,'style.css':1}};cmd('');say('This is a normal folder with two files. Try the buttons. The goal at the top tells you what to try next.');draw()}
+    function cmd(t){$('rpCmd').textContent='$ '+t}
+    function say(t){$('rpSay').innerHTML=t}
+    function id(){R.n++;return ('0000000'+((Math.imul(R.n+7,2654435761)>>>0).toString(16))).slice(-7)}
+    function draw(){
+      var g=0;while(g<goals.length&&goals[g][1]())g++;
+      $('rpGoal').innerHTML=g<goals.length?'<b>GOAL '+(g+1)+' OF '+goals.length+'</b>'+goals[g][0]:'<b>ALL DONE</b>You know what a repository is. Press Start over to play again.';
+      $('rpFiles').innerHTML=Object.keys(R.ver).map(function(f){var ch=R.dirty[f];return '<div class="rp-file'+(ch?' ch':'')+'"><span>'+f+'</span><i>'+(ch?'changed, not saved':'version '+R.ver[f])+'</i></div>'}).join('');
+      var gb=$('rpGit');gb.className='rp-git'+(R.git?' on':'');
+      gb.innerHTML=R.git?'<span class="t">.git/</span> hidden memory: '+(R.snaps.length?R.snaps.length+' snapshot'+(R.snaps.length>1?'s':''):'no snapshots yet')+'<div class="rp-snaps">'+R.snaps.map(function(s){return '<span class="rp-snap"><b>'+s[0]+'</b>'+s[1]+'</span>'}).join('')+'</div>':'no <code>.git</code> folder, so nothing is remembered';
+      $('rpLtag').textContent=R.git?'local repo':'just a folder';
+      $('rpRemote').className='rp-box rp-cloud'+(R.cloud.length?' on':'');
+      $('rpRtag').textContent=R.cloud.length?'remote repo':'empty';
+      $('rpCloud').innerHTML=R.cloud.length?'<div class="rp-dir">you/my-project</div><div class="rp-snaps">'+R.cloud.map(function(s){return '<span class="rp-snap"><b>'+s[0]+'</b>'+s[1]+'</span>'}).join('')+'</div>':'<div class="rp-empty">Nothing online yet.</div>';
+    }
+    function flash(el){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+    $('rpInit').onclick=function(){
+      cmd('git init');
+      if(R.git){say('It is already a repo. You only run <code>git init</code> once per project.');return}
+      R.git=true;R.deleted=false;
+      say('Git made a hidden <code>.git</code> folder. Your files did not change. The folder can now remember.');draw();flash($('rpGit'));
+    };
+    $('rpEdit').onclick=function(){
+      var f=R.edits%2?'style.css':'index.html';R.edits++;R.dirty[f]=1;R.ver[f]++;
+      cmd('code '+f+'    # you type and press Ctrl+S');
+      say(R.git?'<b>'+f+'</b> changed. Git notices, but it only remembers it once you save a snapshot.':'<b>'+f+'</b> changed and the old version is <b>gone for good</b>. Nothing was remembering it.');
+      draw();
+    };
+    $('rpSave').onclick=function(){
+      cmd('git add . && git commit -m "'+drafts[R.snaps.length%drafts.length]+'"');
+      if(!R.git){window.gitPop('err','fatal: not a git repository','This folder has no <code>.git</code>, so there is nowhere to save a snapshot.<br>Press <b>git init</b> first.');return}
+      if(!Object.keys(R.dirty).length){say('Nothing changed since the last snapshot, so there is nothing new to save. Edit a file first.');return}
+      R.snaps.push([id(),drafts[R.snaps.length%drafts.length]]);R.dirty={};
+      say('Snapshot saved inside <code>.git</code>. You can always come back to this exact moment.');draw();flash($('rpGit'));
+    };
+    $('rpPush').onclick=function(){
+      cmd('git push');
+      if(!R.git){window.gitPop('err','fatal: not a git repository','Only a repo can be pushed. Press <b>git init</b> first.');return}
+      if(!R.snaps.length){say('There are no snapshots to send yet. Save one first.');return}
+      R.cloud=R.snaps.slice();
+      say('GitHub now has a copy of every snapshot. The one on your laptop is the <b>local</b> repo, the one online is the <b>remote</b> repo.');draw();flash($('rpCloud'));
+    };
+    $('rpDel').onclick=function(){
+      if(!R.git){say('There is no <code>.git</code> folder to delete.');return}
+      window.gitPop('warn','Delete the .git folder?','Your files stay. All the snapshots inside it are lost from this laptop.',[{t:'Delete it',fn:function(){
+        cmd('rm -rf .git');R.git=false;R.snaps=[];R.deleted=true;
+        say(R.cloud.length?'Your files are still here, but the history is gone from your laptop. Good thing GitHub still has a copy: you could <code>git clone</code> it back.':'Your files are still here, but every snapshot is gone. It is just a folder again.');draw();
+      }},{t:'Keep it'}]);
+    };
+    $('rpReset').onclick=reset;
+    reset();
+  })();
 })();
 
 (function(){
@@ -1880,7 +1965,7 @@ git log --oneline           short history          git push / git pull   sync wi
     RL.repo=rp;RL.tok=tk;rbody.innerHTML='<p class="empty">Connecting...</p>';
     gh('GET','/repos/'+rp).then(function(x){
       if(x.s!==200){RL.tok='';setupForm('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
-      if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Give it Contents: Read and write.');return}
+      if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
       RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
       pl('Connected to github.com/'+rp+' for real. Add it as origin and push!','y');
@@ -1937,7 +2022,7 @@ git log --oneline           short history          git push / git pull   sync wi
       window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(RL.repo)+'.');
       refreshLive();
     }).catch(function(e){
-      perr('error: GitHub refused: '+e.message);window.gitPop&&window.gitPop('err','ERROR: PUSH FAILED',esc(e.message)+'<br>Check that the token has Contents: Read and write on this repo.');
+      perr('error: GitHub refused: '+e.message);window.gitPop&&window.gitPop('err','ERROR: PUSH FAILED',esc(e.message)+'<br>Check that it is a classic token with the repo box ticked.');
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};

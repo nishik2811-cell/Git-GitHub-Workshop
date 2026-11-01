@@ -139,13 +139,16 @@ p1+=card('t1-5','a','P1_05_SETUP-AND-INSTALLATION.EXE','5. Git and GitHub setup 
 
 # =============== PHASE 2 ===============
 p2=''
-p2+=card('t2-1','b','P2_01_INTRO-TO-REPOSITORIES.TXT','1. Introduction to repositories',
- lead('A repository is <mark>a project folder with a memory</mark>.')
- +stage(SV['A project folder with files and a hidden .git folder that stores history'])
- +trio([('folder','sun','Local repo','The copy on your own computer.'),('cloud','sky','Remote repo','The copy online, for example on GitHub.')],True)
- +sub('To turn a normal folder into a repo, open a terminal inside it and run <code>git init</code>. You will do that very soon.')
- +'<div class="note y">Delete the hidden <code>.git</code> folder and your files stay, but the history is gone.</div>'
- +remember('Repository = your files + the hidden .git memory.','folder'))
+p2+=card('t2-1','b','P2_01_INTRO-TO-REPOSITORIES.EXE','1. Introduction to repositories',
+ lead('A repository is <mark>a folder that remembers</mark>.')
+ +'<div class="rvs"><div class="rvs-side"><small>WITHOUT GIT</small><span class="fchip plain">report.docx</span><span class="fchip plain">report_final.docx</span><span class="fchip plain">report_final2.docx</span><span class="fchip plain">report_FINAL_real.docx</span></div><b class="rvs-arrow">&rarr;</b><div class="rvs-side ok"><small>WITH GIT</small><span class="fchip clean"><b>&#10003;</b>report.docx</span><span class="rvs-h">+ every old version, inside <code>.git</code></span></div></div>'
+ +play('make a folder remember','<p class="rp-goal" id="rpGoal"></p>'
+  +'<div class="rp"><div class="rp-box" id="rpLocal"><div class="rp-h"><span>YOUR LAPTOP</span><em id="rpLtag">just a folder</em></div><div class="rp-b"><div class="rp-dir">my-project/</div><div id="rpFiles"></div><div class="rp-git" id="rpGit"></div></div></div>'
+  +'<div class="rp-box rp-cloud" id="rpRemote"><div class="rp-h"><span>GITHUB</span><em id="rpRtag">empty</em></div><div class="rp-b" id="rpCloud"></div></div></div>'
+  +'<pre class="rp-cmd" id="rpCmd">$ </pre><p class="rp-say" id="rpSay"></p>'
+  +'<div class="btns"><button id="rpInit">git init</button><button id="rpEdit">Edit a file</button><button id="rpSave">Save a snapshot</button><button id="rpPush">Push to GitHub</button><button id="rpDel" class="redbtn">Delete .git</button><button id="rpReset">Start over</button></div>')
+ +trio([('folder','sun','Local repo','The repo on your laptop. You work here.'),('cloud','sky','Remote repo','A copy of it online, on GitHub. Your backup and your team\'s meeting point.')],True)
+ +remember('Repository = your files + the hidden <code>.git</code> folder that remembers them.','folder'))
 
 p2+=card('t2-2','c','P2_02_CREATING-AND-MANAGING-REPOS.EXE','2. Creating and managing GitHub repositories',
  lead('Let us <mark>make one</mark> in four steps.')

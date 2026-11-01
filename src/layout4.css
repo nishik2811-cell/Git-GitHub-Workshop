@@ -267,3 +267,33 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .smres{max-height:50vh;overflow:auto}.smres a small{display:block;font-weight:600;opacity:.65;font-size:11.5px}.smres p{padding:12px 16px;margin:0;font-size:13.5px}
 .smfoot{border-top:2px solid #c9d8f6;background:#eef3ff}.smfoot a{border:0!important}
 @media(max-width:700px){.smsub{position:static;border:0;box-shadow:none;background:#f4f8ff;min-width:0}.smi:hover>.smsub{display:none}.smi.open>.smsub{display:block}.smsub a{padding-left:50px!important}.startmenu{width:min(300px,92vw)}}
+
+/* 2.1 repo toy */
+.rvs{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:6px 0 4px}
+.rvs-side{display:flex;flex-direction:column;align-items:flex-start;gap:5px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:10px 14px;min-width:220px}
+.rvs-side small{font-family:var(--pix);letter-spacing:.1em;color:var(--pink-d)}.rvs-side.ok small{color:var(--mint-d)}
+.rvs-side:not(.ok) .fchip{text-decoration:line-through;opacity:.75}.rvs-side:not(.ok) .fchip:last-child{text-decoration:none;opacity:1;background:#ffe3ee}
+.rvs-arrow{font-size:28px;color:var(--ink2)}.rvs-h{font-size:14px;color:var(--ink2);font-weight:700}
+.rp-goal{margin:0 0 12px;font-weight:800;font-size:16px}.rp-goal b{font-family:var(--pix);color:#b3366a;letter-spacing:.06em;margin-right:6px}
+.rp{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;text-align:left}
+@media(max-width:700px){.rp{grid-template-columns:1fr}}
+.rp-box{border:3px solid var(--ink);border-radius:12px;overflow:hidden;background:#fff;min-width:0}
+.rp-h{display:flex;justify-content:space-between;gap:8px;background:var(--blue);color:#fff;font-family:var(--pix);letter-spacing:.08em;font-size:13px;padding:4px 10px}
+.rp-h em{font-style:normal;background:rgba(255,255,255,.18);border-radius:4px;padding:0 6px;letter-spacing:.04em}
+.rp-cloud .rp-h{background:#3a3f4b}.rp-cloud.on .rp-h{background:#24292f}
+.rp-b{padding:10px 12px;min-height:150px}
+.rp-dir{font-family:'Fira Code',monospace;font-weight:700;font-size:14px;margin-bottom:6px}
+.rp-file{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:'Fira Code',monospace;font-size:13px;padding:5px 8px;border:2px solid var(--line);border-radius:7px;margin:4px 0 4px 14px}
+.rp-file.ch{border-color:#e07a2e;background:#fff4e8}
+.rp-file i{font-style:normal;font-size:12px;color:var(--ink2)}
+.rp-git{margin:10px 0 0 14px;border:2.5px dashed var(--ink3);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--ink3);transition:all .3s}
+.rp-git.on{border-color:#6b4fa3;background:var(--lav);color:var(--ink);animation:pin .35s}
+.rp-git .t{font-family:'Fira Code',monospace;font-weight:700;color:#6b4fa3}
+.rp-snaps{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rp-snap{font-family:'Fira Code',monospace;font-size:11.5px;background:#fff;border:2px solid var(--ink);border-radius:6px;padding:2px 7px;animation:pin .35s}
+.rp-snap b{color:#b3366a;margin-right:4px}
+.rp-empty{color:#8a96c0;font-size:14px;text-align:center;padding:36px 8px}
+.rp-cmd{margin:12px 0 4px;text-align:left;background:#0f1c4d;color:#ffe36e;border-radius:8px;padding:8px 12px;font-size:13px;white-space:pre-wrap;min-height:1.6em}
+.rp-say{margin:4px 0 2px;font-size:15.5px;font-weight:600;min-height:46px}
+.rp .flash{animation:fl .7s}
+@media(prefers-reduced-motion:reduce){.rp-git.on,.rp-snap{animation:none}}

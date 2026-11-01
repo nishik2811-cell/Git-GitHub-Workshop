@@ -340,4 +340,68 @@
   tick();setInterval(tick,20000);
   var cols=['#7fb3ea','#ffb74d','#ff8fba','#8fe39a','#c9a6f0','#ffe36e'];
   document.querySelectorAll('.starrow').forEach(function(r){for(var i=0;i<22;i++){r.insertAdjacentHTML('beforeend','<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15,9 22,9.5 16.5,14.5 18.5,22 12,17.8 5.5,22 7.5,14.5 2,9.5 9,9" fill="'+cols[i%6]+'" stroke="#16327a" stroke-width="1.8" stroke-linejoin="round"/></svg>')}});
+
+  /* ---------- 2.1 make a folder remember ---------- */
+  (function(){
+    if(!$('rpFiles'))return;
+    var R,goals=[
+      ['Edit a file. What happens to the old version?',function(){return R.edits>0}],
+      ['Turn the folder into a repo with git init.',function(){return R.git}],
+      ['Edit a file, then save a snapshot.',function(){return R.snaps.length>0}],
+      ['Push your snapshots to GitHub.',function(){return R.cloud.length>0}],
+      ['Now delete .git. What survives?',function(){return R.deleted}]
+    ];
+    var drafts=['first draft','added a menu','fixed the colours','new photo','typo fix','bigger title'];
+    function reset(){R={git:false,edits:0,dirty:{},snaps:[],cloud:[],deleted:false,n:0,ver:{'index.html':1,'style.css':1}};cmd('');say('This is a normal folder with two files. Try the buttons. The goal at the top tells you what to try next.');draw()}
+    function cmd(t){$('rpCmd').textContent='$ '+t}
+    function say(t){$('rpSay').innerHTML=t}
+    function id(){R.n++;return ('0000000'+((Math.imul(R.n+7,2654435761)>>>0).toString(16))).slice(-7)}
+    function draw(){
+      var g=0;while(g<goals.length&&goals[g][1]())g++;
+      $('rpGoal').innerHTML=g<goals.length?'<b>GOAL '+(g+1)+' OF '+goals.length+'</b>'+goals[g][0]:'<b>ALL DONE</b>You know what a repository is. Press Start over to play again.';
+      $('rpFiles').innerHTML=Object.keys(R.ver).map(function(f){var ch=R.dirty[f];return '<div class="rp-file'+(ch?' ch':'')+'"><span>'+f+'</span><i>'+(ch?'changed, not saved':'version '+R.ver[f])+'</i></div>'}).join('');
+      var gb=$('rpGit');gb.className='rp-git'+(R.git?' on':'');
+      gb.innerHTML=R.git?'<span class="t">.git/</span> hidden memory: '+(R.snaps.length?R.snaps.length+' snapshot'+(R.snaps.length>1?'s':''):'no snapshots yet')+'<div class="rp-snaps">'+R.snaps.map(function(s){return '<span class="rp-snap"><b>'+s[0]+'</b>'+s[1]+'</span>'}).join('')+'</div>':'no <code>.git</code> folder, so nothing is remembered';
+      $('rpLtag').textContent=R.git?'local repo':'just a folder';
+      $('rpRemote').className='rp-box rp-cloud'+(R.cloud.length?' on':'');
+      $('rpRtag').textContent=R.cloud.length?'remote repo':'empty';
+      $('rpCloud').innerHTML=R.cloud.length?'<div class="rp-dir">you/my-project</div><div class="rp-snaps">'+R.cloud.map(function(s){return '<span class="rp-snap"><b>'+s[0]+'</b>'+s[1]+'</span>'}).join('')+'</div>':'<div class="rp-empty">Nothing online yet.</div>';
+    }
+    function flash(el){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+    $('rpInit').onclick=function(){
+      cmd('git init');
+      if(R.git){say('It is already a repo. You only run <code>git init</code> once per project.');return}
+      R.git=true;R.deleted=false;
+      say('Git made a hidden <code>.git</code> folder. Your files did not change. The folder can now remember.');draw();flash($('rpGit'));
+    };
+    $('rpEdit').onclick=function(){
+      var f=R.edits%2?'style.css':'index.html';R.edits++;R.dirty[f]=1;R.ver[f]++;
+      cmd('code '+f+'    # you type and press Ctrl+S');
+      say(R.git?'<b>'+f+'</b> changed. Git notices, but it only remembers it once you save a snapshot.':'<b>'+f+'</b> changed and the old version is <b>gone for good</b>. Nothing was remembering it.');
+      draw();
+    };
+    $('rpSave').onclick=function(){
+      cmd('git add . && git commit -m "'+drafts[R.snaps.length%drafts.length]+'"');
+      if(!R.git){window.gitPop('err','fatal: not a git repository','This folder has no <code>.git</code>, so there is nowhere to save a snapshot.<br>Press <b>git init</b> first.');return}
+      if(!Object.keys(R.dirty).length){say('Nothing changed since the last snapshot, so there is nothing new to save. Edit a file first.');return}
+      R.snaps.push([id(),drafts[R.snaps.length%drafts.length]]);R.dirty={};
+      say('Snapshot saved inside <code>.git</code>. You can always come back to this exact moment.');draw();flash($('rpGit'));
+    };
+    $('rpPush').onclick=function(){
+      cmd('git push');
+      if(!R.git){window.gitPop('err','fatal: not a git repository','Only a repo can be pushed. Press <b>git init</b> first.');return}
+      if(!R.snaps.length){say('There are no snapshots to send yet. Save one first.');return}
+      R.cloud=R.snaps.slice();
+      say('GitHub now has a copy of every snapshot. The one on your laptop is the <b>local</b> repo, the one online is the <b>remote</b> repo.');draw();flash($('rpCloud'));
+    };
+    $('rpDel').onclick=function(){
+      if(!R.git){say('There is no <code>.git</code> folder to delete.');return}
+      window.gitPop('warn','Delete the .git folder?','Your files stay. All the snapshots inside it are lost from this laptop.',[{t:'Delete it',fn:function(){
+        cmd('rm -rf .git');R.git=false;R.snaps=[];R.deleted=true;
+        say(R.cloud.length?'Your files are still here, but the history is gone from your laptop. Good thing GitHub still has a copy: you could <code>git clone</code> it back.':'Your files are still here, but every snapshot is gone. It is just a folder again.');draw();
+      }},{t:'Keep it'}]);
+    };
+    $('rpReset').onclick=reset;
+    reset();
+  })();
 })();
