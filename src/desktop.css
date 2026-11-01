@@ -139,6 +139,12 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .brmsg{min-height:20px;font-size:13.5px;color:var(--ink2)}
 .brmsg a{color:var(--blue);font-weight:700}
 
+/* commit graph: long histories scroll sideways */
+.gscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.gscroll svg{display:block}
+.gwrap{position:relative}
+.gwrap .glanes{position:absolute;left:0;top:0;display:block;pointer-events:none}
+
 /* drawing notepad */
 .dwb.padb{display:flex;flex-direction:column;overflow:hidden;background:#fff}
 .padtools{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 8px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}

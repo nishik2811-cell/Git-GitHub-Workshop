@@ -933,6 +933,12 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .brmsg{min-height:20px;font-size:13.5px;color:var(--ink2)}
 .brmsg a{color:var(--blue);font-weight:700}
 
+/* commit graph: long histories scroll sideways */
+.gscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.gscroll svg{display:block}
+.gwrap{position:relative}
+.gwrap .glanes{position:absolute;left:0;top:0;display:block;pointer-events:none}
+
 /* drawing notepad */
 .dwb.padb{display:flex;flex-direction:column;overflow:hidden;background:#fff}
 .padtools{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 8px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
@@ -1847,6 +1853,18 @@ git log --oneline           short history          git push / git pull   sync wi
   function visible(){return R().list.filter(function(c){return !c.hidden})}
   function reach(tip){var s=anc(tip),a=[];keys(s).forEach(function(k){if(!C(k).hidden)a.push(C(k))});a.sort(function(x,y){return y.n-x.n});return a}
   /* ---------- three way merge ---------- */
+  /* git push refused, worded exactly like real Git: "fetch first" when GitHub has commits you never downloaded,
+     "non-fast-forward" when you downloaded them but have not merged them in yet (for example, mid-conflict) */
+  function pushRejected(url,br,fetched){var r=R();
+    pl('To '+url+'\n ! [rejected]        '+br+' -> '+br+(fetched?' (non-fast-forward)':' (fetch first)'),'r');
+    perr("error: failed to push some refs to '"+url+"'\n"+(fetched?"hint: Updates were rejected because the tip of your current branch is behind\nhint: its remote counterpart. If you want to integrate the remote changes,\nhint: use 'git pull' before pushing again.":"hint: Updates were rejected because the remote contains work that you do not\nhint: have locally. This is usually caused by another repository pushing to\nhint: the same ref. If you want to integrate the remote changes, use\nhint: 'git pull' before pushing again.")+"\nhint: See the 'Note about fast-forwards' in 'git push --help' for details.");
+    if(window.gitPop){if(r&&r.merge)window.gitPop('err','ERROR: PUSH REJECTED','You are in the middle of a merge.<br>Fix the conflict, then <code>git add</code> and <code>git commit</code> to finish it. Then push.');
+      else window.gitPop('err','ERROR: PUSH REJECTED','GitHub has work that you do not have yet.<br>Type <code>git pull</code> first, then push again.')}}
+  /* real Git refuses to start another merge or pull while one is unfinished */
+  function mergeBlocked(what){var r=R();if(!r||!r.merge)return false;
+    if(keys(r.conf).length)perr('error: '+what+" is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm <file>'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict.");
+    else perr('error: You have not concluded your merge (MERGE_HEAD exists).\nhint: Please, commit your changes before merging.\nfatal: Exiting because of unfinished merge.');
+    return true}
   /* the second half of git fetch / git pull, once GitHub's commits are known (pretend or real) */
   function syncPull(sub,allowU,res){var r=R();if(!r||!r.remote)return;
     if(res&&res.err){perr(res.err);return}
@@ -1988,6 +2006,7 @@ git log --oneline           short history          git push / git pull   sync wi
       var tt=r.br[tn]?C(r.br[tn]).files:{};applyTree(tt);r.head=tn;pl("Switched to branch '"+tn+"'");return}
     if(sub==='merge'){
       if(a[1]==='--abort'){if(!r.merge){perr('fatal: There is no merge to abort (MERGE_HEAD missing).');return}applyTree(headTree());r.conf={};r.merge=null;pl('Merge aborted.');return}
+      if(mergeBlocked('Merging'))return;
       var on=a[1];
       if(on&&on.indexOf('origin/')===0&&r.rbr&&r.rbr[on.slice(7)]){var rbx=r.rbr[on.slice(7)];if(rbx===headId()||anc(headId())[rbx]){pl('Already up to date.');return}mergeInto(rbx,on,"Merge remote-tracking branch '"+on+"'");return}
       if(!on||!(on in r.br)){perr('merge: '+on+' - not something we can merge');return}
@@ -2003,8 +2022,7 @@ git log --oneline           short history          git push / git pull   sync wi
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
       var br=r.head;if(!headId()){perr('error: src refspec '+br+' does not match any\nerror: failed to push some refs (make a commit first)');return}
       var rt=r.remote.br[br],lt=headId();
-      if(rt&&rt!==lt&&!anc(lt)[rt]){pl('To '+r.remote.url+'\n ! [rejected]        '+br+' -> '+br+' (fetch first)','r');perr("error: failed to push some refs to '"+r.remote.url+"'\nhint: Updates were rejected because the remote contains work that you do\nhint: not have locally. Run  git pull  first.");
-        window.gitPop&&window.gitPop('err','ERROR: PUSH REJECTED','GitHub has new work that you do not have yet.<br>Type <code>git pull</code> first, then push again.');return}
+      if(rt&&rt!==lt&&!anc(lt)[rt]){pushRejected(r.remote.url,br,r.rbr[br]===rt);return}
       pl('Enumerating objects: 5, done.\nCounting objects: 100% (5/5), done.\nWriting objects: 100% (3/3), 280 bytes | 280.00 KiB/s, done.');
       if(rt===lt){pl('Everything up-to-date');return}
       pl('To '+r.remote.url);
@@ -2015,6 +2033,7 @@ git log --oneline           short history          git push / git pull   sync wi
     if(sub==='fetch'||sub==='pull'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
       var allowU=a.indexOf('--allow-unrelated-histories')>=0;
+      if(sub==='pull'&&mergeBlocked('Pulling'))return;
       if(RL.on){realFetch(r.head,function(res){syncPull(sub,allowU,res)});return}
       syncPull(sub,allowU,null);return}
     perr("git: '"+sub+"' is not a git command here. Try: git help");
@@ -2110,13 +2129,16 @@ git log --oneline           short history          git push / git pull   sync wi
     var ln=0,owner={},laneName=[];
     bn.forEach(function(b){var x=r.br[b],mine=false;while(x&&!(x in owner)){if(!C(x).hidden){owner[x]=ln;mine=true}x=C(x).p[0]}if(mine){laneName[ln]=b;ln++}});
     ln=Math.max(ln,1);if(!laneName[0])laneName[0]=r.head;
-    var n=cs.length,G=86,W=470,step=n>1?Math.min(84,(W-G-50)/(n-1)):0,mc=Math.max(7,Math.floor(step/6.4)),pad=64,LH=96;
-    var X=function(i){return G+20+i*step},Y=function(l){return pad+l*LH},H=Y(ln-1)+58,pos={};
+    /* commits keep a readable spacing; a long history makes the graph wider and it scrolls sideways (newest end first) */
+    var n=cs.length,G=86,W0=470,step=n>1?84:0,W=Math.max(W0,G+44+(n-1)*step+50),mc=Math.max(7,Math.floor(step/7.6)),pad=64,LH=96;
+    var X=function(i){return G+44+i*step},Y=function(l){return pad+l*LH},H=Y(ln-1)+58,pos={};
     cs.forEach(function(c,i){var l=owner[c.id];if(l===undefined)l=0;pos[c.id]={x:X(i),y:Y(l),l:l}});
-    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Commit graph">';
+    var s=(W>W0?'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+(W/W0*100).toFixed(1)+'%;max-width:none" role="img" aria-label="Commit graph, scroll sideways to see older commits">':'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Commit graph">');
+    var lanes='<svg class="glanes" viewBox="0 0 '+(G-4)+' '+H+'" style="width:'+((G-4)/W0*100).toFixed(2)+'%" aria-hidden="true"><rect x="0" y="0" width="'+(G-4)+'" height="'+H+'" fill="#fff"/>';
     for(var l=0;l<ln;l++){var nm=laneName[l]||'';var w=Math.min(78,nm.length*7.4+16);
-      s+='<line x1="'+(G-6)+'" y1="'+Y(l)+'" x2="'+(W-8)+'" y2="'+Y(l)+'" stroke="#e1e9fb" stroke-width="2" stroke-dasharray="3 5"/>'
-       +'<rect x="6" y="'+(Y(l)-11)+'" width="'+w+'" height="22" rx="5" fill="'+LC[l%5]+'" stroke="#16327a" stroke-width="2"/><text x="'+(6+w/2)+'" y="'+(Y(l)+4)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Nunito,sans-serif">'+esc(nm.length>9?nm.slice(0,8)+'…':nm)+'</text>'}
+      s+='<line x1="'+(G-6)+'" y1="'+Y(l)+'" x2="'+(W-8)+'" y2="'+Y(l)+'" stroke="#e1e9fb" stroke-width="2" stroke-dasharray="3 5"/>';
+      lanes+='<rect x="6" y="'+(Y(l)-11)+'" width="'+w+'" height="22" rx="5" fill="'+LC[l%5]+'" stroke="#16327a" stroke-width="2"/><text x="'+(6+w/2)+'" y="'+(Y(l)+4)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Nunito,sans-serif">'+esc(nm.length>9?nm.slice(0,8)+'…':nm)+'</text>'}
+    lanes+='</svg>';
     cs.forEach(function(c){c.p.forEach(function(q){var a=pos[q],b=pos[c.id];if(!a)return;
       if(a.y===b.y)s+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+LC[b.l%5]+'" stroke-width="5" stroke-linecap="round"/>';
       else s+='<path d="M'+a.x+' '+a.y+' C '+(a.x+step*.55)+' '+a.y+' '+(b.x-step*.55)+' '+b.y+' '+b.x+' '+b.y+'" fill="none" stroke="'+LC[Math.max(a.l,b.l)%5]+'" stroke-width="5" stroke-linecap="round"/>'})});
@@ -2132,7 +2154,7 @@ git log --oneline           short history          git push / git pull   sync wi
         s+='<rect x="'+(p.x-w/2)+'" y="'+(y-14)+'" width="'+w+'" height="21" rx="5" fill="'+(head?'#e8336d':LC[p.l%5])+'" stroke="#16327a" stroke-width="2"/><text x="'+(p.x-w/2+8)+'" y="'+(y+1)+'" font-size="12" font-weight="800" fill="#fff" font-family="Nunito,sans-serif">'+esc(label)+'</text>'
          +(up?'<g transform="translate('+(p.x+w/2-20)+','+(y-9)+')">'+cloud+'</g>':'');k++});
     });
-    return s+'</svg><div class="glg">Pink tag = where you are now. Cloud = this commit is also on GitHub.</div>'}
+    return s+'</svg></div>'+lanes+'</div><div class="glg">'+(W>W0?n+' commits: scroll sideways to see older ones. ':'')+'Pink tag = where you are now. Cloud = this commit is also on GitHub.</div>'}
   /* missions */
   var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',merge:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 8c0 3 4 4 9.5 4"/></svg>',more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',nd:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
   function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
@@ -2477,7 +2499,7 @@ git log --oneline           short history          git push / git pull   sync wi
   function render(){
     fvDraw();
     var z=zones(),ids=['z1','z2','z3','z4'];
-    ids.forEach(function(id){var el=$(id),h=z[id];if(S.sig[id]!==h){el.innerHTML=h;if(S.sig[id]!==undefined){el.parentNode.classList.remove('flash');void el.parentNode.offsetWidth;el.parentNode.classList.add('flash')}S.sig[id]=h}});
+    ids.forEach(function(id){var el=$(id),h=z[id];if(S.sig[id]!==h){el.innerHTML=h;var gs=el.querySelector('.gscroll');if(gs)gs.scrollLeft=gs.scrollWidth;if(S.sig[id]!==undefined){el.parentNode.classList.remove('flash');void el.parentNode.offsetWidth;el.parentNode.classList.add('flash')}S.sig[id]=h}});
     si=prog();var n=si,cur=si<ST.length?si:-1;
     $('pgCount').textContent=n+' / '+ST.length+' missions';
     var mc=$('pgMission');
@@ -2506,7 +2528,10 @@ git log --oneline           short history          git push / git pull   sync wi
   $('fvB').addEventListener('click',showFile);
   longPress($('fvB'),function(t){var sd=t.closest&&t.closest('.vsside');return !!sd&&!sd.classList.contains('scmside')&&!(t.closest&&t.closest('input'))},vsMenu);
   $('fvB').addEventListener('keydown',function(e){if(e.target.closest&&e.target.closest('.vsside')&&(e.key==='F2'||e.key==='Delete')&&e.target.tagName!=='INPUT'){var row=e.target.closest('.vsfile[data-f],.vsdir');if(!row)return;var a=row.classList.contains('vsdir')?row.getAttribute('data-d'):vsAbs(row.getAttribute('data-f'));e.preventDefault();if(e.key==='F2')vsRename(a);else vsDelete(a)}});
-  $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
+  $('z1').addEventListener('click',showFile);
+  /* over the commit graph, a normal mouse wheel moves along the history sideways */
+  $('z3').addEventListener('wheel',function(e){var g=e.target.closest&&e.target.closest('.gscroll');if(!g||Math.abs(e.deltaX)>Math.abs(e.deltaY)||g.scrollWidth<=g.clientWidth)return;
+    var max=g.scrollWidth-g.clientWidth;if((e.deltaY<0&&g.scrollLeft<=0)||(e.deltaY>0&&g.scrollLeft>=max-1))return;e.preventDefault();g.scrollLeft+=e.deltaY},{passive:false});$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */
   var sGen=0;
   function stopScripts(){sGen++;busy=false;scripting=false;inp.disabled=false;inp.value='';sBusy=false;holdCap=false;sAuto=false;clearTimeout(sTimer);$('stNext').disabled=false}
@@ -2520,7 +2545,7 @@ git log --oneline           short history          git push / git pull   sync wi
     })();
     return true;
   }
-  function reset(){if(RL)RL.known={};fresh();out.innerHTML='';pl('Welcome to your Mini laptop! Type  help  to see what you can do.','y');setPrompt();S.sig={};render()}
+  function reset(){if(RL){RL.known={};RL.map={}}fresh();out.innerHTML='';pl('Welcome to your Mini laptop! Type  help  to see what you can do.','y');setPrompt();S.sig={};render()}
   inp.addEventListener('keydown',function(e){
     if(e.key==='Enter'){var v=inp.value;inp.value='';run(v)}
     else if(e.key==='ArrowUp'){if(S.hi>0){S.hi--;inp.value=S.hist[S.hi]||'';e.preventDefault()}}
@@ -2546,8 +2571,7 @@ git log --oneline           short history          git push / git pull   sync wi
       return go.then(function(){return gh('GET','/repos/'+RL.repo+'/branches')}).then(function(bs){
         var ex=(bs.s===200?bs.j:[]).map(function(b){return b.name}).filter(function(n){return n!==RL.def});
         return ex.reduce(function(pr,n){return pr.then(function(){return gh('DELETE','/repos/'+RL.repo+'/git/refs/heads/'+encodeURIComponent(n)).then(function(x){pl((x.s<300?'deleted branch ':'could not delete branch ')+n,x.s<300?'g':'r')})})},Promise.resolve())})
-        .then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(RL.def)).then(function(x){RL.known={};RL.fresh={};if(x.s===200)RL.fresh[RL.def]=x.j.object.sha})})
-        .then(function(){pl('Done. The repo is empty and ready for a fresh demo.','y')});
+        .then(function(){RL.known={};RL.map={};pl('Done. Every file is deleted, but GitHub keeps the old commits (that is how Git works).','y');pl('Starting again? Type  git pull  first to bring that history down, then add your files, commit and push.','y')});
     }).catch(function(){perr('Could not reach GitHub.')}).then(function(){busy=false;inp.disabled=false;inp.focus({preventScroll:true});refreshLive()});
   }
   $('pgReset').onclick=function(){if(pend)return;stopScripts();
@@ -2689,28 +2713,44 @@ git log --oneline           short history          git push / git pull   sync wi
   };
 
   /* ---------- REAL GitHub mode ---------- */
-  var RL={on:false,repo:'',tok:'',def:'main',view:'main',seen:{},timer:null,known:{},fresh:{},blobs:{}};
-  /* known[branch]: the real GitHub commit our pretend copy matches. fresh[branch]: GitHub's commit right after "Delete everything" (empty repo). */
+  var RL={on:false,repo:'',tok:'',def:'main',view:'main',seen:{},timer:null,known:{},map:{},blobs:{}};
+  /* known[branch]: the GitHub commit our copy of that branch matches. map: GitHub commit id -> our commit, for commits we already have. */
   var EMPTY_TREE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'; // Git's id for "no files at all"; GitHub answers 404 for it
   function realTree(sha){if(sha===EMPTY_TREE)return Promise.resolve({});return gh('GET','/repos/'+RL.repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read the files of one commit ('+t.s+')');
     var fl=t.j.tree.filter(function(x){return x.type==='blob'}).slice(0,200),files={};
     return seq(fl,function(f){if(RL.blobs[f.sha]!==undefined){files[f.path]=RL.blobs[f.sha];return}
       return gh('GET','/repos/'+RL.repo+'/git/blobs/'+f.sha).then(function(b){var txt;try{txt=decodeURIComponent(escape(atob(((b.j&&b.j.content)||'').replace(/\n/g,''))))}catch(e){txt='(binary file)\n'}RL.blobs[f.sha]=txt;files[f.path]=txt})}).then(function(){return files})})}
   /* git fetch / git pull in Real GitHub mode: download the commits GitHub has that we don't, then carry on as normal */
-  function realFetch(br,done){var r=R();pend=true;busy=true;inp.disabled=true;
+  /* run fn over items, a few at a time (much faster than one by one, still gentle on GitHub) */
+  function pool(items,n,fn){var i=0;function next(){if(i>=items.length)return Promise.resolve();var it=items[i++];return fn(it).then(next)}var w=[];for(var k=0;k<Math.min(n,items.length);k++)w.push(next());return Promise.all(w)}
+  /* git fetch / git pull in Real GitHub mode, like real Git: download every commit GitHub has that we do not have yet
+     (the whole history the first time), with its real parents, so merges stay merges */
+  function realFetch(br,done){var r=R();pend=true;busy=true;inp.disabled=true;RL.map=RL.map||{};
     pl('Fetching from github.com/'+RL.repo+' (this one is real)...','y');
     function fin(res){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}try{done(res||{})}catch(e){perr('error: '+e.message)}setPrompt();render()}
     gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
       if(x.s!==200)return {};
-      var head=x.j.object.sha;if(head===RL.known[br]||head===RL.fresh[br])return {};
-      return gh('GET','/repos/'+RL.repo+'/commits?sha='+encodeURIComponent(br)+'&per_page=30').then(function(cl){
+      var head=x.j.object.sha;if(RL.map[head]){r.remote.br[br]=RL.map[head];RL.known[br]=head;return {}}
+      var fresh=[],page=1;
+      function more(){return gh('GET','/repos/'+RL.repo+'/commits?sha='+encodeURIComponent(br)+'&per_page=100&page='+page).then(function(cl){
         if(cl.s!==200)throw new Error('GitHub said '+cl.s);
-        var list=[];for(var i=0;i<cl.j.length;i++){var c=cl.j[i];if(c.sha===RL.known[br]||c.sha===RL.fresh[br])break;list.push(c)}
-        if(!RL.known[br])list=list.slice(0,10); // first time we talk to this repo: its 10 latest commits are plenty
-        list.reverse();var parent=RL.known[br]&&r.remote.br[br]?r.remote.br[br]:null;
-        return seq(list,function(c){return realTree(c.commit.tree.sha).then(function(files){
-          var sc={id:rid(),msg:(c.commit.message||'').split('\n')[0],p:parent?[parent]:[],files:files,br:br,n:++S.n,who:(c.commit.author&&c.commit.author.name)||'GitHub',hidden:true};
-          r.cm[sc.id]=sc;r.list.push(sc);parent=sc.id})}).then(function(){if(list.length&&parent){r.remote.br[br]=parent;RL.known[br]=head}return {}})})
+        var hit=false;cl.j.forEach(function(c){if(RL.map[c.sha])hit=true;else fresh.push(c)});
+        if(hit||cl.j.length<100||page>=20)return;page++;return more()})}
+      return more().then(function(){
+        var bySha={};fresh.forEach(function(c){bySha[c.sha]=c});var trees={},got=0;
+        /* only what the branch really contains: walk back from GitHub's newest commit, stopping at commits we already have */
+        var need=[],seen={},stack=[head];while(stack.length){var q=stack.pop();if(seen[q]||RL.map[q]||!bySha[q])continue;seen[q]=1;need.push(bySha[q]);(bySha[q].parents||[]).forEach(function(pp){stack.push(pp.sha)})}
+        fresh=need;
+        pl('Receiving '+fresh.length+' commit'+(fresh.length===1?'':'s')+'...');
+        return pool(fresh,6,function(c){return realTree(c.commit.tree.sha).then(function(f){trees[c.sha]=f;got++})}).then(function(){
+          var made={};
+          function build(sha){if(RL.map[sha])return RL.map[sha];var c=bySha[sha];if(!c)return null;if(made[sha])return made[sha];
+            var ps=(c.parents||[]).map(function(q){return build(q.sha)}).filter(Boolean);
+            var sc={id:rid(),msg:(c.commit.message||'').split('\n')[0],p:ps,files:trees[sha],br:br,n:++S.n,who:(c.commit.author&&c.commit.author.name)||'GitHub',hidden:true};
+            r.cm[sc.id]=sc;r.list.push(sc);made[sha]=sc.id;RL.map[sha]=sc.id;return sc.id}
+          build(head);
+          if(RL.map[head]){r.remote.br[br]=RL.map[head];RL.known[br]=head}
+          pl('Receiving objects: 100% ('+got+'/'+fresh.length+'), done.');return {}})})
     }).then(fin,function(e){fin({err:'fatal: could not read from GitHub ('+((e&&e.message)||'network error')+')'})})}
   var rb=$('realBox'),rbody=$('realB');
   function gh(method,path,body){
@@ -2736,7 +2776,7 @@ git log --oneline           short history          git push / git pull   sync wi
     gh('GET','/repos/'+rp).then(function(x){
       if(x.s!==200){RL.tok='';setupForm('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
       if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
-      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.fresh={};RL.blobs={};
+      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
       pl('Connected to github.com/'+rp+' for real. Add it as origin and push!','y');
       pl('git remote add origin https://github.com/'+rp+'.git','c');
@@ -2776,7 +2816,7 @@ git log --oneline           short history          git push / git pull   sync wi
     var r=R(),list=reach(lt).filter(function(c){return !rt||!anc(rt)[c.id]}).reverse();
     pend=true;busy=true;inp.disabled=true;pl('Sending '+list.length+' commit'+(list.length===1?'':'s')+' to GitHub (this one is real)...','y');
     var ensure=gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
-      if(x.s===200&&x.j.object.sha!==RL.known[br]&&x.j.object.sha!==RL.fresh[br]){var er=new Error('rejected');er.rejected=true;throw er}});
+      if(x.s===200&&x.j.object.sha!==RL.known[br]){var er=new Error('rejected');er.rejected=true;throw er}});
     if(br!==RL.def)ensure=ensure.then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+br).then(function(x){if(x.s===200)return;
       return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+RL.def).then(function(d){if(d.s!==200)return;return gh('POST','/repos/'+RL.repo+'/git/refs',{ref:'refs/heads/'+br,sha:d.j.object.sha})})})});
     ensure.then(function(){return seq(list,function(c){return seq(treeDiff(c),function(ch){
@@ -2786,7 +2826,7 @@ git log --oneline           short history          git push / git pull   sync wi
         if(ch[0]==='del'){if(!sha)return;return gh('DELETE',path,{message:c.msg,sha:sha,branch:br}).then(chk)}
         return gh('PUT',path,{message:c.msg,content:b64(ch[2]),sha:sha,branch:br}).then(chk)});
       function chk(x){if(x.s>=300)throw new Error(x.s+' '+(x.j.message||'')+' [on '+x.m+' '+x.u.split('?')[0]+(x.need?'; needs: '+x.need:'')+']')}})})})
-    .then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200)RL.known[br]=x.j.object.sha})})
+    .then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=lt}})})
     .then(function(){
       pl('To https://github.com/'+RL.repo+'.git');pl(' * '+(rt?'updated':'[new branch]')+'      '+br+' -> '+br,'g');
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
@@ -2794,8 +2834,7 @@ git log --oneline           short history          git push / git pull   sync wi
       window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(RL.repo)+'.');
       refreshLive();
     }).catch(function(e){
-      if(e&&e.rejected){pl('To https://github.com/'+RL.repo+'.git\n ! [rejected]        '+br+' -> '+br+' (fetch first)','r');perr("error: failed to push some refs to 'https://github.com/"+RL.repo+".git'\nhint: Updates were rejected because GitHub has work that you do\nhint: not have on your laptop. Run  git pull  first, then push again.");
-        window.gitPop&&window.gitPop('err','ERROR: PUSH REJECTED','GitHub has new work that you do not have yet.<br>Type <code>git pull</code> first, then push again.');return}
+      if(e&&e.rejected){pushRejected('https://github.com/'+RL.repo+'.git',br,false);return}
       perr('error: GitHub refused: '+e.message);window.gitPop&&window.gitPop('err','ERROR: PUSH FAILED',esc(e.message)+'<br>Check that it is a classic token with the repo box ticked.');
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
