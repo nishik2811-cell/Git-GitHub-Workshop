@@ -360,7 +360,7 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .vsdb{background:#252526;color:#ccc;border:1px solid #454545;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.6);width:min(330px,88%);padding:14px 14px 12px;font-family:'Segoe UI','Nunito',sans-serif;font-size:12.5px}
 .vsdt{display:flex;gap:10px;align-items:flex-start}
 .vsdt i{flex:none;width:28px;height:28px;border-radius:50%;background:#cca700;color:#1e1e1e;font-style:normal;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center}
-.vsdt b{display:block;color:#fff;font-weight:600;font-size:13px;margin:3px 0 4px;word-break:break-word}
+.vsdt .vsdtt{display:block;color:#fff;font-weight:600;font-size:13px;margin:3px 0 4px;word-break:break-word}.vsdt p b{color:#fff;font-weight:600}
 .vsdt p{margin:0;color:#bbb;line-height:1.45}.vsdt code{background:#3c3c3c;color:#ce9178;padding:0 4px;border-radius:3px}
 .vsdbtn{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .notepad .vsdbtn button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#3a3d41;color:#fff;border:1px solid #4a4a4a;border-radius:2px;box-shadow:none;padding:4px 14px;transform:none}
@@ -399,3 +399,53 @@ html,body{overflow-x:clip}
 .notepad .vsstat svg{display:inline-block}
 @media(max-width:700px){.vsmain{grid-template-columns:30px 118px 1fr}.vsfile b{display:none}}
 @media(hover:none){.vsfile:not(.on) .vsdel{display:none}}
+/* VS Code merge editor */
+.notepad.merging{max-height:none}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) minmax(0,1.15fr);gap:0;height:100%;min-height:300px;background:#1e1e1e}
+.mp{display:flex;flex-direction:column;min-width:0;min-height:0;border:1px solid #2b2b2b}
+.mres{grid-column:1/3;border-top:3px solid #333}
+.mph{display:flex;align-items:center;gap:8px;background:#252526;color:#ccc;font-size:11.5px;padding:4px 10px;flex:none;white-space:nowrap;overflow:hidden}
+.mph b{color:#fff;font-weight:600}.mref{color:#9d9d9d;overflow:hidden;text-overflow:ellipsis}
+.mp:nth-child(1) .mref{color:#5aa9ff}.mp:nth-child(2) .mref{color:#4ec9b0}
+.mleft{margin-left:auto;color:#f48771}.mleft.ok{color:#89d185}
+.mpb{flex:1;overflow:auto;padding:4px 0;min-height:0}
+.notepad .fl.minc{background:rgba(64,166,255,.13)}.notepad .fl.minc.on{background:rgba(64,166,255,.32)}
+.notepad .fl.mcur{background:rgba(64,200,174,.13)}.notepad .fl.mcur.on{background:rgba(64,200,174,.32)}
+.mck{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#ccc;padding:3px 12px 2px 36px;cursor:pointer;user-select:none}
+.mck input{accent-color:#0078d4;width:13px;height:13px;margin:0;cursor:pointer}
+.mhole{margin:2px 12px 2px 36px;border:1px dashed #f48771;color:#f48771;font-size:11.5px;padding:3px 8px;border-radius:3px}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;padding:6px 10px;background:#1e1e1e;flex:none}
+.notepad .mfoot button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#3a3d41;color:#fff;border:1px solid #4a4a4a;border-radius:2px;box-shadow:none;padding:4px 12px;transform:none}
+.notepad .mfoot button.pri{background:#0e639c;border-color:#0e639c}.notepad .mfoot button:hover{filter:brightness(1.15)}
+.notepad.merging .vscrumb{display:none}
+@media(max-width:700px){.notepad.merging .vsside{display:none}.notepad.merging .vsmain{grid-template-columns:30px 1fr}.mgrid{grid-template-columns:1fr;grid-template-rows:auto auto auto}.mres{grid-column:1}}
+/* VS Code source control */
+.vsact i[data-view]{cursor:pointer}.vsact i[data-view]:hover svg{stroke:#ddd}
+.vsmain.scm{grid-template-columns:34px 172px 1fr}
+.scmside .vssh{padding-right:4px}.scmtools{display:flex;gap:2px}
+.scmbox{padding:2px 8px 8px}
+#scmMsg{width:100%;box-sizing:border-box;background:#3c3c3c;color:#ccc;border:1px solid #3c3c3c;font:11.5px 'Segoe UI','Nunito',sans-serif;padding:4px 6px;resize:none;outline:0;border-radius:2px}
+#scmMsg:focus{border-color:#0078d4}#scmMsg::placeholder{color:#8b8b8b}
+.notepad .scmbtn{display:block;width:100%;margin-top:6px;font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#0e639c;color:#fff;border:0;border-radius:2px;box-shadow:none;padding:4px 8px;transform:none}
+.notepad .scmbtn:hover{background:#1177bb}
+.scmside>.scmbtn{width:auto;margin:6px 10px}
+.scmtxt{color:#bbb;font-size:11.5px;line-height:1.45;padding:2px 10px;margin:4px 0}
+.scmh{display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:#ccc;padding:3px 8px 3px 6px;letter-spacing:.02em}
+.scmh span{flex:1}.scmh em{font-style:normal;background:#4d4d4d;border-radius:8px;padding:0 6px;font-size:10px;font-weight:400}
+.scmrow{padding-left:12px}
+.notepad .scma{background:none;border:0;box-shadow:none;color:#ccc;font-size:15px;line-height:1;padding:0 4px;margin:0;border-radius:3px;cursor:pointer;opacity:0;transform:none;font-family:'Segoe UI',sans-serif}
+.scmrow:hover .scma,.scmh:hover .scma,.scma:focus{opacity:1}.notepad .scma:hover{background:#4b4b4b}
+@media(hover:none){.notepad .scma{opacity:1}}
+.vsfile.gD{color:#c74e39}
+.vsbr{color:inherit;cursor:pointer;text-decoration:none;border-radius:2px;padding:0 3px;margin-left:-3px}.vsbr:hover{background:rgba(255,255,255,.15)}
+.vspick{align-items:flex-start;padding-top:6px;background:rgba(0,0,0,.25)}
+.vsqp{background:#252526;border:1px solid #454545;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.6);width:min(340px,92%);padding:6px;font-family:'Segoe UI','Nunito',sans-serif}
+.vsqt{color:#ccc;font-size:12px;padding:4px 6px 6px;border-bottom:1px solid #3c3c3c;margin-bottom:4px}
+.notepad .vsqi{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:0;box-shadow:none;color:#ccc;font-family:inherit;font-size:12.5px;font-weight:400;letter-spacing:0;padding:5px 8px;border-radius:3px;transform:none}
+.notepad .vsqi:hover,.notepad .vsqi:focus{background:#04395e;color:#fff;outline:0}
+.vsqi svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.vsqi small{margin-left:auto;color:#999;font-size:11px}
+.vsqe{color:#bbb;font-size:12px;padding:6px 8px}.vsqe code{color:#ce9178}
+@media(max-width:700px){.vsmain.scm{grid-template-columns:30px 150px 1fr}}
+.vsqin{width:100%;box-sizing:border-box;background:#3c3c3c;color:#fff;border:1px solid #0078d4;font:12.5px 'Segoe UI','Nunito',sans-serif;padding:5px 7px;outline:0;border-radius:2px}.vsqin.bad{border-color:#be1100}
+@media(hover:none) and (pointer:coarse){.vsqin,#scmMsg{font-size:16px}}

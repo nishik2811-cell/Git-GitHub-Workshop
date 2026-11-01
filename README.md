@@ -35,6 +35,8 @@ git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
   - Then use the terminal to `git add`, `git commit` and `git push` what you wrote.
   - The Explorer colours files like VS Code: green **U** for new, orange **M** for changed, red **!** for a conflict.
   - During a merge conflict it shows VS Code's conflict view: **Accept Current / Incoming / Both Changes**.
+  - **Resolve in Merge Editor** opens VS Code's 3-pane Merge Editor (Incoming, Current, Result) with **Complete Merge**.
+  - **Source Control panel** (branch icon on the left): Initialize Repository, stage with **+**, unstage with **−**, type a message and **✓ Commit**, and **Merge Branch...**. Click the branch name in the blue status bar to switch or create a branch. Every click shows the matching git command in the terminal, so you can do the whole flow in VS Code or in the terminal.
 - **Real GitHub mode (optional):** send your commands to an actual GitHub repo.
 
 ## Real GitHub mode

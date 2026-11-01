@@ -675,7 +675,7 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .vsdb{background:#252526;color:#ccc;border:1px solid #454545;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.6);width:min(330px,88%);padding:14px 14px 12px;font-family:'Segoe UI','Nunito',sans-serif;font-size:12.5px}
 .vsdt{display:flex;gap:10px;align-items:flex-start}
 .vsdt i{flex:none;width:28px;height:28px;border-radius:50%;background:#cca700;color:#1e1e1e;font-style:normal;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center}
-.vsdt b{display:block;color:#fff;font-weight:600;font-size:13px;margin:3px 0 4px;word-break:break-word}
+.vsdt .vsdtt{display:block;color:#fff;font-weight:600;font-size:13px;margin:3px 0 4px;word-break:break-word}.vsdt p b{color:#fff;font-weight:600}
 .vsdt p{margin:0;color:#bbb;line-height:1.45}.vsdt code{background:#3c3c3c;color:#ce9178;padding:0 4px;border-radius:3px}
 .vsdbtn{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .notepad .vsdbtn button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#3a3d41;color:#fff;border:1px solid #4a4a4a;border-radius:2px;box-shadow:none;padding:4px 14px;transform:none}
@@ -714,6 +714,56 @@ html,body{overflow-x:clip}
 .notepad .vsstat svg{display:inline-block}
 @media(max-width:700px){.vsmain{grid-template-columns:30px 118px 1fr}.vsfile b{display:none}}
 @media(hover:none){.vsfile:not(.on) .vsdel{display:none}}
+/* VS Code merge editor */
+.notepad.merging{max-height:none}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) minmax(0,1.15fr);gap:0;height:100%;min-height:300px;background:#1e1e1e}
+.mp{display:flex;flex-direction:column;min-width:0;min-height:0;border:1px solid #2b2b2b}
+.mres{grid-column:1/3;border-top:3px solid #333}
+.mph{display:flex;align-items:center;gap:8px;background:#252526;color:#ccc;font-size:11.5px;padding:4px 10px;flex:none;white-space:nowrap;overflow:hidden}
+.mph b{color:#fff;font-weight:600}.mref{color:#9d9d9d;overflow:hidden;text-overflow:ellipsis}
+.mp:nth-child(1) .mref{color:#5aa9ff}.mp:nth-child(2) .mref{color:#4ec9b0}
+.mleft{margin-left:auto;color:#f48771}.mleft.ok{color:#89d185}
+.mpb{flex:1;overflow:auto;padding:4px 0;min-height:0}
+.notepad .fl.minc{background:rgba(64,166,255,.13)}.notepad .fl.minc.on{background:rgba(64,166,255,.32)}
+.notepad .fl.mcur{background:rgba(64,200,174,.13)}.notepad .fl.mcur.on{background:rgba(64,200,174,.32)}
+.mck{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#ccc;padding:3px 12px 2px 36px;cursor:pointer;user-select:none}
+.mck input{accent-color:#0078d4;width:13px;height:13px;margin:0;cursor:pointer}
+.mhole{margin:2px 12px 2px 36px;border:1px dashed #f48771;color:#f48771;font-size:11.5px;padding:3px 8px;border-radius:3px}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;padding:6px 10px;background:#1e1e1e;flex:none}
+.notepad .mfoot button{font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#3a3d41;color:#fff;border:1px solid #4a4a4a;border-radius:2px;box-shadow:none;padding:4px 12px;transform:none}
+.notepad .mfoot button.pri{background:#0e639c;border-color:#0e639c}.notepad .mfoot button:hover{filter:brightness(1.15)}
+.notepad.merging .vscrumb{display:none}
+@media(max-width:700px){.notepad.merging .vsside{display:none}.notepad.merging .vsmain{grid-template-columns:30px 1fr}.mgrid{grid-template-columns:1fr;grid-template-rows:auto auto auto}.mres{grid-column:1}}
+/* VS Code source control */
+.vsact i[data-view]{cursor:pointer}.vsact i[data-view]:hover svg{stroke:#ddd}
+.vsmain.scm{grid-template-columns:34px 172px 1fr}
+.scmside .vssh{padding-right:4px}.scmtools{display:flex;gap:2px}
+.scmbox{padding:2px 8px 8px}
+#scmMsg{width:100%;box-sizing:border-box;background:#3c3c3c;color:#ccc;border:1px solid #3c3c3c;font:11.5px 'Segoe UI','Nunito',sans-serif;padding:4px 6px;resize:none;outline:0;border-radius:2px}
+#scmMsg:focus{border-color:#0078d4}#scmMsg::placeholder{color:#8b8b8b}
+.notepad .scmbtn{display:block;width:100%;margin-top:6px;font-family:'Segoe UI','Nunito',sans-serif;font-size:12px;font-weight:400;letter-spacing:0;background:#0e639c;color:#fff;border:0;border-radius:2px;box-shadow:none;padding:4px 8px;transform:none}
+.notepad .scmbtn:hover{background:#1177bb}
+.scmside>.scmbtn{width:auto;margin:6px 10px}
+.scmtxt{color:#bbb;font-size:11.5px;line-height:1.45;padding:2px 10px;margin:4px 0}
+.scmh{display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:#ccc;padding:3px 8px 3px 6px;letter-spacing:.02em}
+.scmh span{flex:1}.scmh em{font-style:normal;background:#4d4d4d;border-radius:8px;padding:0 6px;font-size:10px;font-weight:400}
+.scmrow{padding-left:12px}
+.notepad .scma{background:none;border:0;box-shadow:none;color:#ccc;font-size:15px;line-height:1;padding:0 4px;margin:0;border-radius:3px;cursor:pointer;opacity:0;transform:none;font-family:'Segoe UI',sans-serif}
+.scmrow:hover .scma,.scmh:hover .scma,.scma:focus{opacity:1}.notepad .scma:hover{background:#4b4b4b}
+@media(hover:none){.notepad .scma{opacity:1}}
+.vsfile.gD{color:#c74e39}
+.vsbr{color:inherit;cursor:pointer;text-decoration:none;border-radius:2px;padding:0 3px;margin-left:-3px}.vsbr:hover{background:rgba(255,255,255,.15)}
+.vspick{align-items:flex-start;padding-top:6px;background:rgba(0,0,0,.25)}
+.vsqp{background:#252526;border:1px solid #454545;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.6);width:min(340px,92%);padding:6px;font-family:'Segoe UI','Nunito',sans-serif}
+.vsqt{color:#ccc;font-size:12px;padding:4px 6px 6px;border-bottom:1px solid #3c3c3c;margin-bottom:4px}
+.notepad .vsqi{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:0;box-shadow:none;color:#ccc;font-family:inherit;font-size:12.5px;font-weight:400;letter-spacing:0;padding:5px 8px;border-radius:3px;transform:none}
+.notepad .vsqi:hover,.notepad .vsqi:focus{background:#04395e;color:#fff;outline:0}
+.vsqi svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.vsqi small{margin-left:auto;color:#999;font-size:11px}
+.vsqe{color:#bbb;font-size:12px;padding:6px 8px}.vsqe code{color:#ce9178}
+@media(max-width:700px){.vsmain.scm{grid-template-columns:30px 150px 1fr}}
+.vsqin{width:100%;box-sizing:border-box;background:#3c3c3c;color:#fff;border:1px solid #0078d4;font:12.5px 'Segoe UI','Nunito',sans-serif;padding:5px 7px;outline:0;border-radius:2px}.vsqin.bad{border-color:#be1100}
+@media(hover:none) and (pointer:coarse){.vsqin,#scmMsg{font-size:16px}}
 .sp-heart{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA40lEQVR42u2awQ2DMAxFY9QZyh5MwIUxukPPTMEOjMGFdZgCrj00LTjGEeH5iETCk5+sTxR5Nn0ovapwg7oF5EPxzpqwn5ywDp1E15iiy6tVb1aPs/k6e9RF11JKfoQBE7XOrnqc/05ddAUSSCCzh4FjE/XdfX8+TG4An98ZCwnoWqquos6ZjooSBtBVU5kUpZNAAgnkpaerWB9AeQYAdAUSSCAvkV2zT9qjExVd+dVyVjdFUXRFVwd1rRRFV3RVqBviR/om11foJLoaqptyNYVOAumjq9vkpJNAAgkkkEACmVYb0sM/hPjzsaUAAAAASUVORK5CYII=);aspect-ratio:19/19}
 .sp-heartb{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAA5UlEQVR42u2asQ2DMBBFfREz0LJDxBapswIDUGYIBmAFarZgiUxCWoSAgH02xrwrkbD1dE9fJ9uSPz8m9XqYG9QtIDOLf0aH/cTDOnQSXdcULV+V9WZD36qvs0dddE2lZGMYUFHLdw19+zd10RVIIIE8PV0PJWr9Lha/N903qqRF11RnV7GdM2NTlHTlZCASRekkkEACeemTgWhPCfYMAOgKJJBAXiJdT0/ao4mKrugaWF0XRdEVXcNc1Kooiq7o6vgMZqrxTEt1RdEVXXU1FjoJpAl3TeD74R+dBBJIIIEEEkj/9QMxBzyVsEic8QAAAABJRU5ErkJggg==);aspect-ratio:19/19}
 .sp-sparkle{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAtCAYAAAA6GuKaAAAAZ0lEQVR42u3WsQ2AIBAF0MM5dEWdRVfUPbDTysQCiJj3Kiruh/xciAAAaCfVuDTvc74GTFvxGUOPLy200H8LnWpsjMdhhTaJeny2Hm9qEON6n48lStdGPWwP9fA1VQ+hhe42NABASydKlxYmpxxlGwAAAABJRU5ErkJggg==);aspect-ratio:15/15}
@@ -1819,35 +1869,121 @@ git log --oneline           short history          git push / git pull   sync wi
     });
     return s+'</svg><div class="glg">Pink tag = where you are now. Cloud = this commit is also on GitHub.</div>'}
   /* missions */
-  var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
+  var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',merge:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 8c0 3 4 4 9.5 4"/></svg>',more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
   function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
   function flang(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase();return {md:'Markdown',html:'HTML',css:'CSS',js:'JavaScript',json:'JSON',py:'Python',gitignore:'Ignore'}[e]||'Plain Text'}
   function vsShell(folder,list,cur,editor,branch,state){
     var dirty=list.filter(function(x){return x[1]}).length;
     var side='<div class="vsside"><div class="vssh"><span>EXPLORER</span><button class="vsnew" data-new="1" title="New File" aria-label="New File">'+VI.nf+'</button></div><div class="vsfold">&#8964; '+esc(folder.toUpperCase())+'</div>'+(S.vsNaming?'<div class="vsname"><input id="vsName" placeholder="name.txt" spellcheck="false" autocomplete="off"></div>':'')+(list.length?list.map(function(x){return '<div class="vsfile'+(x[0]===cur?' on':'')+(x[1]?' g'+x[1]:'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+'<span>'+esc(x[0])+'</span>'+(x[1]?'<b>'+(x[1]==='C'?'!':x[1])+'</b>':'')+'<button class="vsdel" data-del="1" title="Delete" aria-label="Delete '+esc(x[0])+'">'+VI.del+'</button></div>'}).join(''):'<div class="vsnone">empty folder</div>')+'</div>';
-    var act='<div class="vsact"><i class="on" title="Explorer">'+VI.files+'</i><i title="Search">'+VI.search+'</i><i title="Source Control">'+VI.scm+(dirty?'<em>'+dirty+'</em>':'')+'</i><i title="Extensions">'+VI.ext+'</i></div>';
+    var scm=S.vsView==='scm';if(scm)side=scmSide();
+    var act='<div class="vsact"><i'+(scm?'':' class="on"')+' title="Explorer" data-view="files">'+VI.files+'</i><i title="Search">'+VI.search+'</i><i'+(scm?' class="on"':'')+' title="Source Control" data-view="scm">'+VI.scm+(dirty?'<em>'+dirty+'</em>':'')+'</i><i title="Extensions">'+VI.ext+'</i></div>';
     var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(x[0])+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+ficon(cur)+esc(cur)+'</div>':'';
-    var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?VI.br+esc(branch)+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
-    return '<div class="vsmain">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
+    var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?'<a class="vsbr" data-brpick="1" title="Switch branch">'+VI.br+esc(branch)+'</a>'+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
+    return '<div class="vsmain'+(scm?' scm':'')+'">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
   function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
     return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
   function vsPop(title,text,btns){
     var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);
     var d=document.createElement('div');d.className='vsdlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
-    d.innerHTML='<div class="vsdb"><div class="vsdt"><i>!</i><div><b>'+title+'</b><p>'+text+'</p></div></div><div class="vsdbtn"></div></div>';
+    d.innerHTML='<div class="vsdb"><div class="vsdt"><i>!</i><div><strong class="vsdtt">'+title+'</strong><p>'+text+'</p></div></div><div class="vsdbtn"></div></div>';
     var bb=d.querySelector('.vsdbtn'),prev=document.activeElement;
     function close(){d.remove();if(prev&&prev.focus&&document.contains(prev))prev.focus({preventScroll:true})}
     (btns||[{t:'OK'}]).forEach(function(b,i){var x=document.createElement('button');x.textContent=b.t;if(i===0)x.className='pri';x.onclick=function(){close();if(b.fn)b.fn()};bb.appendChild(x)});
     d.addEventListener('keydown',function(e){if(e.key==='Escape'){e.stopPropagation();close()}});
     d.addEventListener('pointerdown',function(e){e.stopPropagation()});
     np.appendChild(d);bb.firstChild.focus({preventScroll:true})}
+  function gp(f){return S.cwd===R().root?f:R().root+'/'+f}
+  function vsRun(cmds){if(busy){vsPop('Busy','Wait for the terminal to finish first.');return}cmds=[].concat(cmds);
+    (function next(){if(pend){setTimeout(next,250);return}if(!cmds.length)return;var c=cmds.shift();if(typeof c==='function'){c();next();return}
+      pr('<span class="c">[VS Code runs]</span>');run(c);setTimeout(next,60)})()}
+  function scmSide(){
+    var h='<div class="vsside scmside"><div class="vssh"><span>SOURCE CONTROL</span>'+(S.repo?'<span class="scmtools"><button class="vsnew" data-scm="merge" title="Merge Branch...">'+VI.merge+'</button><button class="vsnew" data-scm="more" title="More Actions...">'+VI.more+'</button></span>':'')+'</div>';
+    if(!S.repo)return h+'<p class="scmtxt">The folder currently open doesn\'t have a Git repository. You can initialize a repository which will enable source control features powered by Git.</p><button class="scmbtn" data-scm="init">Initialize Repository</button></div>';
+    var st=status(),r=R(),mg=r.merge,msg=S.scmMsg!=null?S.scmMsg:'';
+    h+='<div class="scmbox"><textarea id="scmMsg" rows="2" spellcheck="false" placeholder="'+(mg?esc(mg.msg):'Message (Ctrl+Enter to commit on \''+esc(r.head)+'\')')+'">'+esc(msg)+'</textarea><button class="scmbtn" data-scm="commit">&#10003; '+(mg?'Continue':'Commit')+'</button></div>';
+    function row(f,letter,cls,acts){return '<div class="vsfile scmrow g'+cls+'" data-f="'+esc(f)+'">'+ficon(f)+'<span>'+esc(base(f))+'</span>'+acts+'<b>'+letter+'</b></div>'}
+    function sec(t,n,act,body){return n?'<div class="scmsec"><div class="scmh"><span>&#8964; '+t+'</span>'+act+'<em>'+n+'</em></div>'+body+'</div>':''}
+    var ch=st.unstaged.map(function(x){return [x[0],x[1]==='deleted'?'D':'M']}).concat(st.untracked.map(function(f){return [f,'U']}));
+    h+=sec('Merge Changes',st.conf.length,'',st.conf.map(function(f){return row(f,'!','C','<button class="scma" data-scm="stage" title="Stage Changes">+</button>')}).join(''));
+    h+=sec('Staged Changes',st.staged.length,'<button class="scma" data-scm="unstageall" title="Unstage All Changes">&minus;</button>',st.staged.map(function(x){return row(x[0],x[1]==='deleted'?'D':x[1]==='new file'?'A':'M',x[1]==='deleted'?'D':'A','<button class="scma" data-scm="unstage" title="Unstage Changes">&minus;</button>')}).join(''));
+    h+=sec('Changes',ch.length,'<button class="scma" data-scm="stageall" title="Stage All Changes">+</button>',ch.map(function(x){return row(x[0],x[1],x[1],'<button class="scma" data-scm="stage" title="Stage Changes">+</button>')}).join(''));
+    if(!st.conf.length&&!st.staged.length&&!ch.length)h+='<p class="scmtxt">'+(mg?'All conflicts staged. Press Continue to finish the merge.':'No changes. Edit a file to see it here.')+'</p>';
+    return h+'</div>'}
+  function vsPickList(title,items){
+    var old=np.querySelector('.vsdlg');if(old)old.remove();
+    var d=document.createElement('div');d.className='vsdlg vspick';
+    d.innerHTML='<div class="vsqp"><div class="vsqt">'+title+'</div>'+items.map(function(it,i){return '<button class="vsqi" data-i="'+i+'">'+it.t+(it.d?'<small>'+it.d+'</small>':'')+'</button>'}).join('')+(items.length?'':'<div class="vsqe">No other branches. Make one in the terminal: <code>git switch -c feature</code></div>')+'</div>';
+    function close(){d.remove()}
+    d.addEventListener('click',function(e){var b=e.target.closest('.vsqi');if(b){close();items[+b.getAttribute('data-i')].fn()}else if(e.target===d)close()});
+    d.addEventListener('keydown',function(e){if(e.key==='Escape'){e.stopPropagation();close()}});
+    d.addEventListener('pointerdown',function(e){e.stopPropagation()});
+    np.appendChild(d);var f=d.querySelector('.vsqi');if(f)f.focus({preventScroll:true})}
+  function scmAct(a,f){var r=R();
+    if(a==='init'){vsRun('git init');return}
+    if(!r)return;
+    if(a==='stage'){var t=work()[f];if(r.conf[f]&&/^<<<<<<<|^>>>>>>>/m.test(t||'')){vsPop('Are you sure you want to stage '+esc(f)+' with merge conflicts?','The file still has conflict markers (&lt;&lt;&lt;&lt;&lt;&lt;&lt;). Fix it first with the Accept links or the Merge Editor.',[{t:'Stage anyway',fn:function(){vsRun('git add '+gp(f))}},{t:'Cancel'}]);return}vsRun('git add '+gp(f));return}
+    if(a==='unstage'){vsRun('git restore --staged '+gp(f));return}
+    if(a==='stageall'){vsRun('git add .');return}
+    if(a==='unstageall'){vsRun(status().staged.map(function(x){return 'git restore --staged '+gp(x[0])}));return}
+    if(a==='merge'||a==='more'){var bs=keys(r.br).filter(function(b){return b!==r.head&&r.br[b]});
+      if(a==='more'){vsPickList('More Actions',[{t:'Merge Branch...',fn:function(){scmAct('merge')}},{t:'Switch Branch...',fn:brPick},{t:'Create Branch...',fn:function(){vsAsk('Type a new branch name and press Enter (no spaces)','feature',function(n){vsRun('git switch -c '+n)})}}].concat(r.merge?[{t:'Abort Merge',fn:function(){vsRun('git merge --abort')}}]:[]));return}
+      vsPickList('Select a branch to merge into \''+esc(r.head)+'\'',bs.map(function(b){return {t:VI.br+' '+esc(b),fn:function(){vsRun('git merge '+b)}}}));return}
+    if(a==='commit'){var st=status(),msg=(S.scmMsg||'').trim().replace(/"/g,"'");
+      if(st.conf.length){vsPop('Resolve the merge conflicts first','Fix '+st.conf.map(esc).join(', ')+', then press <b>+</b> to stage it. After that you can commit.');return}
+      if(r.merge){S.scmMsg='';vsRun(msg?'git commit -m "'+msg+'"':'git commit --no-edit');return}
+      if(!msg){vsPop('Type a commit message','Write a short note in the Message box about what you changed, for example <code>Add pasta recipe</code>.');return}
+      if(!st.staged.length){if(!st.unstaged.length&&!st.untracked.length){vsPop('Nothing to commit','There are no changes. Edit or create a file first.');return}
+        vsPop('There are no staged changes to commit.','Would you like to stage all your changes and commit them directly?',[{t:'Yes',fn:function(){S.scmMsg='';vsRun(['git add .','git commit -m "'+msg+'"'])}},{t:'Cancel'}]);return}
+      S.scmMsg='';vsRun('git commit -m "'+msg+'"')}}
+  function vsAsk(title,ph,fn){var old=np.querySelector('.vsdlg');if(old)old.remove();
+    var d=document.createElement('div');d.className='vsdlg vspick';d.innerHTML='<div class="vsqp"><input class="vsqin" placeholder="'+ph+'" spellcheck="false" autocomplete="off"><div class="vsqt" style="border:0;margin:0;padding:6px 6px 2px">'+title+'</div></div>';
+    var inp2=d.querySelector('input');function close(){d.remove()}
+    inp2.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Escape')close();if(e.key==='Enter'){var v=inp2.value.trim();if(!/^[A-Za-z0-9._\/-]+$/.test(v)){inp2.classList.add('bad');return}close();fn(v)}});
+    d.addEventListener('click',function(e){if(e.target===d)close()});d.addEventListener('pointerdown',function(e){e.stopPropagation()});
+    np.appendChild(d);inp2.focus({preventScroll:true})}
+  function brPick(){var r=R();if(!r)return;vsPickList('Select a branch to switch to',[{t:'+ Create new branch...',fn:function(){vsAsk('Type a new branch name and press Enter (no spaces)','feature',function(n){vsRun('git switch -c '+n)})}}].concat(keys(r.br).map(function(b){return {t:VI.br+' '+esc(b),d:b===r.head?'current':'',fn:function(){if(b!==r.head)vsRun('git switch '+b)}}})))}
+  function mParse(t){var segs=[],L=t.replace(/\n$/,'').split('\n'),i=0,base=[];
+    while(i<L.length){var l=L[i];
+      if(/^<<<<<<< ?/.test(l)){if(base.length){segs.push({b:base});base=[]}var c={cur:[],inc:[],cn:l.replace(/^<<<<<<< ?/,'')||'HEAD',inn:''},m=1;i++;
+        while(i<L.length&&!/^>>>>>>> ?/.test(L[i])){if(/^=======/.test(L[i]))m=2;else(m===1?c.cur:c.inc).push(L[i]);i++}
+        c.inn=(L[i]||'').replace(/^>>>>>>> ?/,'');segs.push(c)}
+      else base.push(l);i++}
+    if(base.length)segs.push({b:base});return segs}
+  function mResult(segs,pick,keepMarkers){var o=[],k=0;segs.forEach(function(s){if(s.b){o=o.concat(s.b);return}var p=pick[k++]||[];
+      if(!p.length){if(keepMarkers)o=o.concat(['<<<<<<< '+s.cn],s.cur,['======='],s.inc,['>>>>>>> '+s.inn]);return}
+      p.forEach(function(w){o=o.concat(w==='cur'?s.cur:s.inc)})});return o.join('\n')+'\n'}
+  function mPane(segs,side,pick){var o='',n=0,k=0;segs.forEach(function(s){
+      if(s.b){s.b.forEach(function(l){n++;o+='<div class="fl"><span class="ln2">'+n+'</span><span>'+(esc(l)||'&nbsp;')+'</span></div>'});return}
+      var on=(pick[k]||[]).indexOf(side)>=0;
+      o+='<label class="mck"><input type="checkbox" data-mc="'+k+'" data-side="'+side+'"'+(on?' checked':'')+'> Accept '+(side==='inc'?'Incoming':'Current')+'</label>';
+      s[side].forEach(function(l){n++;o+='<div class="fl m'+side+(on?' on':'')+'"><span class="ln2">'+n+'</span><span>'+(esc(l)||'&nbsp;')+'</span></div>'});k++});return o}
+  function mEditor(t){var segs=mParse(t),pick=S.vsMerge.pick,cs=segs.filter(function(s){return !s.b}),left=cs.filter(function(s,i){return !(pick[i]||[]).length}).length,res='',n=0,k=0;
+    segs.forEach(function(s){if(s.b){s.b.forEach(function(l){n++;res+='<div class="fl"><span class="ln2">'+n+'</span><span>'+(esc(l)||'&nbsp;')+'</span></div>'});return}
+      var p=pick[k++]||[];if(!p.length){res+='<div class="mhole">Conflict: tick a box above</div>';return}
+      p.forEach(function(w){s[w].forEach(function(l){n++;res+='<div class="fl m'+w+' on"><span class="ln2">'+n+'</span><span>'+(esc(l)||'&nbsp;')+'</span></div>'})})});
+    var inn=cs[0]?cs[0].inn:'incoming',cn=R().head;
+    return '<div class="mgrid"><div class="mp"><div class="mph"><b>Incoming</b> <span class="mref">&#9679; '+esc(inn)+'</span></div><div class="mpb">'+mPane(segs,'inc',pick)+'</div></div>'
+      +'<div class="mp"><div class="mph"><b>Current</b> <span class="mref">&#9679; '+esc(cn)+'</span></div><div class="mpb">'+mPane(segs,'cur',pick)+'</div></div>'
+      +'<div class="mp mres"><div class="mph"><b>Result</b> <span class="mref">'+esc(S.fvf)+'</span><span class="mleft'+(left?'':' ok')+'">'+(left?left+' Conflict'+(left>1?'s':'')+' Remaining':'No Remaining Conflicts')+'</span></div><div class="mpb">'+res+'</div>'
+      +'<div class="mfoot"><button data-mclose="1">Close</button><button class="pri" data-mdone="1">Complete Merge</button></div></div></div>'}
+  function mOpen(){S.vsMerge={f:S.fvf,pick:{}};var r=np.getBoundingClientRect(),w=Math.min(760,innerWidth-16),h=Math.min(500,innerHeight-60);
+    np.dataset.prev=JSON.stringify({w:np.style.width,h:np.style.height,l:np.style.left,t:np.style.top,r:np.style.right,b:np.style.bottom});
+    np.style.width=w+'px';np.style.height=h+'px';np.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';np.style.top=Math.max(8,innerHeight-h-50)+'px';np.style.right='auto';np.style.bottom='auto';np.classList.add('merging');fvDraw()}
+  function mClose(){S.vsMerge=null;np.classList.remove('merging');try{var p=JSON.parse(np.dataset.prev||'{}');np.style.width=p.w||'';np.style.height=p.h||'';np.style.left=p.l||'';np.style.top=p.t||'';np.style.right=p.r||'';np.style.bottom=p.b||''}catch(z){}fvDraw()}
+  function mDone(force){var f=S.vsMerge.f,abs=R().root+'/'+f,segs=mParse(work()[f]||''),pick=S.vsMerge.pick,left=segs.filter(function(s){return !s.b}).filter(function(s,i){return !(pick[i]||[]).length}).length;
+    if(left&&!force){vsPop('Do you want to complete the merge of '+esc(f)+'?','The file still has '+left+' unhandled conflict'+(left>1?'s':'')+'.',[{t:'Complete with Conflicts',fn:function(){mDone(true)}},{t:'Cancel'}]);return}
+    S.files[abs]=mResult(segs,pick,true);mClose();
+    pr('<span class="y">[VS Code] Merge completed for '+esc(f)+'. File saved. Next: git add '+esc(f)+', then git commit.</span>');render()}
   function vsPath(){return S.repo?R().root+'/'+S.fvf:S.fvf}
   var vsSel=null;
-  function vsKeep(){var ta=$('vsTa'),nm=$('vsName');if(nm){nm.focus();return}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);ta.scrollTop=vsSel.t;ta.scrollLeft=vsSel.l}vsSel=null}
+  function vsKeep(){var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);ta.scrollTop=vsSel.t;ta.scrollLeft=vsSel.l}vsSel=null}
   $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
     S.files[vsPath()]=v===''||/\n$/.test(v)?v:v+'\n';
     vsSel={f:S.fvf,s:ta.selectionStart,e:ta.selectionEnd,t:ta.scrollTop,l:ta.scrollLeft};render()});
+  $('fvB').addEventListener('input',function(e){if(e.target.id==='scmMsg')S.scmMsg=e.target.value});
+  $('fvB').addEventListener('focusin',function(e){S.scmFocus=e.target.id==='scmMsg'});
   $('fvB').addEventListener('keydown',function(e){
+    if(e.target.id==='scmMsg'&&e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();scmAct('commit');return}
     if(e.target.id==='vsTa'&&e.key==='Tab'){e.preventDefault();var ta=e.target,s=ta.selectionStart;ta.setRangeText('  ',s,ta.selectionEnd,'end');ta.dispatchEvent(new Event('input',{bubbles:true}))}
     if(e.target.id!=='vsName')return;
     if(e.key==='Escape'){S.vsNaming=0;fvDraw();return}
@@ -1871,6 +2007,7 @@ git log --oneline           short history          git push / git pull   sync wi
     if(!ks.length){np.classList.remove('bad');T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,R().head);return}
     if(!S.fvf||!(S.fvf in w))S.fvf=ks[0];
     conf=!!R().conf[S.fvf];
+    if(S.vsMerge&&(!conf||S.vsMerge.f!==S.fvf||!/^<<<<<<</m.test(w[S.fvf]||''))){S.vsMerge=null;np.classList.remove('merging')}
     var hT=headTree();
     function st(f){return R().conf[f]?'C':!(f in R().index)?'U':w[f]!==R().index[f]?'M':R().index[f]!==hT[f]?(f in hT?'M':'A'):''}
     var state=conf?'merge conflict':({U:'new file, not tracked',M:(w[S.fvf]!==R().index[S.fvf]?'changed, not staged':'staged'),A:'staged',C:'merge conflict'})[st(S.fvf)]||'saved';
@@ -1879,7 +2016,7 @@ git log --oneline           short history          git push / git pull   sync wi
     if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
     if(!conf)S.conflShown=0;
     var nc=conf?((w[S.fvf].match(/^<<<<<<</gm)||[]).length):0;
-    B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();
+    B.innerHTML=vsShell(folder,ks.map(function(f){return [f,st(f)]}),S.fvf,(S.vsMerge&&S.vsMerge.f===S.fvf&&nc?mEditor(w[S.fvf]):nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc&&!(S.vsMerge&&S.vsMerge.f===S.fvf)?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();
   }
   function mdPrev(t){var h='<div class="mdp"><div class="mdh">How GitHub shows it</div>';t.replace(/\n$/,'').split('\n').forEach(function(l){
       if(/^## /.test(l))h+='<h4>'+esc(l.replace(/^#+ /,''))+'</h4>';else if(/^# /.test(l))h+='<h3>'+esc(l.slice(2))+'</h3>';else if(l.trim())h+='<p>'+esc(l)+'</p>'});return h+'</div>'}
@@ -1932,8 +2069,14 @@ git log --oneline           short history          git push / git pull   sync wi
     if(window.sDraw)sDraw();
   }
   function showFile(e){if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming=1;fvDraw();return}
+    var vv=e.target.closest&&e.target.closest('[data-view]');if(vv){S.vsView=vv.getAttribute('data-view');fvDraw();return}
+    if(e.target.closest&&e.target.closest('[data-brpick]')){brPick();return}
+    var sc=e.target.closest&&e.target.closest('[data-scm]');if(sc){var rw=sc.closest('[data-f]');scmAct(sc.getAttribute('data-scm'),rw&&rw.getAttribute('data-f'));return}
     var dl=e.target.closest&&e.target.closest('[data-del]');if(dl){var f=dl.closest('[data-f]').getAttribute('data-f'),abs=S.repo?R().root+'/'+f:f,nm=base(abs);
-      vsPop('Are you sure you want to delete \''+esc(nm)+'\'?','You can restore this file from the Trash.'+(S.repo?'<br>Git will then show it as <b>deleted</b>. Run <code>git add '+esc(nm)+'</code> and <code>git commit</code> to save that.':''),[{t:'Move to Trash',fn:function(){delete S.files[abs];if(S.fvf===f)S.fvf=null;pr('<span class="c">[VS Code] Deleted '+esc(nm)+'.'+(S.repo?' Next: git add '+esc(nm)+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}]);return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){vsPop('Merge Editor','In real VS Code this opens a 3-pane view: <b>Incoming</b> and <b>Current</b> on top, the <b>Result</b> below. You tick the changes you want, then click <b>Complete Merge</b>.<br><br>Here, use the <b>Accept</b> links above the conflict. Then run <code>git add</code> and <code>git commit</code>.');return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
+      vsPop('Are you sure you want to delete \''+esc(nm)+'\'?','You can restore this file from the Trash.'+(S.repo?'<br>Git will then show it as <b>deleted</b>. Run <code>git add '+esc(nm)+'</code> and <code>git commit</code> to save that.':''),[{t:'Move to Trash',fn:function(){delete S.files[abs];if(S.fvf===f)S.fvf=null;pr('<span class="c">[VS Code] Deleted '+esc(nm)+'.'+(S.repo?' Next: git add '+esc(nm)+', then git commit.':'')+'</span>');render()}},{t:'Cancel'}]);return}var ac=e.target.closest&&e.target.closest('[data-act]');if(ac){vsAccept(ac.getAttribute('data-act'));return}if(e.target.closest&&e.target.closest('[data-me]')){mOpen();return}
+    if(e.target.closest&&e.target.closest('[data-mclose]')){mClose();return}
+    if(e.target.closest&&e.target.closest('[data-mdone]')){mDone();return}
+    var mc=e.target.closest&&e.target.closest('[data-mc]');if(mc){var k=mc.getAttribute('data-mc'),sd=mc.getAttribute('data-side'),a=S.vsMerge.pick[k]||(S.vsMerge.pick[k]=[]),ix=a.indexOf(sd);if(mc.checked&&ix<0)a.push(sd);if(!mc.checked&&ix>=0)a.splice(ix,1);fvDraw();return}var el=e.target.closest&&e.target.closest('.fchip[data-f],.vstab[data-f],.vsfile[data-f]');if(!el)return;S.fvf=el.getAttribute('data-f');fvDraw();np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
   $('fvB').addEventListener('click',showFile);
   $('z1').addEventListener('click',showFile);$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */
