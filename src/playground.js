@@ -5,7 +5,7 @@
   np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div><span class="npr" id="npR" title="Drag to resize" aria-hidden="true"></span>';
   document.body.appendChild(np);
   (function(){var h=$('nph'),ox,oy,drag=false;
-    h.addEventListener('pointerdown',function(e){if(e.target.id==='npMin')return;drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;h.setPointerCapture(e.pointerId)});
+    h.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('button'))return;drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;h.setPointerCapture(e.pointerId)});
     h.addEventListener('pointermove',function(e){if(!drag)return;np.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';np.style.top=Math.max(0,Math.min(innerHeight-60,e.clientY-oy))+'px';np.style.right='auto';np.style.bottom='auto'});
     h.addEventListener('pointerup',function(){drag=false});
     np.addEventListener('pointerdown',function(){var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.width=r.width+'px';np.style.right='auto';np.style.bottom='auto'});
@@ -82,10 +82,10 @@
   /* ---------- three way merge ---------- */
   /* git push refused, worded exactly like real Git: "fetch first" when GitHub has commits you never downloaded,
      "non-fast-forward" when you downloaded them but have not merged them in yet (for example, mid-conflict) */
-  function pushRejected(url,br,fetched){var r=R();
+  function pushRejected(url,br,fetched){var r=R();S.pushRej=true;
     pl('To '+url+'\n ! [rejected]        '+br+' -> '+br+(fetched?' (non-fast-forward)':' (fetch first)'),'r');
     perr("error: failed to push some refs to '"+url+"'\n"+(fetched?"hint: Updates were rejected because the tip of your current branch is behind\nhint: its remote counterpart. If you want to integrate the remote changes,\nhint: use 'git pull' before pushing again.":"hint: Updates were rejected because the remote contains work that you do not\nhint: have locally. This is usually caused by another repository pushing to\nhint: the same ref. If you want to integrate the remote changes, use\nhint: 'git pull' before pushing again.")+"\nhint: See the 'Note about fast-forwards' in 'git push --help' for details.");
-    if(window.gitPop){if(r&&r.merge)window.gitPop('err','ERROR: PUSH REJECTED','You are in the middle of a merge.<br>Fix the conflict, then <code>git add</code> and <code>git commit</code> to finish it. Then push.');
+    if(window.gitPop&&!scripting){if(r&&r.merge)window.gitPop('err','ERROR: PUSH REJECTED','You are in the middle of a merge.<br>Fix the conflict, then <code>git add</code> and <code>git commit</code> to finish it. Then push.');
       else window.gitPop('err','ERROR: PUSH REJECTED','GitHub has work that you do not have yet.<br>Type <code>git pull</code> first, then push again.')}}
   /* real Git refuses to start another merge or pull while one is unfinished */
   function mergeBlocked(what){var r=R();if(!r||!r.merge)return false;
@@ -808,7 +808,7 @@
     if(!S.repo||!S.cfg.name){window.gitPop&&window.gitPop('warn','MAKE A REPO FIRST','A README lives inside a repo. Run <code>git init</code> and set your name and email first, or press Start the story.');return}
     var cm=['echo "# My Project" > README.md','echo "What it is: a small demo project." >> README.md','echo "How to use it: open the files and read." >> README.md','git add README.md','git commit -m "Add README"'];
     if(S.repo.remote)cm.push('git push');scriptRun(cm,900,null,true)};
-  function ghUrl(){return 'https://github.com/'+(RL.on?RL.repo:'you/recipes')+'.git'}
+  function ghUrl(){return 'https://github.com/'+(RL.on?RL.repo:'you/'+(['recipes','notes','shop'][cs]||'recipes'))+'.git'}
   /* ---------- guided story ---------- */
   var si=0;
   var ST1=[
@@ -914,16 +914,28 @@
     $('stNext').disabled=true;
     var ch=CH[S.choice||'both'];
     var cmds=st.cmds.map(function(c){return c.replace('@URL@',ghUrl()).replace('@FIX@','echo "'+ch[0]+'" > pasta.txt').replace('@CH@',ch[1])});
-    var g=sGen;
-    sTimer=setTimeout(function(){
-      if(g!==sGen)return;
-      var ok=scriptRun(cmds,1100,function(){
+    var g=sGen;S.pushRej=false;
+    function finish(){
         sBusy=false;$('stNext').disabled=false;render();
         var adv=si>k;
         if(si>=ST.length){sAuto=false;holdCap=false;sDraw();return}
+        /* the step ran but its goal is still not met (e.g. a file was renamed by hand): say so instead of looping */
+        if(!adv&&si<=k&&!st.choose&&!(R()&&R().merge)){sAuto=false;holdCap=true;
+          $('stSay').innerHTML='<span class="stn stwarn">STUCK AT STEP '+(si+1)+'</span> This step needs: <b>'+TT[si]+'</b>. Something on your Mini laptop is different from what the story expects (for example, a file with another name). Press <b>Restart story</b> to start again cleanly, or fix it by hand in the terminal.';return}
         if(sAuto&&adv&&!st.stop)sTimer=setTimeout(sStep,3600);
-        else if(sAuto){sAuto=false;sDraw();if(st.stop)$('stSay').innerHTML+=' <b>Press Next step to continue.</b>'}
-      },true);
+        else if(sAuto){sAuto=false;sDraw();if(st.stop)$('stSay').innerHTML+=' <b>Press Next step to continue.</b>'}}
+    /* Real GitHub mode, like real Git: a push is refused when the demo repo already has commits from before
+       (even after "Delete everything", which keeps the history). Bring them down first, then push again. */
+    function afterRun(){if(g!==sGen)return;
+      if(RL.on&&S.pushRej&&R()&&!R().merge){S.pushRej=false;
+        $('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> GitHub refused: your demo repo already has commits from before (<b>Delete everything</b> removes files but keeps the history). Real Git makes you bring them down first with <b>git pull --allow-unrelated-histories</b>, then push again.';
+        scriptRun(['git pull --allow-unrelated-histories','git push -u origin '+R().head],1300,function(){if(g!==sGen)return;
+          if(R()&&R().merge){sAuto=false;$('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> The old files on GitHub clash with this story (a merge conflict). Fix the file in VS Code, then <b>git add</b>, <b>git commit</b> and <b>git push</b>. Or press <b>Delete everything in this repo</b> and <b>Restart story</b>.'}
+          finish()},true);return}
+      finish()}
+    sTimer=setTimeout(function(){
+      if(g!==sGen)return;
+      var ok=scriptRun(cmds,1100,afterRun,true);
       if(!ok){sBusy=false;holdCap=false;$('stNext').disabled=false;sDraw()}
     },900);
   }

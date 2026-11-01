@@ -116,16 +116,24 @@
   /* ---------- floating windows (browser, Bin) ---------- */
   var wins={};
   function zOrder(w){var all=[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).filter(Boolean);
-    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);all.forEach(function(x,i){x.style.zIndex=51+i});tkSync()}
+    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);
+    var npe=$('notepad');if(vsPinned&&npe&&w!==npe){all.splice(all.indexOf(npe),1);all.push(npe)} // pinned VS Code always stays on top
+    all.forEach(function(x,i){x.style.zIndex=51+i});active=w;tkSync()}
+  var active=null,vsPinned=store('vspin')==='1';
   /* which windows are on screen, which one is in front, and what a click on its taskbar button or desktop icon does */
   function isVis(el){if(!el)return false;if(el.id==='notepad')return el.classList.contains('show')&&!el.classList.contains('docked');return !el.hidden&&!el.classList.contains('docked')}
-  function topWin(){var t=null,tz=-1;[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).forEach(function(el){if(!isVis(el))return;var z=+el.style.zIndex||55;if(z>=tz){tz=z;t=el}});return t}
+  function topWin(){if(active&&isVis(active))return active;var t=null,tz=-1;[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).forEach(function(el){if(!isVis(el))return;var z=+el.style.zIndex||55;if(z>=tz){tz=z;t=el}});return t}
   function tkSync(){var t=topWin();Object.keys(wins).forEach(function(k){wins[k].tk.classList.toggle('on',wins[k].el===t)});var tv=$('tkVS');if(tv)tv.classList.toggle('on',!!t&&t.id==='notepad')}
   function activate(el,open){if(!el)return;var isNp=el.id==='notepad',id=el.id;
     if(!isVis(el)){if(isNp){ML.showVS();zOrder(el)}else{winOpen(id);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit();if(id==='memeWin')memeInit()}return}
     if(open||topWin()!==el){zOrder(el);return}
     if(isNp)window.vsDock(true);else winDock(id,true)}
   var np=$('notepad');if(np){np.addEventListener('pointerdown',function(){zOrder(np)},true);
+    /* pin VS Code on top of the other windows */
+    var pinB=document.createElement('button');pinB.type='button';pinB.id='npPin';pinB.innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1.5h6l-1 4 2.5 2.5h-9L6 5.5z" fill="currentColor"/><path d="M8 8v6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    function pinSync(){pinB.classList.toggle('on',vsPinned);pinB.setAttribute('aria-pressed',vsPinned?'true':'false');pinB.title=vsPinned?'Unpin (stop keeping VS Code on top)':'Pin on top (keep VS Code above other windows)';pinB.setAttribute('aria-label',pinB.title)}
+    pinB.onclick=function(e){e.stopPropagation();vsPinned=!vsPinned;store('vspin',vsPinned?'1':'0');pinSync();zOrder(np)};
+    var mn=$('npMin');if(mn)mn.parentNode.insertBefore(pinB,mn);pinSync();
     var tkv=$('tkVS');if(tkv)tkv.onclick=function(){activate(np)};
     var npWas=false;new MutationObserver(function(){var vis=isVis(np);if(vis&&!npWas)zOrder(np);else tkSync();npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
   function makeWin(id,title,icon,tk,w,h,o){o=o||{};var el=document.createElement('div');el.className='dwin';el.id=id;el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label',title);
@@ -171,7 +179,19 @@
   function appCols(){if(desk.hidden||!desk.clientHeight)return 1;var L=layout(items()),m=0;items().forEach(function(it){if(it.app&&L[it.k])m=Math.max(m,L[it.k].col)});return m+1}
   WS.place=function(){var c=cell(),n=appCols();if(innerWidth<=700){WS.el.style.setProperty('--wsl',Math.min(c.x0+n*c.w+4,Math.round(innerWidth*0.45))+'px');return}var l=Math.min(c.x0+n*c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
   var WSBASE=980;
-  function wsZoom(){var w=wsBody.clientWidth,base=innerWidth<=700?innerWidth:WSBASE;wsIn.style.zoom=w&&w<base*0.97?String(Math.round(w/base*1000)/1000):''}
+  function wsZoom(){var w=wsBody.clientWidth;if(!w)return;var base=innerWidth<=700?innerWidth:WSBASE,nz=w&&w<base*0.97?String(Math.round(w/base*1000)/1000):'';if(nz!==wsIn.style.zoom)wsIn.style.zoom=nz}
+  /* keep your reading position when the window is resized, made full screen or rescaled:
+     remember which bit of the lesson sits in the middle of the window, and put it back there afterwards */
+  var bookmark=null,bmT=0;
+  function wsRec(){var wr=wsBody.getBoundingClientRect();if(!wr.height||WS.el.hidden||WS.el.classList.contains('docked'))return;var z=parseFloat(wsIn.style.zoom)||1;
+    if(wsBody.scrollTop<2){bookmark=null;return}
+    var found=null;[0.4,0.55,0.25,0.7].some(function(f){var hit=document.elementFromPoint(wr.left+wr.width/2,wr.top+wr.height*f);
+      if(!hit||!wsIn.contains(hit)||(hit.closest&&hit.closest('.loadwrap,.wnav,.wbtns')))return false; // sticky bars never move: useless as a bookmark
+      found={el:hit,f:f,d:(wr.top+wr.height*f-hit.getBoundingClientRect().top)/z};return true});
+    if(found)bookmark=found}
+  function wsRestore(){if(!bookmark||!wsIn.contains(bookmark.el)||WS.el.hidden||WS.el.classList.contains('docked'))return;var wr=wsBody.getBoundingClientRect(),z=parseFloat(wsIn.style.zoom)||1;if(!wr.height)return;
+    var diff=bookmark.el.getBoundingClientRect().top+bookmark.d*z-(wr.top+wr.height*bookmark.f);if(Math.abs(diff)>1)wsBody.scrollTo({top:wsBody.scrollTop+diff,behavior:'instant'})}
+  wsBody.addEventListener('scroll',function(){clearTimeout(bmT);bmT=setTimeout(wsRec,120)},{passive:true});
   function wsLw(){var lw=wsIn.querySelector('.loadwrap');wsIn.style.setProperty('--lwh',(lw?lw.offsetHeight:0)+'px')}
   /* the little flowers, hearts and stars behind the lessons: the page made them while it was still hidden
      (so only a few), so fill the whole height of the lessons once the window is open, and again if it grows a lot */
@@ -198,7 +218,7 @@
       if(!free(x,y,sz)||near(cx,cy))continue;grid[Math.floor(cx/cs)+','+Math.floor(cy/cs)]=[cx,cy];
       var e=document.createElement('i');e.className='sp '+q[0]+(Math.random()<0.5?' bob':' bob2');
       e.style.left=(x/W*100)+'%';e.style.top=y+'px';e.style.height=sz+'px';e.style.animationDelay=(-Math.random()*4).toFixed(2)+'s';bg.appendChild(e);k++}}
-  function wsFit(){wsZoom();wsLw();clearTimeout(decoT);decoT=setTimeout(decoFill,250)}
+  function wsFit(){wsZoom();wsLw();wsRestore();clearTimeout(decoT);decoT=setTimeout(decoFill,250)}
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
   addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
 

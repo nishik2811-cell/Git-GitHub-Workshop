@@ -112,6 +112,7 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .dwh button.dmax{font-size:15px}
 #wsWin .dwb.wsb{position:relative;scroll-behavior:smooth;background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px;background-attachment:local}
 #wsIn{position:relative;min-height:100%}
+#wsWin .dwb.wsb{overflow-anchor:none}
 #wsIn p.note{margin-left:auto;margin-right:auto}
 #wsWin .dwb.wsb{overflow-x:hidden}
 /* the step-by-step guides: their sticky bars now sit inside the window (no taskbar gap, below the loading bar) */
@@ -138,6 +139,14 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .brcard small{display:block;color:var(--ink2);font-size:12.5px}
 .brmsg{min-height:20px;font-size:13.5px;color:var(--ink2)}
 .brmsg a{color:var(--blue);font-weight:700}
+
+.stn.stwarn{background:#b3366a!important;color:#fff}
+
+/* VS Code: pin on top */
+.nph #npPin{display:flex;align-items:center;justify-content:center;padding:2px 7px;margin-left:auto;color:#ccc}
+.nph #npPin svg{width:14px;height:14px;display:block;transform:rotate(45deg);transition:transform .15s}
+.nph #npPin.on{background:#0e639c;border-color:#0e639c;color:#fff}
+.nph #npPin.on svg{transform:none}
 
 /* commit graph: long histories scroll sideways */
 .gscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
