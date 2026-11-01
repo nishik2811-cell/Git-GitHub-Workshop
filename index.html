@@ -1952,6 +1952,15 @@ git log --oneline           short history          git push / git pull   sync wi
     else if(e.key==='ArrowDown'){if(S.hi<S.hist.length){S.hi++;inp.value=S.hist[S.hi]||'';e.preventDefault()}}
     else if(e.key==='l'&&e.ctrlKey){out.innerHTML='';e.preventDefault()}
   });
+  inp.addEventListener('paste',function(e){
+    var t=(e.clipboardData||window.clipboardData).getData('text');if(!/[\r\n]/.test(t))return;
+    e.preventDefault();if(busy)return;
+    var lines=(inp.value+t).split(/\r?\n/).filter(function(l){return l.trim()});inp.value='';
+    busy=true;scripting=true;inp.disabled=true;
+    (function next(){if(pend){setTimeout(next,300);return}
+      if(!lines.length){busy=false;scripting=false;inp.disabled=false;inp.focus({preventScroll:true});return}
+      run(lines.shift());setTimeout(next,120)})();
+  });
   $('pgTerm').addEventListener('click',function(e){if(!window.getSelection().toString())inp.focus({preventScroll:true})});
   function wipeReal(){
     busy=true;inp.disabled=true;reset();pl('Deleting every file in github.com/'+RL.repo+' ...','y');
