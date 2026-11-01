@@ -31,6 +31,7 @@ git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
 - **17 free practice missions** with a "Type it for me" button when you get stuck.
 - **VS Code window:** a small floating editor that stays with you as you scroll. Drag it, resize it from the corner, or press `_` to tuck it away.
   - Click the **New File** icon next to EXPLORER, name the file, and type your code straight into it.
+  - Delete a file with the trash icon next to its name. Git then shows it as deleted, ready to `git add` and commit.
   - Then use the terminal to `git add`, `git commit` and `git push` what you wrote.
   - The Explorer colours files like VS Code: green **U** for new, orange **M** for changed, red **!** for a conflict.
   - During a merge conflict it shows VS Code's conflict view: **Accept Current / Incoming / Both Changes**.
