@@ -34,6 +34,16 @@ if os.path.exists('docs/setup-guide.pdf'):
     i=h.rindex('</body>')
     h=h[:i]+'<script type="text/plain" id="guidePdf">\n'+b64+'\n</script>\n'+h[i:]
 
+# the memes for the hehehe folder on the desktop, packed in as base64
+h=re.sub(r'<script type="text/plain" class="memePack" data-name="[^"]*">.*?</script>\n?','',h,flags=re.S)
+if os.path.isdir('memes'):
+    for name in sorted(os.listdir('memes')):
+        if not name.lower().endswith(('.jpg','.jpeg')):continue
+        b64=base64.b64encode(open(os.path.join('memes',name),'rb').read()).decode()
+        b64='\n'.join(b64[k:k+120] for k in range(0,len(b64),120))
+        i=h.rindex('</body>')
+        h=h[:i]+'<script type="text/plain" class="memePack" data-name="'+name+'">\n'+b64+'\n</script>\n'+h[i:]
+
 # tiny head script: hide the lessons until the start screen is ready
 h=re.sub(r'<script id="preboot">.*?</script>','',h,flags=re.S)
 i=h.index('</head>')

@@ -51,6 +51,7 @@ git clone https://github.com/nishik2811-cell/Git-GitHub-Workshop.git
 - **Bin:** things deleted on the desktop or in VS Code land here. **Restore** puts them back (a deleted repo comes back with its history), **Empty Bin** removes them for good. `rm` in the terminal deletes for good, just like real Git Bash.
 - **Browser:** the address bar is locked to this repo. **Search** opens it on GitHub in a new tab.
 - **Setup-Guide.pdf:** the full setup guide (install Git, Git Bash and VS Code on Windows or Linux, connect to GitHub, a cheat sheet and troubleshooting). It opens in its own window with **_**, **□** (full screen) and **x** on its title bar, plus **Open in new tab** and **Download** buttons. On phones, which cannot show a PDF inside a page, use those buttons. The file lives in `docs/setup-guide.pdf` and is also packed into `index.html`, so the single file still has it offline.
+- **hehehe folder:** Git and GitHub memes for a laugh. Open it to see them as thumbnails, click one to view it big, and flip through with the arrows (or the arrow keys). The images live in `memes/` and are also packed into `index.html`.
 - **Notepad:** draw with the mouse, a pen or your finger. Pen and eraser, six colours, three sizes, Undo, Clear, and **Save** to download your drawing as a picture.
 - **Desktop app icons and taskbar buttons:** double-click an app's icon to open it. Once it is open, one click on its icon (or its taskbar button) brings it to the front, and clicking again when it is already in front minimises it. The thin strip at the far right of the taskbar minimises everything (show desktop).
 - **Power button:** in the Start menu. It goes back to the start screen, and START picks up where you left off. Reloading the page always shows the start screen.
@@ -76,19 +77,9 @@ It's a single static file, so any static host works.
 
 Don't see your changes? Press **Ctrl + Shift + R** to skip the browser cache.
 
-## Rebuilding from source
+## Making changes
 
-`src/` has the generator (Python + Pillow) plus the CSS and JS. You only need this to change the content.
+- **Lesson text and layout:** edit `index.html` directly.
+- **The Mini laptop** (terminal, VS Code window, desktop, apps): edit `src/playground.js`, `src/desktop.js` or `src/desktop.css`, then run `python3 src/sync.py`. It copies them into `index.html`, together with `docs/setup-guide.pdf` and the images in `memes/`.
 
-```bash
-cd src
-pip install pillow
-python3 pixart.py && python3 gen4.py && python3 build4.py
-cp git_github_scrapbook_blue.html ../index.html
-```
-
-`build4.py` embeds fonts from `src/fontpkg/node_modules/@fontsource/` (Jersey 10, Nunito, Fira Code), which isn't committed. Install them first:
-
-```bash
-cd src && mkdir -p fontpkg && cd fontpkg && npm install @fontsource/jersey-10 @fontsource/nunito @fontsource/fira-code
-```
+The other files in `src/` (`gen4.py`, `build4.py`, `pixart.py` and friends) built the very first version of the page and are out of date. Don't run them: they would overwrite `index.html` and lose the desktop.

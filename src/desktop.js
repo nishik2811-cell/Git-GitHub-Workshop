@@ -58,6 +58,7 @@
   var tkBR=tkBtn('tkBR','Browser',I.br);tkBR.hidden=true;tbar.insertBefore(tkBR,tray);
   var tkDraw=tkBtn('tkDraw','Notepad',I.pad);tkDraw.hidden=true;tbar.insertBefore(tkDraw,tray);
   var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
+  var tkMeme=tkBtn('tkMeme','hehehe',I.folder);tkMeme.hidden=true;tbar.insertBefore(tkMeme,tray);
   var tkBin=tkBtn('tkBin','Bin',I.bin);tkBin.hidden=true;tbar.insertBefore(tkBin,tray);
 
   html.classList.add('deskon');
@@ -118,7 +119,7 @@
   function topWin(){var t=null,tz=-1;[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).forEach(function(el){if(!isVis(el))return;var z=+el.style.zIndex||55;if(z>=tz){tz=z;t=el}});return t}
   function tkSync(){var t=topWin();Object.keys(wins).forEach(function(k){wins[k].tk.classList.toggle('on',wins[k].el===t)});var tv=$('tkVS');if(tv)tv.classList.toggle('on',!!t&&t.id==='notepad')}
   function activate(el,open){if(!el)return;var isNp=el.id==='notepad',id=el.id;
-    if(!isVis(el)){if(isNp){ML.showVS();zOrder(el)}else{winOpen(id);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit()}return}
+    if(!isVis(el)){if(isNp){ML.showVS();zOrder(el)}else{winOpen(id);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit();if(id==='memeWin')memeInit()}return}
     if(open||topWin()!==el){zOrder(el);return}
     if(isNp)window.vsDock(true);else winDock(id,true)}
   var np=$('notepad');if(np){np.addEventListener('pointerdown',function(){zOrder(np)},true);
@@ -238,6 +239,31 @@
   // clicks inside the PDF do not reach the page, so bring the window forward when the PDF gets focus
   addEventListener('blur',function(){setTimeout(function(){var f=GW.el.querySelector('iframe');if(f&&document.activeElement===f&&topWin()!==GW.el)zOrder(GW.el)},0)});
 
+
+  /* the hehehe folder: memes packed into the page by src/sync.py from the memes/ folder */
+  var MEMES=[['google-drive-crimes.jpg','"Where do you save your code?" "Google Drive." The driver turns round, horrified.'],
+    ['final_final_FINAL_v3.jpg','Expanding brain: git, then folders v1.0 to v2.2, then project-final-for-real, then projectttttt and aaaaaaaa.'],
+    ['git-out-alive.jpg','In case of fire: 1. git commit, 2. git push, 3. git out!'],
+    ['star-forks.jpg','A fork held up in front of the GitHub logo: May the fork be with you.'],
+    ['bathroom-tile-commit-streak.jpg','Your GitHub contribution graph with a few green squares, versus a whole wall of green tiles.']];
+  var MW=makeWin('memeWin','hehehe',I.folder,tkMeme,660,480,{max:true}),memeList=null,memeAt=-1;
+  MW.body.classList.add('mmb');
+  function escA(t){return esc(t).replace(/"/g,'&quot;')}
+  function memeInit(){if(memeList)return;memeList=[];var packs={};document.querySelectorAll('script.memePack').forEach(function(sc){packs[sc.getAttribute('data-name')]=sc});
+    var names=MEMES.map(function(m){return m[0]}).filter(function(n){return packs[n]}).concat(Object.keys(packs).filter(function(n){return !MEMES.some(function(m){return m[0]===n})}));
+    names.forEach(function(n){try{var b=atob(packs[n].textContent.replace(/\s+/g,'')),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
+      var alt=(MEMES.filter(function(m){return m[0]===n})[0]||[n,n])[1];memeList.push({n:n,alt:alt,url:URL.createObjectURL(new Blob([a],{type:'image/jpeg'}))})}catch(e){}});
+    memeGrid()}
+  function memeGrid(){memeAt=-1;
+    if(!memeList.length){MW.body.innerHTML='<div class="mmempty">This folder is empty.</div>';return}
+    MW.body.innerHTML='<div class="mmpath">&#128193; ~/Desktop/hehehe <small>'+memeList.length+' items</small></div><div class="mmgrid">'+memeList.map(function(m,i){return '<button type="button" class="mmt" data-i="'+i+'" title="'+esc(m.n)+'"><span class="mmimg"><img src="'+m.url+'" alt="'+escA(m.alt)+'"></span><span class="mmn">'+esc(m.n)+'</span></button>'}).join('')+'</div>'}
+  function memeShow(i){memeAt=(i+memeList.length)%memeList.length;var m=memeList[memeAt];
+    MW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-mm="back">&#9664; Back to folder</button><span>'+esc(m.n)+' <small>('+(memeAt+1)+' of '+memeList.length+')</small></span><button type="button" class="mmbtn" data-mm="prev" aria-label="Previous meme">&larr;</button><button type="button" class="mmbtn" data-mm="next" aria-label="Next meme">&rarr;</button></div><div class="mmview"><img src="'+m.url+'" alt="'+escA(m.alt)+'"></div>';
+    var f=MW.body.querySelector('[data-mm="next"]');if(f)f.focus({preventScroll:true})}
+  MW.body.addEventListener('click',function(e){var t=e.target.closest('.mmt');if(t){memeShow(+t.getAttribute('data-i'));return}
+    var b=e.target.closest('[data-mm]');if(!b)return;var a=b.getAttribute('data-mm');if(a==='back')memeGrid();else memeShow(memeAt+(a==='next'?1:-1))});
+  MW.el.addEventListener('keydown',function(e){if(memeAt<0)return;if(e.key==='ArrowRight'){e.preventDefault();memeShow(memeAt+1)}else if(e.key==='ArrowLeft'){e.preventDefault();memeShow(memeAt-1)}else if(e.key==='Backspace'){e.preventDefault();memeGrid()}});
+
   /* Bin window */
   var BW=makeWin('binWin','Bin',I.bin,tkBin,460,330);
   function binDraw(){var b=S().bin||[],h='<div class="bintop"><span>'+(b.length?b.length+' item'+(b.length>1?'s':'')+' in the Bin':'The Bin is empty')+'</span><button type="button" data-bin="all"'+(b.length?'':' disabled')+'>Restore all</button><button type="button" class="red" data-bin="empty"'+(b.length?'':' disabled')+'>Empty Bin</button></div>';
@@ -259,7 +285,7 @@
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:memes',n:'hehehe',ic:I.folder,app:'memes',dir:true},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repo&&s.repo.root===d)})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){mine.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
@@ -269,7 +295,7 @@
        (the setup guide counts as a .pdf file); by date created keeps the apps first, then your things oldest first */
     if(sortBy==='name')return o.concat(mine).sort(nm);
     if(sortBy==='date'){mine.sort(function(a,b){return born[a.k]-born[b.k]});return o.concat(mine)}
-    var grp=function(x){return x.app&&x.app!=='guide'?0:x.dir?1:2},ord=function(x){return x.app?['ws','vs','br','draw','bin'].indexOf(x.app):0};
+    var grp=function(x){return x.app&&x.app!=='guide'&&x.app!=='memes'?0:x.dir?1:2},ord=function(x){return x.app?['ws','vs','br','draw','bin'].indexOf(x.app):0};
     return o.concat(mine).sort(function(a,b){return grp(a)!==grp(b)?grp(a)-grp(b):grp(a)===0?ord(a)-ord(b):ext(a)!==ext(b)?(ext(a)<ext(b)?-1:1):nm(a,b)})}
   var SORTS={name:'name',type:'type',date:'date created'},sortBy=SORTS[store('sort')]?store('sort'):'type',born={},bornN=0;
   function arrange(k){sortBy=k;store('sort',k);pos={};lastSig='';draw(true);say('Arranged the icons by '+SORTS[k]+'.')}
@@ -298,7 +324,7 @@
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
-    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin'}[it.app]].el,open);return}
+    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin'}[it.app]].el,open);return}
     openVS(it.k)}
 
   /* rename right on the icon */
@@ -351,7 +377,9 @@
     if(b){var it=itemOf(b.getAttribute('data-k'));if(it){itemMenu(it,e.clientX,e.clientY);return}}sel=null;markSel();deskMenu(e.clientX,e.clientY)});
 
   /* click, double-click, drag */
-  var drag=null,lastTap={k:null,t:0},lastPtr='mouse';
+  var drag=null,lastTap={k:null,t:0},lastPtr='mouse',ghostUntil=0;
+  /* on touch screens a window can open right under your finger; the same tap's click must not press a button in it */
+  document.addEventListener('click',function(e){if(Date.now()<ghostUntil&&!(e.target.closest&&e.target.closest('#desk'))){e.preventDefault();e.stopPropagation();ghostUntil=0}},true);
   desk.addEventListener('pointerdown',function(e){lastPtr=e.pointerType},true);
   desk.addEventListener('pointerdown',function(e){if(e.button!==0&&e.pointerType==='mouse')return;var b=e.target.closest('.dico');if(renaming&&(!b||b.getAttribute('data-k')!==renaming))return;
     if(!b){sel=null;markSel();return}
@@ -367,8 +395,8 @@
     if(me.app)return null;if(it.app==='bin'||it.app==='vs'||(it.dir&&!(me.dir&&under(it.k,me.k))))return t;return null}
   function endDrag(e){if(!drag)return;var d=drag;drag=null;d.b.classList.remove('drag');
     if(!d.moved){if(e.type==='pointercancel'||(desk._lp&&Date.now()-desk._lp<900))return;var now=Date.now(),it=itemOf(d.k);
-      if(appOpen(it)){lastTap={k:null,t:0};activate(appEl(it));return}
-      if(d.type!=='mouse'){if(lastTap.k===d.k&&now-lastTap.t<700){lastTap={k:null,t:0};openItem(it)}else lastTap={k:d.k,t:now}}
+      if(appOpen(it)){lastTap={k:null,t:0};if(d.type!=='mouse')ghostUntil=Date.now()+600;activate(appEl(it));return}
+      if(d.type!=='mouse'){if(lastTap.k===d.k&&now-lastTap.t<700){lastTap={k:null,t:0};ghostUntil=Date.now()+600;openItem(it)}else lastTap={k:d.k,t:now}}
       return}
     var t=dropTarget(d,e.clientX,e.clientY);icons.querySelectorAll('.dico.drop').forEach(function(x){x.classList.remove('drop')});
     if(t){var it2=itemOf(t.getAttribute('data-k'));
@@ -382,7 +410,7 @@
   desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;
     var it=itemOf(b.getAttribute('data-k'));if(appOpen(it))return;openItem(it)});
   /* once an app's window is open (even minimised), one click on its icon minimises or restores it, like the taskbar */
-  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin'}[it.app]].el):null}
+  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin'}[it.app]].el):null}
   function appOpen(it){var el=appEl(it);if(!el)return false;return el.id==='notepad'?el.classList.contains('show'):!el.hidden}
   desk.addEventListener('keydown',function(e){if(e.target.closest('.dren'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k);
     if(e.key==='Enter'&&it){e.preventDefault();openItem(it)}
