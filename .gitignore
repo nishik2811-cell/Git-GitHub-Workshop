@@ -1,0 +1,5 @@
+__pycache__/
+*.bak
+*_bak*
+.DS_Store
+node_modules/

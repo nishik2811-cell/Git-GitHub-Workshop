@@ -1,0 +1,53 @@
+/* ---------- pixel art layer ---------- */
+.sp{display:inline-block;background-size:100% 100%;background-repeat:no-repeat;image-rendering:pixelated;pointer-events:none;flex:none}
+.tbar{position:relative}
+.tbar .sp{position:absolute;right:92px;top:50%;height:26px;transform:translateY(-50%)}
+.heroframe{max-width:660px;margin:14px auto 0;background:#f4f1e7;border-radius:28px;padding:18px 22px 24px;box-shadow:0 0 0 3px #e2ddcc,8px 8px 0 rgba(29,75,166,.25)}
+.hero-load{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:16px}
+.hero-load .bar{width:78%;height:20px;border:3px solid var(--ink);border-radius:5px;background:#fff;padding:2px;box-sizing:border-box}
+.hero-load .bar i{display:block;height:100%;width:70%;background:repeating-linear-gradient(90deg,var(--blue) 0 9px,transparent 9px 12px)}
+.hero-load span{font-family:var(--pix);letter-spacing:.14em;color:var(--blue);font-size:16px}
+.hero.card{max-width:none;border-radius:14px;box-shadow:none;border-width:4px;overflow:hidden}
+.hero .tbar{padding:10px 14px;font-size:17px;letter-spacing:.08em}
+.hero .tbar .xbtn{width:26px;height:26px;background:#e8336d;border-radius:4px;border:2px solid #fff}
+.scene{position:relative;height:600px;background-size:cover;background-position:center bottom;image-rendering:pixelated;overflow:hidden}
+.scene .sp{position:absolute}
+.scene h1{position:absolute;left:0;right:0;top:7%;margin:0;text-align:center;color:#fff;font-size:52px;line-height:1.05;letter-spacing:.03em;text-shadow:-3px -3px 0 #16327a,3px -3px 0 #16327a,-3px 3px 0 #16327a,3px 3px 0 #16327a,0 5px 0 #16327a,0 -4px 0 #16327a,-4px 0 0 #16327a,4px 0 0 #16327a}
+.scene .tag{position:absolute;left:50%;top:27%;transform:translateX(-50%);background:#f4f1e7;border:3px solid var(--ink);border-radius:8px;padding:5px 14px;font-weight:700;font-size:15px;color:var(--ink);text-align:center;width:max-content;max-width:86%;box-shadow:3px 3px 0 rgba(22,50,122,.5)}
+.scene .start{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;gap:0;font-family:var(--pix);font-weight:700;font-size:62px;letter-spacing:.05em;color:#fff;text-decoration:none;background:#6aa048;border:0;border-radius:0;padding:10px 40px 16px;text-shadow:3px 3px 0 #2c4a1e,-2px 0 0 #2c4a1e,0 -2px 0 #2c4a1e;box-shadow:0 -6px 0 #2c3a22,0 6px 0 #2c3a22,-6px 0 0 #2c3a22,6px 0 0 #2c3a22,inset 0 6px 0 #92c866,inset 0 -8px 0 #4b7a35,inset 6px 0 0 #7fb65a,inset -6px 0 0 #4b7a35,10px 12px 0 rgba(22,50,122,.45)}
+.scene .start:hover{transform:translate(-50%,-53%)}
+.scene .start:active{transform:translate(-50%,-45%)}
+.scene .sp-hand{left:63%;top:51%;height:54px}
+.scene .mdlg{position:absolute;left:5%;bottom:17%;width:210px;background:#dfe6f7;border:4px solid var(--ink);border-radius:8px;box-shadow:5px 5px 0 rgba(22,50,122,.5)}
+.mdlg .dh{background:var(--ink);color:#fff;font-family:var(--pix);font-size:14px;letter-spacing:.1em;padding:3px 8px;display:flex;justify-content:space-between}
+.mdlg .db{padding:10px 10px 12px;text-align:center;font-family:var(--pix);color:var(--ink);font-size:15px;letter-spacing:.08em;line-height:1.25}
+.mdlg .row{display:flex;gap:12px;justify-content:center;margin-top:10px}
+.mdlg button{font-family:var(--pix);font-size:12px;padding:1px 16px;background:#cfd4e0;border:2px solid var(--ink);box-shadow:inset -2px -2px 0 #9aa3b8,inset 2px 2px 0 #fff;border-radius:0;color:var(--ink);cursor:pointer;transform:none}
+.mdlg button:active{box-shadow:inset 2px 2px 0 #9aa3b8}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.bob{animation:bob 2.6s ease-in-out infinite}.bob2{animation:bob 3.4s ease-in-out infinite .6s}
+@media(prefers-reduced-motion:reduce){.bob,.bob2{animation:none}}
+.banner{position:relative;background-size:cover;background-position:center bottom;image-rendering:pixelated;border:3px solid var(--ink);border-radius:12px;padding:20px 22px;min-height:112px;box-shadow:6px 6px 0 rgba(29,75,166,.3);margin-bottom:12px;overflow:hidden}
+.banner>div:nth-child(2){position:relative;z-index:1}
+.banner h2,.banner small{color:#fff;text-shadow:-2px -2px 0 #16327a,2px -2px 0 #16327a,-2px 2px 0 #16327a,2px 2px 0 #16327a,0 3px 0 #16327a}
+.banner small{font-size:15px;text-shadow:-1px -1px 0 #16327a,1px -1px 0 #16327a,-1px 1px 0 #16327a,1px 1px 0 #16327a,0 2px 0 #16327a}
+.banner .rule{display:none}
+.banner .sp{position:absolute;right:22px;bottom:14px;height:46px}
+.banner .sp+.sp{right:90px;bottom:auto;top:12px;height:30px}
+.banner .pn{position:relative;z-index:1}
+.grass{height:30px;background-repeat:repeat-x;background-size:48px 30px;image-rendering:pixelated;margin:34px 0 8px}
+@media(max-width:700px){.scene{height:520px}.scene h1{font-size:38px}.scene .start{font-size:44px;padding:8px 28px 12px}.scene .mdlg{width:160px;bottom:12%}.scene .mdlg .db{font-size:12px}.heroframe{padding:14px 12px 18px}.scene .sp.hide-m{display:none}.banner .sp+.sp{display:none}}
+.credits{max-width:560px;margin:0 auto 18px;background:#fff;border:3px solid var(--ink);border-radius:12px;box-shadow:5px 5px 0 rgba(29,75,166,.3);overflow:hidden}
+.cr-t{background:var(--blue);color:#fff;font-family:var(--pix);letter-spacing:.12em;padding:4px 12px;font-size:14px;text-align:left}
+.cr-n{display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:center;padding:14px 12px}
+.cr-n span{font-family:var(--pix);font-size:19px;letter-spacing:.04em;color:var(--ink);background:#e9efff;border:2.5px solid var(--ink);border-radius:8px;padding:2px 14px;box-shadow:3px 3px 0 var(--ink)}
+footer{text-align:center}
+.hero.card{padding:0!important}.scene h1{top:9%}
+.hero .tbar{margin:0!important}.hero.card{display:block}
+@media(max-width:700px){.scene .tag{top:26%;font-size:13px}.scene .start{top:56%}.scene .sp-cursor{display:none}.scene h1{top:10%}}
+.folderbtn{position:absolute;right:4%;bottom:4%;background:none;border:0;box-shadow:none;padding:0;cursor:pointer;transform:none;border-radius:0}
+.folderbtn:hover{filter:brightness(1.12) drop-shadow(0 0 0 #fff)}
+.folderbtn:hover i{transform:scale(1.08)}.folderbtn:active{transform:translateY(3px)}
+.folderbtn i{display:block;transition:transform .12s}
+.folderbtn::after{content:'click me!';position:absolute;left:50%;bottom:100%;transform:translateX(-50%);white-space:nowrap;font-family:var(--pix);font-size:12px;letter-spacing:.06em;background:#fff;color:var(--ink);border:2px solid var(--ink);padding:1px 8px;border-radius:4px;opacity:0;transition:opacity .15s}
+.folderbtn:hover::after,.folderbtn:focus-visible::after{opacity:1}
