@@ -1846,6 +1846,19 @@ git log --oneline           short history          git push / git pull   sync wi
   function visible(){return R().list.filter(function(c){return !c.hidden})}
   function reach(tip){var s=anc(tip),a=[];keys(s).forEach(function(k){if(!C(k).hidden)a.push(C(k))});a.sort(function(x,y){return y.n-x.n});return a}
   /* ---------- three way merge ---------- */
+  /* the second half of git fetch / git pull, once GitHub's commits are known (pretend or real) */
+  function syncPull(sub,allowU,res){var r=R();if(!r||!r.remote)return;
+    if(res&&res.err){perr(res.err);return}
+    var rb=r.remote.br[r.head];
+    if(!rb){if(sub==='pull'){perr("fatal: couldn't find remote ref "+r.head);pl('GitHub does not have the branch '+r.head+' yet. Push it first:  git push -u origin '+r.head,'y')}return}
+    if(r.rbr[r.head]!==rb){pl('From '+r.remote.url+'\n   '+(r.rbr[r.head]||'0000000')+'..'+rb+'  '+r.head+'       -> origin/'+r.head)}
+    keys(anc(rb)).forEach(function(k){C(k).hidden=false});r.rbr[r.head]=rb;
+    if(sub==='fetch')return;
+    var cur=headId();
+    if(!cur){var s0=diffStat({},C(rb).files);applyTree(C(rb).files);r.br[r.head]=rb;pl('Fast-forward','y');pl(statLine(s0));return}
+    if(cur===rb||anc(cur)[rb]){pl('Already up to date.');return}
+    if(!anc(rb)[cur]&&!lca(cur,rb)&&!allowU){perr('fatal: refusing to merge unrelated histories');pl("Your laptop's history and GitHub's started separately (for example, the repo was created with a README on GitHub). To join them, type:  git pull --allow-unrelated-histories",'y');return}
+    mergeInto(rb,'origin/'+r.head,"Merge branch '"+r.head+"' of "+r.remote.url)}
   function mergeInto(otherId,label,msg){
     var r=R(),cur=headId(),o=C(otherId),st=status();
     if(st.staged.length||st.unstaged.length){perr('error: Your local changes would be overwritten by merge.\nCommit your changes first.');return false}
@@ -1974,7 +1987,9 @@ git log --oneline           short history          git push / git pull   sync wi
       var tt=r.br[tn]?C(r.br[tn]).files:{};applyTree(tt);r.head=tn;pl("Switched to branch '"+tn+"'");return}
     if(sub==='merge'){
       if(a[1]==='--abort'){if(!r.merge){perr('fatal: There is no merge to abort (MERGE_HEAD missing).');return}applyTree(headTree());r.conf={};r.merge=null;pl('Merge aborted.');return}
-      var on=a[1];if(!on||!(on in r.br)){perr('merge: '+on+' - not something we can merge');return}
+      var on=a[1];
+      if(on&&on.indexOf('origin/')===0&&r.rbr&&r.rbr[on.slice(7)]){var rbx=r.rbr[on.slice(7)];if(rbx===headId()||anc(headId())[rbx]){pl('Already up to date.');return}mergeInto(rbx,on,"Merge remote-tracking branch '"+on+"'");return}
+      if(!on||!(on in r.br)){perr('merge: '+on+' - not something we can merge');return}
       if(!r.br[on]){perr('merge: '+on+' - not something we can merge');return}
       if(on===r.head){pl('Already up to date.');return}
       mergeInto(r.br[on],on,"Merge branch '"+on+"'");return}
@@ -1998,13 +2013,9 @@ git log --oneline           short history          git push / git pull   sync wi
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;return}
     if(sub==='fetch'||sub==='pull'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
-      var rb=r.remote.br[r.head];
-      if(!rb){pl(sub==='pull'?'Already up to date.':'');return}
-      if(r.rbr[r.head]!==rb){pl('From '+r.remote.url+'\n   '+(r.rbr[r.head]||'0000000')+'..'+rb+'  '+r.head+'       -> origin/'+r.head)}
-      keys(anc(rb)).forEach(function(k){C(k).hidden=false});r.rbr[r.head]=rb;
-      if(sub==='fetch')return;
-      if(headId()===rb||anc(headId())[rb]){pl('Already up to date.');return}
-      mergeInto(rb,'origin/'+r.head,"Merge branch '"+r.head+"' of "+r.remote.url);return}
+      var allowU=a.indexOf('--allow-unrelated-histories')>=0;
+      if(RL.on){realFetch(r.head,function(res){syncPull(sub,allowU,res)});return}
+      syncPull(sub,allowU,null);return}
     perr("git: '"+sub+"' is not a git command here. Try: git help");
   }
   function statusColor(l,txt){var idx=txt.indexOf(l);var sIdx=txt.indexOf('Changes to be committed'),uIdx=txt.indexOf('Changes not staged'),tIdx=txt.indexOf('Untracked files'),mIdx=txt.indexOf('Unmerged paths');
@@ -2508,7 +2519,7 @@ git log --oneline           short history          git push / git pull   sync wi
     })();
     return true;
   }
-  function reset(){fresh();out.innerHTML='';pl('Welcome to your Mini laptop! Type  help  to see what you can do.','y');setPrompt();S.sig={};render()}
+  function reset(){if(RL)RL.known={};fresh();out.innerHTML='';pl('Welcome to your Mini laptop! Type  help  to see what you can do.','y');setPrompt();S.sig={};render()}
   inp.addEventListener('keydown',function(e){
     if(e.key==='Enter'){var v=inp.value;inp.value='';run(v)}
     else if(e.key==='ArrowUp'){if(S.hi>0){S.hi--;inp.value=S.hist[S.hi]||'';e.preventDefault()}}
@@ -2534,6 +2545,7 @@ git log --oneline           short history          git push / git pull   sync wi
       return go.then(function(){return gh('GET','/repos/'+RL.repo+'/branches')}).then(function(bs){
         var ex=(bs.s===200?bs.j:[]).map(function(b){return b.name}).filter(function(n){return n!==RL.def});
         return ex.reduce(function(pr,n){return pr.then(function(){return gh('DELETE','/repos/'+RL.repo+'/git/refs/heads/'+encodeURIComponent(n)).then(function(x){pl((x.s<300?'deleted branch ':'could not delete branch ')+n,x.s<300?'g':'r')})})},Promise.resolve())})
+        .then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(RL.def)).then(function(x){RL.known={};RL.fresh={};if(x.s===200)RL.fresh[RL.def]=x.j.object.sha})})
         .then(function(){pl('Done. The repo is empty and ready for a fresh demo.','y')});
     }).catch(function(){perr('Could not reach GitHub.')}).then(function(){busy=false;inp.disabled=false;inp.focus({preventScroll:true});refreshLive()});
   }
@@ -2676,7 +2688,27 @@ git log --oneline           short history          git push / git pull   sync wi
   };
 
   /* ---------- REAL GitHub mode ---------- */
-  var RL={on:false,repo:'',tok:'',def:'main',view:'main',seen:{},timer:null};
+  var RL={on:false,repo:'',tok:'',def:'main',view:'main',seen:{},timer:null,known:{},fresh:{},blobs:{}};
+  /* known[branch]: the real GitHub commit our pretend copy matches. fresh[branch]: GitHub's commit right after "Delete everything" (empty repo). */
+  function realTree(sha){return gh('GET','/repos/'+RL.repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read files ('+t.s+')');
+    var fl=t.j.tree.filter(function(x){return x.type==='blob'}).slice(0,200),files={};
+    return seq(fl,function(f){if(RL.blobs[f.sha]!==undefined){files[f.path]=RL.blobs[f.sha];return}
+      return gh('GET','/repos/'+RL.repo+'/git/blobs/'+f.sha).then(function(b){var txt;try{txt=decodeURIComponent(escape(atob(((b.j&&b.j.content)||'').replace(/\n/g,''))))}catch(e){txt='(binary file)\n'}RL.blobs[f.sha]=txt;files[f.path]=txt})}).then(function(){return files})})}
+  /* git fetch / git pull in Real GitHub mode: download the commits GitHub has that we don't, then carry on as normal */
+  function realFetch(br,done){var r=R();pend=true;busy=true;inp.disabled=true;
+    pl('Fetching from github.com/'+RL.repo+' (this one is real)...','y');
+    function fin(res){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}try{done(res||{})}catch(e){perr('error: '+e.message)}setPrompt();render()}
+    gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
+      if(x.s!==200)return {};
+      var head=x.j.object.sha;if(head===RL.known[br]||head===RL.fresh[br])return {};
+      return gh('GET','/repos/'+RL.repo+'/commits?sha='+encodeURIComponent(br)+'&per_page=30').then(function(cl){
+        if(cl.s!==200)throw new Error('GitHub said '+cl.s);
+        var list=[];for(var i=0;i<cl.j.length;i++){var c=cl.j[i];if(c.sha===RL.known[br]||c.sha===RL.fresh[br])break;list.push(c)}
+        list.reverse();var parent=RL.known[br]&&r.remote.br[br]?r.remote.br[br]:null;
+        return seq(list,function(c){return realTree(c.commit.tree.sha).then(function(files){
+          var sc={id:rid(),msg:(c.commit.message||'').split('\n')[0],p:parent?[parent]:[],files:files,br:br,n:++S.n,who:(c.commit.author&&c.commit.author.name)||'GitHub',hidden:true};
+          r.cm[sc.id]=sc;r.list.push(sc);parent=sc.id})}).then(function(){if(list.length&&parent){r.remote.br[br]=parent;RL.known[br]=head}return {}})})
+    }).then(fin,function(e){fin({err:'fatal: could not read from GitHub ('+((e&&e.message)||'network error')+')'})})}
   var rb=$('realBox'),rbody=$('realB');
   function gh(method,path,body){
     return fetch('https://api.github.com'+path,{method:method,headers:{'Authorization':'Bearer '+RL.tok,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body:body?JSON.stringify(body):undefined}).then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {s:r.status,j:j,m:method,u:path,need:r.headers.get('x-accepted-github-permissions')}})});
@@ -2701,7 +2733,7 @@ git log --oneline           short history          git push / git pull   sync wi
     gh('GET','/repos/'+rp).then(function(x){
       if(x.s!==200){RL.tok='';setupForm('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
       if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
-      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};
+      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.fresh={};RL.blobs={};
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
       pl('Connected to github.com/'+rp+' for real. Add it as origin and push!','y');
       pl('git remote add origin https://github.com/'+rp+'.git','c');
@@ -2740,9 +2772,10 @@ git log --oneline           short history          git push / git pull   sync wi
   function realPush(br,rt,lt){
     var r=R(),list=reach(lt).filter(function(c){return !rt||!anc(rt)[c.id]}).reverse();
     pend=true;busy=true;inp.disabled=true;pl('Sending '+list.length+' commit'+(list.length===1?'':'s')+' to GitHub (this one is real)...','y');
-    var ensure=Promise.resolve();
-    if(br!==RL.def)ensure=gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+br).then(function(x){if(x.s===200)return;
-      return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+RL.def).then(function(d){if(d.s!==200)return;return gh('POST','/repos/'+RL.repo+'/git/refs',{ref:'refs/heads/'+br,sha:d.j.object.sha})})});
+    var ensure=gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
+      if(x.s===200&&x.j.object.sha!==RL.known[br]&&x.j.object.sha!==RL.fresh[br]){var er=new Error('rejected');er.rejected=true;throw er}});
+    if(br!==RL.def)ensure=ensure.then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+br).then(function(x){if(x.s===200)return;
+      return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+RL.def).then(function(d){if(d.s!==200)return;return gh('POST','/repos/'+RL.repo+'/git/refs',{ref:'refs/heads/'+br,sha:d.j.object.sha})})})});
     ensure.then(function(){return seq(list,function(c){return seq(treeDiff(c),function(ch){
       var path='/repos/'+RL.repo+'/contents/'+ch[1].split('/').map(encodeURIComponent).join('/');
       return gh('GET',path+'?ref='+encodeURIComponent(br)).then(function(ex){
@@ -2750,6 +2783,7 @@ git log --oneline           short history          git push / git pull   sync wi
         if(ch[0]==='del'){if(!sha)return;return gh('DELETE',path,{message:c.msg,sha:sha,branch:br}).then(chk)}
         return gh('PUT',path,{message:c.msg,content:b64(ch[2]),sha:sha,branch:br}).then(chk)});
       function chk(x){if(x.s>=300)throw new Error(x.s+' '+(x.j.message||'')+' [on '+x.m+' '+x.u.split('?')[0]+(x.need?'; needs: '+x.need:'')+']')}})})})
+    .then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200)RL.known[br]=x.j.object.sha})})
     .then(function(){
       pl('To https://github.com/'+RL.repo+'.git');pl(' * '+(rt?'updated':'[new branch]')+'      '+br+' -> '+br,'g');
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
@@ -2757,6 +2791,8 @@ git log --oneline           short history          git push / git pull   sync wi
       window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(RL.repo)+'.');
       refreshLive();
     }).catch(function(e){
+      if(e&&e.rejected){pl('To https://github.com/'+RL.repo+'.git\n ! [rejected]        '+br+' -> '+br+' (fetch first)','r');perr("error: failed to push some refs to 'https://github.com/"+RL.repo+".git'\nhint: Updates were rejected because GitHub has work that you do\nhint: not have on your laptop. Run  git pull  first, then push again.");
+        window.gitPop&&window.gitPop('err','ERROR: PUSH REJECTED','GitHub has new work that you do not have yet.<br>Type <code>git pull</code> first, then push again.');return}
       perr('error: GitHub refused: '+e.message);window.gitPop&&window.gitPop('err','ERROR: PUSH FAILED',esc(e.message)+'<br>Check that it is a classic token with the repo box ticked.');
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
