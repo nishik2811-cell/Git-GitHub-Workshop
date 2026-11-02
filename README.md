@@ -60,9 +60,20 @@ This workshop starts somewhere friendlier: a tiny pixel computer in your browser
 
 Every folder can be its own repo. Clone one into another folder, push from the clone, and the original sees it after a `git fetch`.
 
-**The Mini laptop** around it all: open apps, open folders in the File Explorer (folders inside folders too), or right-click and *Open with VS Code*, drag files into folders, change the wallpaper, rescue things from the Bin. Pin VS Code or the drawing Notepad on top. The Start menu search finds lessons, apps, your files, settings and Git commands: type what you want to do, like *undo* or *upload*, and it suggests the command, with a *Try it* button. There's also a setup guide for installing the real tools afterwards, and a folder of memes.
+**The Mini laptop** around it all: open apps, open folders in the File Explorer (folders inside folders too), or right-click and *Open with VS Code*, select several things at once (Ctrl-click, Shift-click or drag a box) and drag them into folders, change the wallpaper, rescue things from the Bin. Pin VS Code or the drawing Notepad on top. The Start menu search finds lessons, apps, your files, settings and Git commands: type what you want to do, like *undo* or *upload*, and it suggests the command, with a *Try it* button. There's also a setup guide for installing the real tools afterwards, and a folder of memes.
 
 **Real GitHub mode** for when you're ready: connect a throwaway repo, and your `git push` lands on GitHub for real. Make a folder on the desktop, write a file in VS Code, and push it. In the Teammates story you play the teammate yourself, editing a file on github.com, and *Your own project* goes straight to your real repo. Use a token you delete straight after the workshop.
+
+## How it's different
+
+There are great Git visualizers out there, like *Learn Git Branching*, which draws the commit graph as you type. This workshop shows the whole picture instead:
+
+- **All four places at once:** your working folder, the staging area, your local history and GitHub, updating with every command.
+- **Fetch vs pull you can see:** `origin/main` moves on its own after `git fetch`, and `git status` can say *up to date* when it isn't.
+- **A VS Code look-alike,** with Source Control and the merge conflict buttons, so the real editor feels familiar later.
+- **Real GitHub mode:** the same commands push to an actual repo.
+- **A whole workshop, not just a sandbox:** guided stories, missions, and a little desktop with folders, a Bin and a File Explorer.
+- **One HTML file:** works offline and on phones, nothing to install.
 
 ## Running a workshop with it
 

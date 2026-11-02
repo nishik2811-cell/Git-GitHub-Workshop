@@ -349,7 +349,7 @@
 
 
   /* ---------- File Explorer: opening a folder shows what is inside (folders in folders too); "Open with VS Code" edits it ---------- */
-  var FX=makeWin('fxWin','File Explorer',I.folder,tkFx,620,440,{max:true}),fxDir=HOME,fxSel=null,fxRen=null,fxTap={k:null,t:0},fxPtr='mouse';
+  var FX=makeWin('fxWin','File Explorer',I.folder,tkFx,620,440,{max:true}),fxDir=HOME,fxSel=null,fxSels={},fxSelMode=false,fxRen=null,fxTap={k:null,t:0},fxPtr='mouse',fxMarq=null;
   FX.body.classList.add('fxb');
   function fxItems(){var st=S(),o=[];
     Object.keys(st.dirs).filter(function(d){return d!==fxDir&&dirname(d)===fxDir}).forEach(function(d){o.push({k:d,n:base(d),dir:true,repo:!!(st.repos&&st.repos[d])})});
@@ -363,51 +363,76 @@
       +'<button type="button" class="mmbtn" data-fx="newdir" title="New folder">+ Folder</button><button type="button" class="mmbtn" data-fx="newfile" title="New file">+ File</button>'
       +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button></div>'
       +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.</div>':'')
-      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSel===it.k?' sel':'')+(clip&&clip.mode==='cut'&&clip.abs===it.k?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:I.file)
+      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:I.file)
         +(it.repo?'<b class="dbadge bU" style="background:#e8336d">git</b>':it.mark?'<b class="dbadge b'+it.mark+'">'+(it.mark==='C'?'!':it.mark)+'</b>':'')+'</span><span class="mmn">'+esc(it.n)+'</span></button>'}).join('')+'</div>'
         :'<div class="mmempty">This folder is empty. Right-click (or long-press) for <b>New folder</b> or <b>New file</b>.</div>')
-      +'<div class="fxfoot">'+list.length+' item'+(list.length===1?'':'s')+'</div>'}
-  function openFolder(d){fxDir=d;fxSel=null;activate(FX.el,true);fxDraw()}
-  function fxOpen(k){var st=S();if(st.dirs[k]){fxDir=k;fxSel=null;fxDraw();return}openVS(k)}
+      +'<div class="fxfoot">'+list.length+' item'+(list.length===1?'':'s')+'</div>';fxSelBar()}
+  function fxList(){return fxItems().map(function(x){return x.k}).filter(function(k){return fxSels[k]})}
+  function fxMark(){FX.body.querySelectorAll('.fxt').forEach(function(b){b.classList.toggle('sel',!!fxSels[b.getAttribute('data-k')])});fxSelBar()}
+  function fxClear(){fxSels={};fxSel=null;fxSelMode=false;fxMark()}
+  function fxAll(){fxSels={};fxItems().forEach(function(x){fxSels[x.k]=1});fxMark()}
+  /* the selection bar inside the explorer: only in Select mode on phones */
+  function fxSelBar(){var old=FX.body.querySelector('.selbar');var l=fxList();if(!fxSelMode){if(old)old.remove();return}
+    var bar=old||document.createElement('div');bar.className='selbar fxsb';bar.setAttribute('role','toolbar');
+    bar.innerHTML='<b>'+l.length+' selected</b><button type="button" data-sb="open"'+(l.length?'':' disabled')+'>Open</button><button type="button" data-sb="cut"'+(l.length?'':' disabled')+'>Cut</button><button type="button" data-sb="copy"'+(l.length?'':' disabled')+'>Copy</button>'
+      +'<button type="button" data-sb="del"'+(l.length?'':' disabled')+'>Delete</button><button type="button" data-sb="all">Select all</button><button type="button" data-sb="done">Done</button>';
+    if(!old){var bar2=FX.body.querySelector('.fxbar');bar2.parentNode.insertBefore(bar,bar2.nextSibling)}}
+  function openFolder(d){fxDir=d;fxSel=null;fxSels={};fxSelMode=false;activate(FX.el,true);fxDraw()}
+  function fxOpen(k){var st=S();if(st.dirs[k]){fxDir=k;fxSel=null;fxSels={};fxSelMode=false;fxDraw();return}openVS(k)}
   function fxRename(k,isNew){var b=FX.body.querySelector('.fxt[data-k="'+cssq(k)+'"]');if(!b)return;fxRen=k;fxSel=k;
     var lab=b.querySelector('.mmn'),inp=document.createElement('input');inp.className='dren';inp.value=base(k);inp.setAttribute('aria-label','New name');inp.spellcheck=false;inp.autocapitalize='off';lab.replaceWith(inp);
     var dot=inp.value.lastIndexOf('.');inp.focus();inp.setSelectionRange(0,dot>0&&!S().dirs[k]?dot:inp.value.length);var done=false;
     function finish(ok){if(done)return;var v=inp.value.trim();
       if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
         var r=ML.fsRename(k,dirname(k)+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
-        done=true;fxRen=null;keyMoved(k,r.abs);fxSel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');ML.render();fxDraw();return}
+        done=true;fxRen=null;keyMoved(k,r.abs);fxSel=r.abs;fxSels={};fxSels[r.abs]=1;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');ML.render();fxDraw();return}
       done=true;fxRen=null;fxDraw()}
     inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
     inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&fxRen===k)finish(true)},0)});
     ['pointerdown','click','dblclick','contextmenu'].forEach(function(n){inp.addEventListener(n,function(e){e.stopPropagation()})})}
   function fxNew(dir){var name=ML.uniq(fxDir,dir?'new-folder':'new-file.txt'),r=ML.fsNew(fxDir+'/'+name,dir);if(r.err)return popWarn('Cannot create',r.err);
-    say('Created '+(dir?'folder ':'')+esc(tilde(r.abs))+'.');fxSel=r.abs;ML.render();fxDraw();fxRename(r.abs,true)}
-  function fxDelete(k){var st=S(),rp=Object.keys(st.repos||{}).some(function(rt){return under(rt,k)}),own=ML.repoOf(k),inr=!!own&&k!==own.root;
-    function go(){var r=ML.binPut(k);if(r.err)return popWarn('Cannot delete',r.err);if(clip&&under(clip.abs,k))clip=null;fxSel=null;
-      say('Moved '+esc(base(k))+' to the Bin.'+(inr?' Next: git add, then git commit.':''));ML.render();fxDraw()}
-    if(rp)confirmPop('Delete this Git repo?','<b>'+esc(base(k))+'</b> holds a Git repo. Its history (the hidden .git folder) goes to the Bin with it. You can restore it from the Bin.',go);else go()}
+    say('Created '+(dir?'folder ':'')+esc(tilde(r.abs))+'.');fxSel=r.abs;fxSels={};fxSels[r.abs]=1;ML.render();fxDraw();fxRename(r.abs,true)}
+  function fxDelete(k){delMany([k])}
   function fxMenu(k,x,y){var st=S();
-    if(!k){var canPaste=!!(clip&&ML.exists(clip.abs));
-      ML.ctxMenu(x,y,[{t:'New folder',fn:function(){fxNew(true)}},{t:'New file',fn:function(){fxNew(false)}},'-',{t:'Paste',k:'Ctrl+V',dis:!canPaste,fn:function(){paste(fxDir);fxDraw()}},
-        {t:'Open with VS Code',fn:function(){openVS(fxDir)}},{t:'Refresh',k:'F5',fn:fxDraw}]);return}
-    fxSel=k;FX.body.querySelectorAll('.fxt').forEach(function(b){b.classList.toggle('sel',b.getAttribute('data-k')===k)});var isDir=!!st.dirs[k];
-    ML.ctxMenu(x,y,[{t:'Open',fn:function(){fxOpen(k)}},{t:'Open with VS Code',fn:function(){openVS(k)}},'-',
-      {t:'Cut',k:'Ctrl+X',fn:function(){clip={mode:'cut',abs:k};fxDraw();lastSig='';draw(true)}},{t:'Copy',k:'Ctrl+C',fn:function(){clip={mode:'copy',abs:k};fxDraw()}},
-      {t:'Paste into folder',dis:!(isDir&&clip&&ML.exists(clip.abs)),fn:function(){paste(k);fxDraw()}},'-',
-      {t:'Rename',k:'F2',fn:function(){fxRename(k)}},{t:'Delete',k:'Del',fn:function(){fxDelete(k)}}])}
+    if(!k){ML.ctxMenu(x,y,[{t:'New folder',fn:function(){fxNew(true)}},{t:'New file',fn:function(){fxNew(false)}},'-',{t:'Paste',k:'Ctrl+V',dis:!canPasteNow(),fn:function(){paste(fxDir)}},
+        {t:'Select all',k:'Ctrl+A',fn:fxAll},{t:'Open with VS Code',fn:function(){openVS(fxDir)}},{t:'Refresh',k:'F5',fn:fxDraw}]);return}
+    var cur=fxList();if(fxSels[k]&&cur.length>1){fxSel=k;multiMenu(cur,x,y,'fx');return}
+    fxSel=k;fxSels={};fxSels[k]=1;fxMark();var isDir=!!st.dirs[k];
+    var touchSel=fxPtr!=='mouse'?[{t:'Select',fn:function(){fxSelMode=true;fxSels={};fxSels[k]=1;fxMark()}}]:[];
+    ML.ctxMenu(x,y,[{t:'Open',fn:function(){fxOpen(k)}},{t:'Open with VS Code',fn:function(){openVS(k)}}].concat(touchSel,['-',
+      {t:'Cut',k:'Ctrl+X',fn:function(){setClip('cut',[k])}},{t:'Copy',k:'Ctrl+C',fn:function(){setClip('copy',[k])}},
+      {t:'Paste into folder',dis:!(isDir&&canPasteNow()),fn:function(){paste(k)}},'-',
+      {t:'Rename',k:'F2',fn:function(){fxRename(k)}},{t:'Delete',k:'Del',fn:function(){fxDelete(k)}}]))}
   FX.body.addEventListener('pointerdown',function(e){fxPtr=e.pointerType||'mouse'},true);
-  FX.body.addEventListener('click',function(e){if(fxRen)return;var c=e.target.closest('[data-go]');if(c){fxDir=c.getAttribute('data-go');fxSel=null;fxDraw();return}
-    var a=e.target.closest('[data-fx]');if(a){var w=a.getAttribute('data-fx');if(w==='up'&&fxDir!==HOME){fxSel=fxDir;fxDir=dirname(fxDir);fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
-    var t=e.target.closest('.fxt');if(!t){fxSel=null;FX.body.querySelectorAll('.fxt.sel').forEach(function(b){b.classList.remove('sel')});return}
+  /* drag a box over empty space in the folder to select everything inside it */
+  FX.body.addEventListener('pointerdown',function(e){if(fxRen||(e.button!==0&&e.pointerType==='mouse'))return;if(e.target.closest('.fxt,.fxbar,.selbar,input'))return;var g=e.target.closest('.fxgrid,.mmempty,.fxfoot')||(e.target===FX.body?FX.body:null);if(!g)return;
+    var add=e.ctrlKey||e.metaKey;if(!add&&!fxSelMode){fxSels={};fxSel=null;fxMark()}var base={};Object.keys(fxSels).forEach(function(k){base[k]=1});
+    var box=document.createElement('div');box.className='marq';box.hidden=true;FX.body.appendChild(box);fxMarq={sx:e.clientX,sy:e.clientY,box:box,base:base,id:e.pointerId,on:false}});
+  FX.body.addEventListener('pointermove',function(e){if(!fxMarq||e.pointerId!==fxMarq.id)return;var mx=e.clientX,my=e.clientY,m=fxMarq;
+    if(!m.on){if(Math.abs(mx-m.sx)+Math.abs(my-m.sy)<8)return;m.on=true;m.box.hidden=false;try{FX.body.setPointerCapture(e.pointerId)}catch(z){}}
+    var br=FX.body.getBoundingClientRect(),l=Math.min(mx,m.sx),t=Math.min(my,m.sy),r=Math.max(mx,m.sx),bt=Math.max(my,m.sy);
+    m.box.style.left=(l-br.left+FX.body.scrollLeft)+'px';m.box.style.top=(t-br.top+FX.body.scrollTop)+'px';m.box.style.width=(r-l)+'px';m.box.style.height=(bt-t)+'px';
+    var nx={};Object.keys(m.base).forEach(function(k){nx[k]=1});FX.body.querySelectorAll('.fxt').forEach(function(ic){var q=ic.getBoundingClientRect();if(q.left<r&&q.right>l&&q.top<bt&&q.bottom>t)nx[ic.getAttribute('data-k')]=1});fxSels=nx;fxMark()});
+  ['pointerup','pointercancel'].forEach(function(n){FX.body.addEventListener(n,function(e){if(fxMarq&&e.pointerId===fxMarq.id){var was=fxMarq.on;fxMarq.box.remove();fxMarq=null;if(was)FX.body._marqUntil=Date.now()+300}})});
+  FX.body.addEventListener('click',function(e){if(fxRen)return;var c=e.target.closest('[data-go]');if(c){fxDir=c.getAttribute('data-go');fxSel=null;fxSels={};fxSelMode=false;fxDraw();return}
+    var sb=e.target.closest('.selbar [data-sb]');if(sb){var w2=sb.getAttribute('data-sb'),l=fxList();if(w2==='open')openMany(l);else if(w2==='cut')setClip('cut',l);else if(w2==='copy')setClip('copy',l);else if(w2==='del')delMany(l);else if(w2==='all'){fxAll();return}if(w2==='done'||w2==='open'||w2==='del')fxClear();return}
+    var a=e.target.closest('[data-fx]');if(a){var w=a.getAttribute('data-fx');if(w==='up'&&fxDir!==HOME){var was=fxDir;fxDir=dirname(fxDir);fxSels={};fxSels[was]=1;fxSel=was;fxSelMode=false;fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
+    var t=e.target.closest('.fxt');if(!t){if(FX.body._marqUntil&&Date.now()<FX.body._marqUntil)return;if(!fxSelMode&&!e.ctrlKey&&!e.metaKey){fxSels={};fxSel=null;fxMark()}return}
+    var k=t.getAttribute('data-k'),now=Date.now();
+    /* Ctrl/Cmd-click (or Select mode on a phone) adds or removes; Shift-click selects a range */
+    if(fxSelMode||((e.ctrlKey||e.metaKey)&&e.detail<2)){if(fxSels[k])delete fxSels[k];else fxSels[k]=1;fxSel=k;fxMark();return}
+    if(e.shiftKey&&fxSel){var o=fxItems().map(function(x){return x.k}),i0=o.indexOf(fxSel),i1=o.indexOf(k);if(i0>=0&&i1>=0){fxSels={};o.slice(Math.min(i0,i1),Math.max(i0,i1)+1).forEach(function(x){fxSels[x]=1});fxMark();return}}
     /* one click selects; double-click (double-tap, or Enter) opens */
-    var k=t.getAttribute('data-k'),now=Date.now(),open=e.detail===0||e.detail>=2||(fxPtr!=='mouse'&&fxTap.k===k&&now-fxTap.t<600);
-    if(open){fxTap={k:null,t:0};fxOpen(k);return}fxTap={k:k,t:now};fxSel=k;FX.body.querySelectorAll('.fxt').forEach(function(b){b.classList.toggle('sel',b===t)})});
+    var open=e.detail===0||e.detail>=2||(fxPtr!=='mouse'&&fxTap.k===k&&now-fxTap.t<600);
+    if(open){fxTap={k:null,t:0};var l2=fxList();if(e.detail===0&&l2.length>1&&fxSels[k]){openMany(l2);return}fxOpen(k);return}fxTap={k:k,t:now};fxSel=k;fxSels={};fxSels[k]=1;fxMark()});
   ML.longPress(FX.body,function(t){return !(t.closest&&(t.closest('input')||t.closest('.fxbar')))},function(e){var t=e.target.closest&&e.target.closest('.fxt');fxMenu(t?t.getAttribute('data-k'):null,e.clientX,e.clientY)});
-  FX.el.addEventListener('keydown',function(e){if(fxRen||(e.target.closest&&e.target.closest('input')))return;var k=fxSel;
-    if(e.key==='Backspace'&&fxDir!==HOME){e.preventDefault();fxSel=fxDir;fxDir=dirname(fxDir);fxDraw()}
-    else if(e.key==='F2'&&k){e.preventDefault();fxRename(k)}else if(e.key==='Delete'&&k){e.preventDefault();fxDelete(k)}else if(e.key==='F5'){e.preventDefault();fxDraw()}
-    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&k&&(e.key==='c'||e.key==='x')){e.preventDefault();clip={mode:e.key==='x'?'cut':'copy',abs:k};fxDraw()}
-    else if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();paste(k&&S().dirs[k]?k:fxDir);fxDraw()}});
+  FX.el.addEventListener('keydown',function(e){if(fxRen||(e.target.closest&&e.target.closest('input')))return;var l=fxList(),k=l.length===1?l[0]:fxSel,many=l.length>1;
+    if(e.key==='Backspace'&&fxDir!==HOME){e.preventDefault();var was=fxDir;fxDir=dirname(fxDir);fxSels={};fxSels[was]=1;fxSel=was;fxDraw()}
+    else if(e.key==='F2'&&k&&!many){e.preventDefault();fxRename(k)}else if(e.key==='Delete'&&l.length){e.preventDefault();delMany(l)}else if(e.key==='F5'){e.preventDefault();fxDraw()}
+    else if(e.key==='Escape'&&(l.length||fxSelMode)){e.preventDefault();fxClear()}
+    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==='a'||e.key==='A')){e.preventDefault();fxAll()}
+    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&l.length&&(e.key.toLowerCase()==='c'||e.key.toLowerCase()==='x')){e.preventDefault();setClip(e.key.toLowerCase()==='x'?'cut':'copy',l)}
+    else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='v'){e.preventDefault();paste(k&&!many&&S().dirs[k]?k:fxDir)}});
 
   /* suspects.txt: the team, with GitHub profile links (add a username here when you have it) */
   var TEAM=[['Nishita','nishik2811-cell'],['Yashieta','yashibleh'],['Abhinav','Abhinav9897S'],['Aryan','Aryan5x'],['Vasu','VasuMittal2606']];
@@ -434,7 +459,7 @@
 
   /* ---------- desktop icons ---------- */
   var view=store('view')==='small'?'small':'large',wp=WP[store('wp')]?store('wp'):'day',theme=store('theme')||'blue';
-  var pos={},sel=null,clip=null,renaming=null,lastSig='';
+  var pos={},sel=null,sels={},selMode=false,clip=null,renaming=null,lastSig='';
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
@@ -463,14 +488,14 @@
       do{col=Math.floor(i/g.rows);row=i%g.rows;i++}while(used[key(col,row)]&&i<5000);used[key(col,row)]=1;out[it.k]={col:col,row:row}});
     return out}
   function draw(force){if(desk.hidden&&!force)return;if(renaming)return;
-    var list=items(),s=S(),sig=JSON.stringify(list.map(function(x){return [x.k,x.mark||'',x.repo||0,x.ic.length]}))+'|'+view+'|'+(clip?clip.mode+clip.abs:'')+'|'+sel+'|'+desk.clientWidth+'x'+desk.clientHeight+'|'+JSON.stringify(pos);
+    var list=items(),s=S(),sig=JSON.stringify(list.map(function(x){return [x.k,x.mark||'',x.repo||0,x.ic.length]}))+'|'+view+'|'+(clip?clip.mode+clip.list.join(','):'')+'|'+Object.keys(sels).sort().join(',')+'|'+desk.clientWidth+'x'+desk.clientHeight+'|'+JSON.stringify(pos);
     if(sig===lastSig&&!force)return;lastSig=sig;
     var L=layout(list),c=cell(),h='',foc=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.dico'),fk=foc&&foc.getAttribute('data-k');
-    list.forEach(function(it){var p=L[it.k];h+='<button type="button" class="dico'+(sel===it.k?' sel':'')+(clip&&clip.mode==='cut'&&clip.abs===it.k?' cut':'')+'" data-k="'+esc(it.k)+'" style="left:'+(c.x0+p.col*c.w+(c.w-(view==='small'?(innerWidth<=700?62:68):(innerWidth<=700?74:84)))/2)+'px;top:'+(c.y0+p.row*c.h)+'px" title="'+esc(it.n)+(it.repo?' (Git repo)':'')+'">'
+    list.forEach(function(it){var p=L[it.k];h+='<button type="button" class="dico'+(sels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" style="left:'+(c.x0+p.col*c.w+(c.w-(view==='small'?(innerWidth<=700?62:68):(innerWidth<=700?74:84)))/2)+'px;top:'+(c.y0+p.row*c.h)+'px" title="'+esc(it.n)+(it.repo?' (Git repo)':'')+'">'
       +'<span class="dic">'+it.ic+(it.repo?'<b class="dbadge bU" style="background:#e8336d" aria-label="Git repo">git</b>':it.mark?'<b class="dbadge b'+it.mark+'" aria-label="Git: '+({U:'new',M:'changed',A:'staged',C:'conflict'})[it.mark]+'">'+(it.mark==='C'?'!':it.mark)+'</b>':'')+'</span><span class="dl">'+esc(it.n)+'</span></button>'});
     icons.innerHTML=h;
     if(fk){var nf=icons.querySelector('[data-k="'+cssq(fk)+'"]');if(nf)nf.focus({preventScroll:true})}
-    if(!BW.el.hidden)binDraw();else tkBin.querySelector('i').innerHTML=(s.bin||[]).length?I.binf:I.bin}
+    if(!BW.el.hidden)binDraw();else tkBin.querySelector('i').innerHTML=(s.bin||[]).length?I.binf:I.bin;selBarDraw()}
   function keyMoved(o,n){if(pos[o]){pos[n]=pos[o];delete pos[o]}if(born[o]){born[n]=born[o];delete born[o]}if(mtime[o]){mtime[n]=mtime[o];delete mtime[o]}if(msig[o]!==undefined){msig[n]=msig[o];delete msig[o]}}
   function cssq(v){return v.replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
   /* remember the order things appear in ~ (for "Arrange icons by date created"); runs after every change */
@@ -488,98 +513,159 @@
     openVS(it.k)}
 
   /* rename right on the icon */
-  function startRename(k,isNew){var b=icons.querySelector('.dico[data-k="'+cssq(k)+'"]');if(!b)return;renaming=k;sel=k;b.classList.add('sel');
+  function startRename(k,isNew){var b=icons.querySelector('.dico[data-k="'+cssq(k)+'"]');if(!b)return;renaming=k;sel=k;sels={};sels[k]=1;markSel();
     var lab=b.querySelector('.dl'),inp=document.createElement('input');inp.className='dren';inp.value=base(k);inp.setAttribute('aria-label','New name');inp.spellcheck=false;inp.autocapitalize='off';
     lab.replaceWith(inp);var dot=inp.value.lastIndexOf('.');inp.focus();inp.setSelectionRange(0,dot>0&&!S().dirs[k]?dot:inp.value.length);
     var done=false;
     function finish(ok){if(done)return;var v=inp.value.trim();
       if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
         var r=ML.fsRename(k,HOME+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
-        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}keyMoved(k,r.abs);sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
+        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}keyMoved(k,r.abs);sel=r.abs;sels={};sels[r.abs]=1;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
       done=true;renaming=null;lastSig='';draw(true)}
     inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
     inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&renaming===k)finish(true)},0)});
     ['pointerdown','click','dblclick','contextmenu'].forEach(function(n){inp.addEventListener(n,function(e){e.stopPropagation()})})}
 
   function newThing(dir){var name=ML.uniq(HOME,dir?'new-folder':'new-file.txt'),r=ML.fsNew(HOME+'/'+name,dir);if(r.err)return popWarn('Cannot create',r.err);
-    say('Created '+(dir?'folder ':'')+esc(name)+'.');sel=r.abs;lastSig='';ML.render();draw(true);startRename(r.abs,true)}
-  function del(k){var it=itemOf(k);if(!it||it.app)return;var s=S(),rp=Object.keys(s.repos||{}).some(function(rt){return under(rt,k)}),own=ML.repoOf(k),inr=!!own&&k!==own.root;
-    function go(){var r=ML.binPut(k);if(r.err)return popWarn('Cannot delete',r.err);if(clip&&under(clip.abs,k))clip=null;delete pos[k];sel=null;
-      say('Moved '+esc(base(k))+' to the Bin.'+(inr?' Next: git add, then git commit.':''));ML.render()}
-    if(rp)confirmPop('Delete this Git repo?','<b>'+esc(base(k))+'</b> holds a Git repo. Its history (the hidden .git folder) goes to the Bin with it. You can restore it from the Bin.',go);else go()}
-  function paste(dir){if(!clip||!ML.exists(clip.abs))return;var r=clip.mode==='cut'?ML.fsMove(clip.abs,dir):ML.fsCopy(clip.abs,dir);
-    if(r.err)return popWarn('Cannot paste',r.err);
-    say((clip.mode==='cut'?'Moved ':'Copied ')+esc(base(clip.abs))+' to '+esc(tilde(dir))+(r.abs&&base(r.abs)!==base(clip.abs)?' as '+esc(base(r.abs)):'')+'.');
-    if(clip.mode==='cut'){if(r.abs!==clip.abs){if(pos[clip.abs]&&dir===HOME)pos[r.abs]=pos[clip.abs];delete pos[clip.abs]}clip=null}
-    sel=dir===HOME?r.abs:sel;lastSig='';ML.render()}
+    say('Created '+(dir?'folder ':'')+esc(name)+'.');sel=r.abs;sels={};sels[r.abs]=1;lastSig='';ML.render();draw(true);startRename(r.abs,true)}
+  /* cut / copy / paste / delete work on one thing or many (the clipboard holds a list) */
+  function setClip(mode,list){list=list.filter(function(k){var it=itemOf(k);return !(it&&it.app)&&ML.exists(k)});clip=list.length?{mode:mode,list:list}:null;lastSig='';draw(true);if(!FX.el.hidden)fxDraw()}
+  function inClip(k){return !!(clip&&clip.mode==='cut'&&clip.list.indexOf(k)>=0)}
+  function canPasteNow(){return !!(clip&&clip.list.some(function(k){return ML.exists(k)}))}
+  function nameList(l){return l.length===1?esc(base(l[0])):l.length+' items'}
+  function delMany(list){list=list.filter(function(k){var it=itemOf(k);return !(it&&it.app)&&ML.exists(k)});if(!list.length)return;
+    var s=S(),rp=list.filter(function(k){return Object.keys(s.repos||{}).some(function(rt){return under(rt,k)})}),inr=list.some(function(k){var o=ML.repoOf(k);return !!o&&k!==o.root});
+    function go(){var done=[];list.forEach(function(k){if(!ML.exists(k))return;var r=ML.binPut(k);if(r.err){popWarn('Cannot delete',r.err);return}done.push(k);if(clip){clip.list=clip.list.filter(function(c){return !under(c,k)});if(!clip.list.length)clip=null}delete pos[k];delete sels[k];delete fxSels[k]});
+      if(!done.length)return;sel=null;say('Moved '+nameList(done)+' to the Bin.'+(inr?' Next: git add, then git commit.':''));ML.render();if(!FX.el.hidden)fxDraw()}
+    if(rp.length)confirmPop(rp.length===1&&list.length===1?'Delete this Git repo?':'Delete Git repos?','<b>'+rp.map(function(k){return esc(base(k))}).join(', ')+'</b> '+(rp.length===1?'holds a Git repo':'hold Git repos')+'. The history (the hidden .git folder) goes to the Bin too. You can restore it from the Bin.',go);else go()}
+  function del(k){delMany([k])}
+  function paste(dir){if(!canPasteNow())return;var moved=[],errs=[],mode=clip.mode;
+    clip.list.forEach(function(k){if(!ML.exists(k))return;if(S().dirs[k]&&under(dir,k)){errs.push(esc(base(k))+': a folder cannot go inside itself.');return}
+      var r=mode==='cut'?ML.fsMove(k,dir):ML.fsCopy(k,dir);if(r.err){errs.push(esc(base(k))+': '+r.err);return}moved.push(r.abs);
+      if(mode==='cut'&&r.abs!==k){if(pos[k]&&dir===HOME)pos[r.abs]=pos[k];delete pos[k];keyMoved(k,r.abs)}});
+    if(moved.length)say((mode==='cut'?'Moved ':'Copied ')+nameList(moved)+' to '+esc(tilde(dir))+'.');
+    if(errs.length)popWarn('Cannot paste',errs.join('<br>'));
+    if(mode==='cut')clip=null;
+    if(dir===HOME&&moved.length){sels={};moved.forEach(function(k){sels[k]=1});sel=moved[0]}lastSig='';ML.render();if(!FX.el.hidden)fxDraw()}
+  /* open several things at once: apps come to the front, folders open in the File Explorer, files in VS Code */
+  function openMany(list){list.forEach(function(k){var it=itemOf(k)||{k:k,dir:!!S().dirs[k]};openItem(it,true)})}
 
   /* menus */
-  function deskMenu(x,y){var canPaste=!!(clip&&ML.exists(clip.abs));
+  function deskMenu(x,y){
     ML.ctxMenu(x,y,[{t:'New folder',fn:function(){newThing(true)}},{t:'New file',fn:function(){newThing(false)}},'-',
-      {t:'Paste',k:'Ctrl+V',dis:!canPaste,fn:function(){paste(HOME)}},{t:'Refresh',k:'F5',fn:refresh},'-',
+      {t:'Paste',k:'Ctrl+V',dis:!canPasteNow(),fn:function(){paste(HOME)}},{t:'Select all',k:'Ctrl+A',fn:selectAll},{t:'Refresh',k:'F5',fn:refresh},'-',
       {t:'Arrange icons',sub:Object.keys(SORTS).map(function(k){return {t:'By '+SORTS[k],on:sortBy===k,fn:function(){arrange(k)}}})},
       {t:'View',sub:[{t:'Large icons',on:view==='large',fn:function(){setView('large')}},{t:'Small icons',on:view==='small',fn:function(){setView('small')}}]},'-',
       {t:'Change wallpaper',sub:Object.keys(WP).map(function(k){return {t:WP[k].n,on:wp===k,fn:function(){wp=k;store('wp',k);applyLook()}}})},
       {t:'Personalise',sub:['blue','green','pink','purple','orange'].map(function(k){return {t:k[0].toUpperCase()+k.slice(1),on:theme===k,fn:function(){theme=k;store('theme',k);applyLook()}}})}])}
-  function itemMenu(it,x,y){sel=it.k;markSel();
-    if(it.app){var m=[{t:'Open',fn:function(){openItem(it,true)}}];if(it.app==='bin'){var n=(S().bin||[]).length;m.push('-',{t:'Empty Bin',dis:!n,fn:function(){confirmPop('Empty the Bin?','Everything in the Bin will be gone for good.',function(){ML.binEmpty();say('Emptied the Bin.');ML.render()})}})}
+  function selList(){return items().map(function(x){return x.k}).filter(function(k){return sels[k]})}
+  /* right-click on a selection of several things: act on all of them */
+  function multiMenu(list,x,y,where){var mv=list.filter(function(k){var it=itemOf(k);return !(it&&it.app)}),files=mv.filter(function(k){return !S().dirs[k]});
+    ML.ctxMenu(x,y,[{t:'Open ('+list.length+')',fn:function(){openMany(list)}},{t:'Open with VS Code',dis:!files.length,fn:function(){openVS(files[0])}},'-',
+      {t:'Cut ('+mv.length+')',k:'Ctrl+X',dis:!mv.length,fn:function(){setClip('cut',mv)}},{t:'Copy ('+mv.length+')',k:'Ctrl+C',dis:!mv.length,fn:function(){setClip('copy',mv)}},'-',
+      {t:'Delete ('+mv.length+')',k:'Del',dis:!mv.length,fn:function(){delMany(mv)}}].concat(where==='fx'?[]:['-',{t:'Clear selection',k:'Esc',fn:clearSel}]))}
+  function itemMenu(it,x,y){var cur=selList();if(sels[it.k]&&cur.length>1){sel=it.k;multiMenu(cur,x,y);return}
+    sel=it.k;sels={};sels[it.k]=1;markSel();
+    var touchSel=lastPtr!=='mouse'?[{t:'Select',fn:function(){selMode=true;sels={};sels[it.k]=1;markSel()}}]:[];
+    if(it.app){var m=[{t:'Open',fn:function(){openItem(it,true)}}].concat(touchSel);if(it.app==='bin'){var n=(S().bin||[]).length;m.push('-',{t:'Empty Bin',dis:!n,fn:function(){confirmPop('Empty the Bin?','Everything in the Bin will be gone for good.',function(){ML.binEmpty();say('Emptied the Bin.');ML.render()})}})}
       ML.ctxMenu(x,y,m);return}
-    var canPaste=it.dir&&clip&&ML.exists(clip.abs);
-    ML.ctxMenu(x,y,[{t:'Open',fn:function(){openItem(it)}},{t:'Open with VS Code',fn:function(){openVS(it.k)}},'-',
-      {t:'Cut',k:'Ctrl+X',fn:function(){clip={mode:'cut',abs:it.k};lastSig='';draw(true)}},{t:'Copy',k:'Ctrl+C',fn:function(){clip={mode:'copy',abs:it.k};lastSig='';draw(true)}},
+    var canPaste=it.dir&&canPasteNow();
+    ML.ctxMenu(x,y,[{t:'Open',fn:function(){openItem(it)}},{t:'Open with VS Code',fn:function(){openVS(it.k)}}].concat(touchSel,['-',
+      {t:'Cut',k:'Ctrl+X',fn:function(){setClip('cut',[it.k])}},{t:'Copy',k:'Ctrl+C',fn:function(){setClip('copy',[it.k])}},
       {t:'Paste into folder',dis:!canPaste,fn:function(){paste(it.k)}},'-',
-      {t:'Rename',k:'F2',fn:function(){startRename(it.k)}},{t:'Delete',k:'Del',fn:function(){del(it.k)}}])}
+      {t:'Rename',k:'F2',fn:function(){startRename(it.k)}},{t:'Delete',k:'Del',fn:function(){del(it.k)}}]))}
   function setView(v){view=v;store('view',v);pos={};applyLook();lastSig='';draw(true)}
   function refresh(){lastSig='';draw(true);desk.classList.remove('flash');void desk.offsetWidth;desk.classList.add('flash')}
-  function markSel(){icons.querySelectorAll('.dico').forEach(function(b){b.classList.toggle('sel',b.getAttribute('data-k')===sel)})}
+  function markSel(){icons.querySelectorAll('.dico').forEach(function(b){b.classList.toggle('sel',!!sels[b.getAttribute('data-k')])});selBarDraw()}
+  function clearSel(){sels={};sel=null;selMode=false;markSel()}
+  function selectAll(){sels={};items().forEach(function(x){sels[x.k]=1});markSel()}
+  /* the selection bar: only in Select mode on phones (there is no right-click there); with a mouse the right-click menu does the job */
+  var selBar=document.createElement('div');selBar.className='selbar';selBar.hidden=true;selBar.setAttribute('role','toolbar');selBar.setAttribute('aria-label','Selected items');desk.appendChild(selBar);
+  function selBarDraw(){var l=selList(),mv=l.filter(function(k){var it=itemOf(k);return !(it&&it.app)});if(!selMode){selBar.hidden=true;return}selBar.hidden=false;
+    selBar.innerHTML='<b>'+l.length+' selected</b><button type="button" data-sb="open"'+(l.length?'':' disabled')+'>Open</button><button type="button" data-sb="cut"'+(mv.length?'':' disabled')+'>Cut</button><button type="button" data-sb="copy"'+(mv.length?'':' disabled')+'>Copy</button>'
+      +'<button type="button" data-sb="del"'+(mv.length?'':' disabled')+'>Delete</button><button type="button" data-sb="all">Select all</button><button type="button" data-sb="done">Done</button>'}
+  selBar.addEventListener('pointerdown',function(e){e.stopPropagation()});
+  selBar.addEventListener('click',function(e){e.stopPropagation();var b=e.target.closest('[data-sb]');if(!b)return;var a=b.getAttribute('data-sb'),l=selList(),mv=l.filter(function(k){var it=itemOf(k);return !(it&&it.app)});
+    if(a==='open'){openMany(l)}else if(a==='cut')setClip('cut',mv);else if(a==='copy')setClip('copy',mv);else if(a==='del')delMany(mv);else if(a==='all'){selectAll();return}
+    if(a==='done'||a==='open'||a==='del')clearSel()});
 
   ML.longPress(desk,function(t){return !(t.closest&&t.closest('input'))},function(e){var b=e.target.closest&&e.target.closest('.dico');
-    if(b){var it=itemOf(b.getAttribute('data-k'));if(it){itemMenu(it,e.clientX,e.clientY);return}}sel=null;markSel();deskMenu(e.clientX,e.clientY)});
+    if(b){var it=itemOf(b.getAttribute('data-k'));if(it){itemMenu(it,e.clientX,e.clientY);return}}if(marq){marq.box.remove();marq=null}if(!selMode){sels={};sel=null;markSel()}deskMenu(e.clientX,e.clientY)});
 
   /* click, double-click, drag */
   var drag=null,lastTap={k:null,t:0},lastPtr='mouse',ghostUntil=0;
   /* on touch screens a window can open right under your finger; the same tap's click must not press a button in it */
   document.addEventListener('click',function(e){if(Date.now()<ghostUntil&&!(e.target.closest&&e.target.closest('#desk'))){e.preventDefault();e.stopPropagation();ghostUntil=0}},true);
   desk.addEventListener('pointerdown',function(e){lastPtr=e.pointerType},true);
-  desk.addEventListener('pointerdown',function(e){if(e.button!==0&&e.pointerType==='mouse')return;var b=e.target.closest('.dico');if(renaming&&(!b||b.getAttribute('data-k')!==renaming))return;
-    if(!b){sel=null;markSel();return}
+  var marq=null;
+  /* items in reading order (down each column, then the next column), for Shift-click ranges */
+  function inOrder(){var L=layout(items());return items().map(function(x){return x.k}).sort(function(a,b){return L[a].col-L[b].col||L[a].row-L[b].row})}
+  desk.addEventListener('pointerdown',function(e){if(e.button!==0&&e.pointerType==='mouse')return;if(e.target.closest('.selbar'))return;var b=e.target.closest('.dico');if(renaming&&(!b||b.getAttribute('data-k')!==renaming))return;
+    var add=e.ctrlKey||e.metaKey;
+    if(!b){/* drag a box over empty desktop to select everything inside it */
+      if(!add&&!selMode){sels={};sel=null;markSel()}
+      var base={};Object.keys(sels).forEach(function(k){base[k]=1});var dr=desk.getBoundingClientRect(),box=document.createElement('div');box.className='marq';box.hidden=true;desk.appendChild(box);
+      marq={sx:e.clientX,sy:e.clientY,x0:dr.left,y0:dr.top,box:box,base:base,id:e.pointerId,on:false};return}
     if(b.querySelector('.dren'))return;
-    sel=b.getAttribute('data-k');markSel();
-    drag={b:b,k:sel,sx:e.clientX,sy:e.clientY,ox:b.offsetLeft,oy:b.offsetTop,moved:false,id:e.pointerId,type:e.pointerType}});
-  desk.addEventListener('pointermove',function(e){if(!drag||e.pointerId!==drag.id)return;var dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
+    var k=b.getAttribute('data-k');
+    if(selMode||add){if(sels[k])delete sels[k];else sels[k]=1;sel=k;markSel();drag={b:b,k:k,sx:e.clientX,sy:e.clientY,ox:b.offsetLeft,oy:b.offsetTop,moved:false,id:e.pointerId,type:e.pointerType,toggled:true};return}
+    if(e.shiftKey&&sel&&e.pointerType==='mouse'){var o=inOrder(),i0=o.indexOf(sel),i1=o.indexOf(k);if(i0>=0&&i1>=0){sels={};o.slice(Math.min(i0,i1),Math.max(i0,i1)+1).forEach(function(x){sels[x]=1});markSel();return}}
+    if(!sels[k]){sels={};sels[k]=1}sel=k;markSel();
+    drag={b:b,k:k,sx:e.clientX,sy:e.clientY,ox:b.offsetLeft,oy:b.offsetTop,moved:false,id:e.pointerId,type:e.pointerType,many:selList().length>1}});
+  desk.addEventListener('pointermove',function(e){
+    if(marq&&e.pointerId===marq.id){var mx=e.clientX,my=e.clientY;if(!marq.on){if(Math.abs(mx-marq.sx)+Math.abs(my-marq.sy)<8)return;marq.on=true;marq.box.hidden=false;try{desk.setPointerCapture(e.pointerId)}catch(z){}}
+      var l=Math.min(mx,marq.sx),t=Math.min(my,marq.sy),r=Math.max(mx,marq.sx),bt=Math.max(my,marq.sy);
+      marq.box.style.left=(l-marq.x0)+'px';marq.box.style.top=(t-marq.y0)+'px';marq.box.style.width=(r-l)+'px';marq.box.style.height=(bt-t)+'px';
+      var nx={};Object.keys(marq.base).forEach(function(k){nx[k]=1});icons.querySelectorAll('.dico').forEach(function(ic){var q=ic.getBoundingClientRect();if(q.left<r&&q.right>l&&q.top<bt&&q.bottom>t)nx[ic.getAttribute('data-k')]=1});
+      sels=nx;markSel();return}
+    if(!drag||e.pointerId!==drag.id||drag.toggled)return;var dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
     if(!drag.moved){if(Math.abs(dx)+Math.abs(dy)<8)return;drag.moved=true;drag.b.classList.add('drag');try{desk.setPointerCapture(e.pointerId)}catch(z){}}
     drag.b.style.left=(drag.ox+dx)+'px';drag.b.style.top=(drag.oy+dy)+'px';
+    /* the other selected icons travel along */
+    if(drag.many)icons.querySelectorAll('.dico.sel').forEach(function(x){if(x!==drag.b){x.style.transform='translate('+dx+'px,'+dy+'px)';x.classList.add('drag2')}});
     var t=dropTarget(drag,e.clientX,e.clientY);icons.querySelectorAll('.dico.drop').forEach(function(x){if(x!==t)x.classList.remove('drop')});if(t)t.classList.add('drop')});
   function dropTarget(d,x,y){var b=d.b;b.style.visibility='hidden';var el=document.elementFromPoint(x,y);b.style.visibility='';var t=el&&el.closest&&el.closest('.dico');
     if(!t||t===b)return null;var it=itemOf(t.getAttribute('data-k'));if(!it)return null;var me=itemOf(d.k);if(!me)return null;
-    if(me.app)return null;if(it.app==='bin'||it.app==='vs'||(it.dir&&!(me.dir&&under(it.k,me.k))))return t;return null}
-  function endDrag(e){if(!drag)return;var d=drag;drag=null;d.b.classList.remove('drag');
+    if(me.app)return null;if(d.many&&sels[it.k])return null;if(it.app==='bin'||it.app==='vs'||(it.dir&&!(me.dir&&under(it.k,me.k))))return t;return null}
+  function endDrag(e){
+    if(marq&&e.pointerId===marq.id){marq.box.remove();marq=null;return}
+    if(!drag)return;var d=drag;drag=null;d.b.classList.remove('drag');icons.querySelectorAll('.drag2').forEach(function(x){x.style.transform='';x.classList.remove('drag2')});
+    if(d.toggled)return;
     if(!d.moved){if(e.type==='pointercancel'||(desk._lp&&Date.now()-desk._lp<900))return;var now=Date.now(),it=itemOf(d.k);
+      /* a plain click inside a selection of several picks just that one (like a real desktop) */
+      if(d.many&&d.type==='mouse'&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){sels={};sels[d.k]=1;markSel()}
       if(appOpen(it)){lastTap={k:null,t:0};if(d.type!=='mouse')ghostUntil=Date.now()+600;activate(appEl(it));return}
       if(d.type!=='mouse'){if(lastTap.k===d.k&&now-lastTap.t<700){lastTap={k:null,t:0};ghostUntil=Date.now()+600;openItem(it)}else lastTap={k:d.k,t:now}}
       return}
     var t=dropTarget(d,e.clientX,e.clientY);icons.querySelectorAll('.dico.drop').forEach(function(x){x.classList.remove('drop')});
+    var group=d.many?selList().filter(function(k){var x=itemOf(k);return !(x&&x.app)}):[d.k];if(d.many&&group.indexOf(d.k)<0&&!(itemOf(d.k)||{}).app)group.push(d.k);
     if(t){var it2=itemOf(t.getAttribute('data-k'));
-      if(it2.app==='bin'){del(d.k);lastSig='';draw(true);return}
+      if(it2.app==='bin'){delMany(group);lastSig='';draw(true);return}
       if(it2.app==='vs'){lastSig='';draw(true);openVS(d.k);return}
-      if(it2.dir){var r=ML.fsMove(d.k,it2.k);if(r.err){popWarn('Cannot move',r.err);lastSig='';draw(true);return}delete pos[d.k];if(clip&&clip.abs===d.k)clip=null;sel=null;say('Moved '+esc(base(d.k))+' into '+esc(base(it2.k))+'.');lastSig='';ML.render();return}}
-    var c=cell(),g=slots(),col=Math.max(0,Math.min(g.cols-1,Math.round((d.b.offsetLeft-c.x0)/c.w))),row=Math.max(0,Math.min(g.rows-1,Math.round((d.b.offsetTop-c.y0)/c.h)));
-    var L=layout(items()),taken=null;Object.keys(L).forEach(function(k){if(k!==d.k&&L[k].col===col&&L[k].row===row)taken=k});
-    if(taken){pos[taken]=L[d.k]}pos[d.k]={col:col,row:row};lastSig='';draw(true)}
+      if(it2.dir){var ok2=[],er2=[];group.forEach(function(k){if(k===it2.k||(S().dirs[k]&&under(it2.k,k)))return;var r=ML.fsMove(k,it2.k);if(r.err){er2.push(esc(base(k))+': '+r.err);return}ok2.push(k);delete pos[k];delete sels[k];if(clip){clip.list=clip.list.filter(function(c){return c!==k});if(!clip.list.length)clip=null}});
+        if(er2.length)popWarn('Cannot move',er2.join('<br>'));if(ok2.length){sel=null;say('Moved '+nameList(ok2)+' into '+esc(base(it2.k))+'.')}lastSig='';ML.render();return}}
+    /* dropped on empty desktop: the icon (and the others selected with it) move by the same number of places */
+    var c=cell(),g=slots(),L=layout(items()),col=Math.max(0,Math.min(g.cols-1,Math.round((d.b.offsetLeft-c.x0)/c.w))),row=Math.max(0,Math.min(g.rows-1,Math.round((d.b.offsetTop-c.y0)/c.h)));
+    var dc=col-L[d.k].col,dr2=row-L[d.k].row,movers=d.many?selList():[d.k];
+    movers.forEach(function(k){var from=L[k],to={col:Math.max(0,Math.min(g.cols-1,from.col+dc)),row:Math.max(0,Math.min(g.rows-1,from.row+dr2))};
+      var taken=null;Object.keys(L).forEach(function(o){if(o!==k&&movers.indexOf(o)<0&&L[o].col===to.col&&L[o].row===to.row)taken=o});
+      if(taken){pos[taken]=from;L[taken]=from}pos[k]=to;L[k]=to});lastSig='';draw(true)}
   desk.addEventListener('pointerup',endDrag);desk.addEventListener('pointercancel',endDrag);
   desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;
     var it=itemOf(b.getAttribute('data-k'));if(appOpen(it))return;openItem(it)});
   /* once an app's window is open (even minimised), one click on its icon minimises or restores it, like the taskbar */
   function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
   function appOpen(it){var el=appEl(it);if(!el)return false;return el.id==='notepad'?el.classList.contains('show'):!el.hidden}
-  desk.addEventListener('keydown',function(e){if(e.target.closest('.dren'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k);
-    if(e.key==='Enter'&&it){e.preventDefault();openItem(it)}
-    else if(e.key==='F2'&&it&&!it.app){e.preventDefault();startRename(k)}
-    else if(e.key==='Delete'&&it&&!it.app){e.preventDefault();del(k)}
+  desk.addEventListener('keydown',function(e){if(e.target.closest('.dren')||e.target.closest('.selbar'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k),l=selList(),many=l.length>1;
+    if(e.key==='Enter'&&(it||many)){e.preventDefault();if(many)openMany(l);else openItem(it)}
+    else if(e.key==='F2'&&it&&!it.app&&!many){e.preventDefault();startRename(k)}
+    else if(e.key==='Delete'&&(many||(it&&!it.app))){e.preventDefault();delMany(many?l:[k])}
     else if(e.key==='F5'){e.preventDefault();refresh()}
-    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&it&&!it.app&&(e.key==='c'||e.key==='x')){e.preventDefault();clip={mode:e.key==='x'?'cut':'copy',abs:k};lastSig='';draw(true)}
-    else if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();paste(it&&it.dir?k:HOME)}});
-  desk.addEventListener('focusin',function(e){var b=e.target.closest&&e.target.closest('.dico');if(b&&!renaming){sel=b.getAttribute('data-k');markSel()}});
+    else if(e.key==='Escape'&&(l.length||selMode)){e.preventDefault();clearSel()}
+    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==='a'||e.key==='A')){e.preventDefault();selectAll()}
+    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&(many||(it&&!it.app))&&(e.key.toLowerCase()==='c'||e.key.toLowerCase()==='x')){e.preventDefault();setClip(e.key.toLowerCase()==='x'?'cut':'copy',many?l:[k])}
+    else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='v'){e.preventDefault();paste(it&&it.dir&&!many?k:HOME)}});
+  desk.addEventListener('focusin',function(e){var b=e.target.closest&&e.target.closest('.dico');if(b&&!renaming&&!selList().length){sel=b.getAttribute('data-k');sels={};sels[sel]=1;markSel()}});
   /* ---------- Start menu search: lessons, apps, your files, Git commands and settings, in groups ---------- */
   (function(){var Q=$('smQ'),R=$('smRes'),L=$('smList'),sm=$('startMenu');if(!Q||!R||!sm)return;
     Q.placeholder='Search lessons, apps, files...';Q.setAttribute('aria-label','Search lessons, apps, files, Git commands and settings');
