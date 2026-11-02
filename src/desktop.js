@@ -127,6 +127,8 @@
   function isVis(el){if(!el)return false;if(el.id==='notepad')return el.classList.contains('show')&&!el.classList.contains('docked');return !el.hidden&&!el.classList.contains('docked')}
   function topWin(){if(active&&isVis(active))return active;var t=null,tz=-1;[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).forEach(function(el){if(!isVis(el))return;var z=+el.style.zIndex||55;if(z>=tz){tz=z;t=el}});return t}
   function tkSync(){var t=topWin();Object.keys(wins).forEach(function(k){wins[k].tk.classList.toggle('on',wins[k].el===t)});var tv=$('tkVS');if(tv)tv.classList.toggle('on',!!t&&t.id==='notepad')}
+  /* a double-click on a taskbar button counts as one click: its second click (detail 2) must not minimise the window the first one just brought up */
+  function tkClick(el){return function(e){if(e&&e.detail>=2&&isVis(el)&&topWin()===el)return;activate(el)}}
   function activate(el,open){if(!el)return;var isNp=el.id==='notepad',id=el.id;
     if(!isVis(el)){if(isNp){ML.showVS();zOrder(el)}else{winOpen(id);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit();if(id==='memeWin')memeInit()}return}
     if(open||topWin()!==el){zOrder(el);return}
@@ -137,7 +139,7 @@
     function pinSync(){pinB.classList.toggle('on',vsPinned);pinB.setAttribute('aria-pressed',vsPinned?'true':'false');pinB.title=vsPinned?'Unpin (stop keeping VS Code on top)':'Pin on top (keep VS Code above other windows)';pinB.setAttribute('aria-label',pinB.title)}
     pinB.onclick=function(e){e.stopPropagation();vsPinned=!vsPinned;store('vspin',vsPinned?'1':'0');pinSync();zOrder(np)};
     var mn=$('npMin');if(mn)mn.parentNode.insertBefore(pinB,mn);pinSync();
-    var tkv=$('tkVS');if(tkv)tkv.onclick=function(){activate(np)};
+    var tkv=$('tkVS');if(tkv)tkv.onclick=tkClick(np);
     var npWas=false;new MutationObserver(function(){var vis=isVis(np);if(vis&&!npWas)zOrder(np);else tkSync();npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
   function makeWin(id,title,icon,tk,w,h,o){o=o||{};var el=document.createElement('div');el.className='dwin';el.id=id;el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label',title);
     el.innerHTML='<div class="dwh"><i>'+icon+'</i><span>'+esc(title)+'</span><button type="button" class="dmin" title="Minimise" aria-label="Minimise">_</button>'+(o.max?'<button type="button" class="dmax" title="Full screen" aria-label="Full screen">&#9633;</button>':'')+(o.noClose?'':'<button type="button" class="dx" title="Close" aria-label="Close">x</button>')+'</div><div class="dwb"></div><span class="dwr" aria-hidden="true"></span>';
@@ -155,7 +157,7 @@
     if(!o.noClose){el.querySelector('.dx').onclick=function(){winClose(id)};
       if(!o.noEsc)el.addEventListener('keydown',function(e){if(e.key==='Escape'&&!e.defaultPrevented&&!document.querySelector('.ctxm')){winClose(id)}})}
     if(o.max){el.querySelector('.dmax').onclick=function(){winMax(id)};hd.addEventListener('dblclick',function(e){if(!e.target.closest('button')&&innerWidth>700)winMax(id)})}
-    tk.onclick=function(){activate(el)};
+    tk.onclick=tkClick(el);
     return W}
   function vsFront(){if(np)zOrder(np)}
   function openVS(k){ML.openInVS(k);vsFront()}
@@ -378,9 +380,11 @@
        (the setup guide counts as a .pdf file); by date created keeps the apps first, then your things oldest first */
     if(sortBy==='name')return o.concat(mine).sort(nm);
     if(sortBy==='date'){mine.sort(function(a,b){return born[a.k]-born[b.k]});return o.concat(mine)}
+    /* by date modified: the apps first, then your things, the one you changed longest ago first (so new changes go to the end) */
+    if(sortBy==='modified'){mine.sort(function(a,b){return (mtime[a.k]||born[a.k])-(mtime[b.k]||born[b.k])});return o.concat(mine)}
     var grp=function(x){return x.app&&x.app!=='guide'&&x.app!=='memes'&&x.app!=='credits'?0:x.dir?1:2},ord=function(x){return x.app?['ws','lab','vs','br','draw','bin'].indexOf(x.app):0};
     return o.concat(mine).sort(function(a,b){return grp(a)!==grp(b)?grp(a)-grp(b):grp(a)===0?ord(a)-ord(b):ext(a)!==ext(b)?(ext(a)<ext(b)?-1:1):nm(a,b)})}
-  var SORTS={name:'name',type:'type',date:'date created'},sortBy=SORTS[store('sort')]?store('sort'):'type',born={},bornN=0;
+  var SORTS={name:'name',type:'type',date:'date created',modified:'date modified'},sortBy=SORTS[store('sort')]?store('sort'):'modified',born={},bornN=0,mtime={},msig={};
   function arrange(k){sortBy=k;store('sort',k);pos={};lastSig='';draw(true);say('Arranged the icons by '+SORTS[k]+'.')}
   function cell(){var sm=view==='small',ph=innerWidth<=700;return {w:sm?(ph?66:74):(ph?80:92),h:sm?(ph?66:72):(ph?84:96),x0:8,y0:8}}
   function slots(n){var c=cell(),rows=Math.max(1,Math.floor((desk.clientHeight-c.y0)/c.h)),cols=Math.max(1,Math.floor((desk.clientWidth-c.x0)/c.w));return {c:c,rows:rows,cols:cols}}
@@ -401,7 +405,10 @@
     if(!BW.el.hidden)binDraw();else tkBin.querySelector('i').innerHTML=(s.bin||[]).length?I.binf:I.bin}
   function cssq(v){return v.replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
   /* remember the order things appear in ~ (for "Arrange icons by date created"); runs after every change */
-  function noteNew(){var s=S();Object.keys(s.dirs).concat(Object.keys(s.files)).forEach(function(k){if(k!==HOME&&dirname(k)===HOME&&!born[k])born[k]=++bornN})}
+  function noteNew(){var s=S();Object.keys(s.dirs).concat(Object.keys(s.files)).forEach(function(k){if(k!==HOME&&dirname(k)===HOME&&!born[k])born[k]=++bornN});
+    /* date modified: a file changes when its contents change; a folder when something is added, removed or renamed directly inside it (like a real computer) */
+    Object.keys(born).forEach(function(k){var sig=k in s.files?'f'+s.files[k]:s.dirs[k]?'d'+Object.keys(s.dirs).concat(Object.keys(s.files)).filter(function(x){return dirname(x)===k}).sort().join('|'):null;
+      if(sig===null){delete msig[k];return}if(msig[k]!==undefined&&msig[k]!==sig)mtime[k]=++bornN;else if(msig[k]===undefined)mtime[k]=born[k];msig[k]=sig})}
   window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw()};
   addEventListener('resize',function(){lastSig='';draw()});
 
@@ -418,7 +425,7 @@
     function finish(ok){if(done)return;var v=inp.value.trim();
       if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
         var r=ML.fsRename(k,HOME+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
-        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}if(born[k]){born[r.abs]=born[k];delete born[k]}sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
+        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}if(born[k]){born[r.abs]=born[k];delete born[k]}if(mtime[k]){mtime[r.abs]=mtime[k];delete mtime[k]}if(msig[k]!==undefined){msig[r.abs]=msig[k];delete msig[k]}sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
       done=true;renaming=null;lastSig='';draw(true)}
     inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
     inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&renaming===k)finish(true)},0)});
@@ -525,11 +532,21 @@
       ['git add .','Stage every change in this folder at once','save stage add all everything','#t2-3','git add .'],
       ['git restore --staged <file>','Take a file back out of the staging area (keeps your changes)','unstage undo add remove staging restore','#t2-3','git restore --staged '],
       ['git commit -m "message"','Save a snapshot (a save point) of what you staged','save commit snapshot message checkpoint','#t2-3','git commit -m ""'],
+      ['git diff','See exactly which lines you changed (not staged yet)','diff difference changes compare what changed lines see','#t2-3','git diff'],
+      ['git diff --staged','See the changes you staged, before you commit them','diff staged cached compare before commit','#t2-3','git diff --staged'],
+      ['git show','See the last commit and the lines it changed','show last commit details lines changed','#t2-3','git show'],
       ['git log','See every commit: who, when and why','history log list commits past see author','#t2-3','git log'],
       ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#t2-3','git log --oneline'],
       ['git restore <file>','Throw away changes to a file you have not staged yet','undo discard throw away changes reset file restore go back','#t2-3','git restore '],
       ['git revert <commit>','Undo a commit safely, by adding a new commit that reverses it','undo revert reverse commit go back mistake','#t2-3','git revert '],
       ['git revert HEAD','Undo the last commit you made (safely, with a new commit)','undo last commit head revert mistake','#t2-3','git revert HEAD'],
+      ['git reset <file>','Unstage a file (the same as git restore --staged)','unstage reset undo add','#t2-3','git reset '],
+      ['git reset --soft HEAD~1','Undo the last commit but keep its changes staged','undo last commit reset soft uncommit keep','#t2-3','git reset --soft HEAD~1'],
+      ['git reset --hard HEAD~1','Throw away the last commit and its changes (careful: they are gone)','undo delete last commit reset hard throw away dangerous','#t2-3','git reset --hard HEAD~1'],
+      ['git stash','Put your unfinished changes away for later, leaving a clean folder','stash save later shelve put away hide changes switch','#t2-3','git stash'],
+      ['git stash pop','Bring your stashed changes back','stash pop restore unstash bring back','#t2-3','git stash pop'],
+      ['git stash list','See what you have stashed','stash list see saved','#t2-3','git stash list'],
+      ['git mv <old> <new>','Rename or move a file, and stage the rename','rename move mv file','#t2-3','git mv '],
       ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
       ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url add','#t2-5','git remote add origin '],
       ['git remote -v','Show which GitHub address your repo is connected to','remote address url origin show connected','#t2-5','git remote -v'],
@@ -548,6 +565,9 @@
       ['git branch -d <name>','Delete a branch you have already merged','delete remove branch','#t3-2','git branch -d '],
       ['git merge <branch>','Combine another branch into the one you are on','combine merge join branch together','#t3-3','git merge '],
       ['git merge --abort','Give up on a merge with conflicts and go back to before it','abort cancel stop merge conflict undo','#t3-5','git merge --abort'],
+      ['git tag v1.0','Put a name (a version label) on the current commit','tag version release label name','#t4-3','git tag v1.0'],
+      ['git tag -a v1.0 -m "message"','A version label with a message (an annotated tag)','tag annotated version release message','#t4-3','git tag -a v1.0 -m ""'],
+      ['git push origin v1.0','Upload a tag to GitHub (git push --tags uploads all of them)','push tag upload release version','#t4-3','git push origin v1.0'],
       ['.gitignore','A file listing what Git should never save, like passwords','ignore secret password private hide gitignore keep out','#t4-1','echo "secret.txt" > .gitignore'],
       ['ls -a','List the files here, hidden ones too (like .git)','list files hidden folder see ls show','#t2-2','ls -a'],
       ['cd <folder>','Go into a folder (cd .. goes back up)','change folder go into directory cd move','#t2-2','cd '],
@@ -571,7 +591,7 @@
         .map(function(it){return '<button type="button" class="smhit" data-i="'+act(function(){openItem(it,true)})+'"><i class="smic">'+it.ic+'</i>'+esc(it.n)+'<small>App</small></button>'});
       var les=lessons().filter(function(x){return hit(x.t+' '+x.p,words)}).slice(0,6)
         .map(function(x){return '<a class="smhit" href="'+esc(x.h)+'">'+esc(x.t)+'<small>'+esc(x.p)+'</small></a>'});
-      var cmds=CMDS.filter(function(c){return hit(c[0]+' '+c[1]+' '+c[2],words)}).slice(0,6)
+      var cmds=CMDS.filter(function(c){return hit(c[0]+' '+c[1]+' '+c[2],words)}).slice(0,8)
         .map(function(c){return '<div class="smcmd"><a class="smhit" href="'+c[3]+'"><code>'+esc(c[0])+'</code><small>'+esc(c[1])+'</small></a><button type="button" class="smtry" data-i="'+act(function(){tryCmd(c[4])})+'" title="Type it in the Practice Lab">Try it</button></div>'});
       var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
         .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
