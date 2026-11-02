@@ -121,14 +121,10 @@
 
   /* ---------- floating windows (browser, Bin) ---------- */
   var wins={};
-  /* stacking: whatever you click or open yourself comes to the very front, above pinned windows too.
-     A pin only stops windows that come up BY THEMSELVES (auto: VS Code popping up, the lab opened by Try it) from covering it. */
+  /* stacking: a pinned window (VS Code, Notepad, Cheat Sheet) always stays on top; whatever you click or open comes to the front of all the others */
   function zOrder(w,auto){var all=[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).filter(Boolean);
-    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);
-    var pinOn=function(x){return x.id==='notepad'?vsPinned:!!winPin[x.id]};
-    /* a window coming up by itself slides in just below the lowest pinned window (nothing else moves); otherwise it goes on top */
-    var at=all.length;if(auto&&!pinOn(w))for(var i=0;i<all.length;i++){if(pinOn(all[i])&&isVis(all[i])){at=i;break}}
-    all.splice(at,0,w);
+    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);
+    var pinOn=function(x){return x.id==='notepad'?vsPinned:!!winPin[x.id]};all=all.filter(function(x){return !pinOn(x)}).concat(all.filter(pinOn));
     all.forEach(function(x,i){x.style.zIndex=51+i});active=w;tkSync()}
   var active=null,vsPinned=store('vspin')==='1',winPin={};
   /* which windows are on screen, which one is in front, and what a click on its taskbar button or desktop icon does */
