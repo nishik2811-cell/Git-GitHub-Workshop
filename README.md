@@ -36,16 +36,17 @@ This workshop starts somewhere friendlier: a tiny pixel computer in your browser
 
 **The Practice Lab**, where it clicks. It's an app on the desktop, so a lesson can stay open right beside it.
 
-- **Four guided stories** play out step by step while you watch:
+- **Five guided stories** play out step by step while you watch:
   1. A pasta recipe that ends in a merge conflict.
   2. A deleted file you bring back.
   3. A password you keep out of GitHub with `.gitignore`.
-  4. **Teammates:** Meera pushes while you're not looking. `git status` still says *up to date*, `git fetch` shows what changed, `git pull` brings it in, and a bonus ending turns it into a conflict.
-- **Missions** for every story, to try on your own, with a *Type it for me* button for when you're stuck.
+  4. **Teammates:** Roli pushes while you're not looking. `git status` still says *up to date*, `git fetch` shows what changed, `git pull` brings it in, and a bonus ending turns it into a conflict.
+  5. **Your own project:** type a folder name, your name and email, and the setup is done for you. Then it's your turn: make a file, `git add .`, `git commit` and `git push` it yourself.
+- **Missions** for every story, to try on your own, with a *Type it for me* button for when you're stuck. In *Your own project* there's no button: you type it all yourself.
 - **A live picture** of your working folder, staging area, commit history and GitHub, updating with every command you type. The graph shows where `origin/main` is, so you can watch `git fetch` move it and `git pull` catch up.
 - **A VS Code window** with the Explorer, Source Control and the merge conflict buttons, so the first time you open the real thing, it already looks familiar.
 
-**The Git it understands**, the everyday commands, answering like the real thing:
+**The Git it understands**, the everyday commands (and the terminal basics around them), answering like the real thing:
 
 | | |
 |---|---|
@@ -55,12 +56,13 @@ This workshop starts somewhere friendlier: a tiny pixel computer in your browser
 | Files | `rm`, `mv`, `.gitignore` |
 | Branches | `branch`, `switch`, `checkout`, `merge`, `tag` |
 | GitHub | `remote`, `push`, `fetch`, `pull` |
+| Terminal | `ls`, `cd`, `mkdir`, `touch`, `echo`, `cat`, `mv`, `cp`, `rm` |
 
 Every folder can be its own repo. Clone one into another folder, push from the clone, and the original sees it after a `git fetch`.
 
 **The Mini laptop** around it all: open apps, drag files into folders, change the wallpaper, rescue things from the Bin. Pin VS Code or the drawing Notepad on top. The Start menu search finds lessons, apps, your files, settings and Git commands: type what you want to do, like *undo* or *upload*, and it suggests the command, with a *Try it* button. There's also a setup guide for installing the real tools afterwards, and a folder of memes.
 
-**Real GitHub mode** for when you're ready: connect a throwaway repo, and your `git push` lands on GitHub for real. Make a folder on the desktop, write a file in VS Code, and push it. In the Teammates story you play the teammate yourself, editing a file on github.com. Use a token you delete straight after the workshop.
+**Real GitHub mode** for when you're ready: connect a throwaway repo, and your `git push` lands on GitHub for real. Make a folder on the desktop, write a file in VS Code, and push it. In the Teammates story you play the teammate yourself, editing a file on github.com, and *Your own project* goes straight to your real repo. Use a token you delete straight after the workshop.
 
 ## Running a workshop with it
 

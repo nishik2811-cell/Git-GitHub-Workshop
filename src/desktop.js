@@ -336,7 +336,13 @@
   function memeShow(i){memeAt=(i+memeList.length)%memeList.length;var m=memeList[memeAt];
     MW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-mm="back">&#9664; Back to folder</button><span>'+esc(m.n)+' <small>('+(memeAt+1)+' of '+memeList.length+')</small></span><button type="button" class="mmbtn" data-mm="prev" aria-label="Previous meme">&larr;</button><button type="button" class="mmbtn" data-mm="next" aria-label="Next meme">&rarr;</button></div><div class="mmview"><img src="'+m.url+'" alt="'+escA(m.alt)+'"></div>';
     var f=MW.body.querySelector('[data-mm="next"]');if(f)f.focus({preventScroll:true})}
-  MW.body.addEventListener('click',function(e){var t=e.target.closest('.mmt');if(t){memeShow(+t.getAttribute('data-i'));return}
+  /* like a real folder: one click selects a picture, a double-click (double-tap on a phone, or Enter) opens it */
+  var mmTap={i:-1,t:0},mmPtr='mouse';
+  MW.body.addEventListener('pointerdown',function(e){mmPtr=e.pointerType||'mouse'},true);
+  MW.body.addEventListener('click',function(e){var t=e.target.closest('.mmt');if(t){var i=+t.getAttribute('data-i'),now=Date.now();
+      var open=e.detail===0||e.detail>=2||(mmPtr!=='mouse'&&mmTap.i===i&&now-mmTap.t<600);
+      if(open){mmTap={i:-1,t:0};memeShow(i);return}
+      mmTap={i:i,t:now};MW.body.querySelectorAll('.mmt').forEach(function(x){x.classList.toggle('sel',x===t)});return}
     var b=e.target.closest('[data-mm]');if(!b)return;var a=b.getAttribute('data-mm');if(a==='back')memeGrid();else memeShow(memeAt+(a==='next'?1:-1))});
   MW.el.addEventListener('keydown',function(e){if(memeAt<0)return;if(e.key==='ArrowRight'){e.preventDefault();memeShow(memeAt+1)}else if(e.key==='ArrowLeft'){e.preventDefault();memeShow(memeAt-1)}else if(e.key==='Backspace'){e.preventDefault();memeGrid()}});
 
@@ -555,7 +561,7 @@
       ['git fetch','Download new commits from GitHub without changing your files','download fetch check update look remote teammate','#t2-4','git fetch'],
       ['git pull','Download new commits from GitHub and merge them into your branch','download pull get update latest sync teammate','#t2-4','git pull'],
       ['git pull --allow-unrelated-histories','Join two histories that started separately (e.g. a README made on GitHub)','unrelated histories pull join refusing','#t2-4','git pull --allow-unrelated-histories'],
-      ['git clone <url>','Copy a whole repo from GitHub into a new folder','download clone copy get repo','#t2-4','git clone https://github.com/meera/website'],
+      ['git clone <url>','Copy a whole repo from GitHub into a new folder','download clone copy get repo','#t2-4','git clone https://github.com/roli/website'],
       ['git branch','List your branches (the * is the one you are on)','list branches see branch','#t3-2','git branch'],
       ['git branch -a','List your branches and GitHub\'s (origin/...)','list all branches remote origin','#t3-2','git branch -a'],
       ['git branch <name>','Make a new branch, but stay where you are','new branch create make','#t3-2','git branch '],
@@ -573,6 +579,8 @@
       ['cd <folder>','Go into a folder (cd .. goes back up)','change folder go into directory cd move','#t2-2','cd '],
       ['mkdir <folder>','Make a new folder','new folder make directory create mkdir','#t2-2','mkdir '],
       ['echo "text" > file.txt','Create a file (or replace what is in it). >> adds a line instead','create write file text echo make new','#t2-3','echo "" > notes.txt'],
+      ['mv <old> <new>','Rename or move a file or folder (git mv also stages it)','rename move mv file folder','#t2-2','mv '],
+      ['cp <file> <copy>','Copy a file (cp -r copies a folder)','copy duplicate cp file folder','#t2-2','cp '],
       ['cat <file>','Show what is inside a file','read show open file view cat contents','#t2-3','cat ']];
     var THEMES=['blue','green','pink','purple','orange'];
     function settings(){var o=[];

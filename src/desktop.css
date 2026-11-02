@@ -139,6 +139,16 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .pgtrk small{display:block;opacity:.7;font-size:11.5px;margin-top:2px}
 .pgtrk.flash{animation:pzflash .9s}
 @keyframes pzflash{0%{background:#ffe36e}100%{background:#fffbe6}}
+.mmt.sel{background:#d6e4ff;outline:2px solid #2f6fe0;outline-offset:-2px}
+/* story 5: the set-up form */
+.ownf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:end;margin:10px 0 2px}
+.ownf label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:800;color:#16327a}
+.ownf input{font:600 14px 'Nunito',sans-serif;padding:6px 8px;border:2px solid #16327a;border-radius:6px;background:#fff;color:#16327a;min-width:0}
+.ownf button{padding:7px 14px;font-size:14px}
+.ownf .ownerr{grid-column:1/-1;margin:0;color:#c2185b;font-size:13px;font-weight:700;min-height:0}
+.ownf .ownerr:empty{display:none}
+@media(max-width:700px){.ownf{grid-template-columns:1fr}}
+.mfree{margin:8px 0 0;font-weight:800;color:#2e7d32;font-size:14px}
 /* Notepad's pin button */
 .dwh button.dpin svg{width:14px;height:14px;display:block;transform:rotate(45deg);transition:transform .15s}
 .dwh button.dpin.on{background:#ffd34e;color:#16327a}
