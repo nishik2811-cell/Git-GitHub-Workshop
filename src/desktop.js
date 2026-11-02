@@ -216,7 +216,7 @@
      (so only a few), so fill the whole height of the lessons once the window is open, and again if it grows a lot */
   var DECO=['sp-star','sp-flower','sp-heart','sp-flower2','sp-heartb','sp-sparkle'],decoT=null;
   function decoFill(){var bg=wsIn.querySelector('.bgdeco');if(!bg||WS.el.hidden)return;bg.style.height='0px';var H=wsIn.scrollHeight;if(H<400)return;
-    if(Math.abs(H-(+bg.dataset.h||0))<300&&Math.abs((wsIn.clientWidth||0)-(+bg.dataset.w||0))<40){bg.style.height=bg.dataset.h+'px';return}
+    if(Math.abs(H-(+bg.dataset.h||0))<300&&Math.abs((wsIn.clientWidth||0)-(+bg.dataset.w||0))<40){bg.style.height=H+'px';return}
     bg.dataset.h=H;bg.style.height=H+'px';bg.innerHTML='';
     /* a natural-looking scatter ("blue noise"): random spots, but never too close to each other, so there are no
        clumps and no grid pattern. Never behind a lesson card or banner (they are see-through and it would smudge). */
@@ -241,6 +241,11 @@
   wsIn.querySelectorAll('.wiz').forEach(function(w){var c=w.closest('.rv');if(c)c.classList.add('rvfade')});
   function wsFit(){wsZoom();wsLw();wsRestore();clearTimeout(decoT);decoT=setTimeout(decoFill,250)}
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
+  /* the lessons can change height without the window changing (fonts arriving, a quiz or demo opening):
+     re-measure the decorations then too, so there is never empty space below the sign-off */
+  (function(){var wr=wsIn.querySelector('.wrap'),again=function(){clearTimeout(decoT);decoT=setTimeout(decoFill,250)};
+    if(wr&&window.ResizeObserver)new ResizeObserver(again).observe(wr);
+    try{document.fonts&&document.fonts.ready.then(again)}catch(z){}})();
   addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
 
 
@@ -940,7 +945,7 @@
         .map(function(o){return '<button type="button" class="smhit" data-i="'+act(o.fn)+'">'+esc(o.t)+(o.on?' <b class="smon">&#10003;</b>':'')+'<small>Setting</small></button>'});
       var h=grp('Apps',apps)+grp('Lessons',les)+grp('Git commands',cmds)+grp('Your files',fs)+grp('Settings',set);
       L.hidden=true;R.hidden=false;R.innerHTML=h||'<p>Nothing found. Try "branch", "undo", "notepad" or "wallpaper".</p>'}
-    var lp=L&&L.querySelector('a.smp[href="#p5"]');if(lp){var sub=lp.nextElementSibling;if(sub&&sub.classList.contains('smsub'))sub.remove();var ar=lp.querySelector('em');if(ar)ar.remove()}
+    var lp=L&&L.querySelector('a.smp[href="#p5"]');if(lp){var lb=lp.querySelector('b');if(lb){lb.innerHTML=I.lab;lb.classList.add('smweb')}var sub=lp.nextElementSibling;if(sub&&sub.classList.contains('smsub'))sub.remove();var ar=lp.querySelector('em');if(ar)ar.remove()}
     Q.addEventListener('input',search);
     Q.addEventListener('keydown',function(e){if(e.key!=='Enter')return;e.preventDefault();search();var f=R.hidden?null:R.querySelector('.smhit');if(f)f.click()});
     R.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();var fn=acts[+b.getAttribute('data-i')];sm.hidden=true;if(fn)fn()})})();
