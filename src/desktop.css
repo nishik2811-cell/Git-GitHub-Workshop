@@ -140,6 +140,26 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .pgtrk.flash{animation:pzflash .9s}
 @keyframes pzflash{0%{background:#ffe36e}100%{background:#fffbe6}}
 .mmt.sel{background:#d6e4ff;outline:2px solid #2f6fe0;outline-offset:-2px}
+/* stacking: windows count up from 51 (one level each), so the taskbar, its tip and the Start menu sit well above any number of windows */
+.taskbar{z-index:80}
+.tktip{z-index:81}
+.startmenu{z-index:82}
+/* Cheat Sheet */
+.dwb.csb{display:flex;flex-direction:column;background:#fffdf3}
+.cshead{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
+.cshead input{flex:1;min-width:0;font:600 14px 'Nunito',sans-serif;padding:7px 10px;border:2px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink)}
+.cshead small{font-size:12px;color:var(--ink3);white-space:nowrap}
+.cslist{overflow:auto;padding:4px 12px 16px;flex:1}
+.csg h3{font:800 12px 'Nunito',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6b78a8;margin:14px 0 4px}
+.csr{padding:7px 0;border-bottom:1px dashed #d8dff0}
+.csr[hidden],.csg[hidden]{display:none}
+.cst{display:flex;align-items:center;gap:8px}
+.cst code{flex:1;min-width:0;font:700 13px 'Fira Code',monospace;color:#16327a;overflow-wrap:anywhere}
+.csr p{margin:3px 0 0;font-size:13px;line-height:1.4;color:#3b4a7a}
+.csr .smtry{flex:none;padding:3px 10px;font-size:12px;border:2px solid var(--ink3);border-radius:5px;background:#8fe39a;color:#16327a;box-shadow:none;transform:none;cursor:pointer}
+.csr .cscopy{flex:none;padding:3px 10px;font-size:12px;border:2px solid var(--ink3);border-radius:5px;background:#fff;color:#16327a;box-shadow:none;transform:none;cursor:pointer;min-width:58px}
+.csr .cscopy.done{background:#d6e4ff}
+.csnone{padding:24px;text-align:center;color:var(--ink2)}
 /* selecting several things: the box you drag, and the bar of actions */
 .marq{position:absolute;z-index:3;border:1.5px solid #2f6fe0;background:rgba(47,111,224,.18);pointer-events:none}
 .dwb.fxb{position:relative}

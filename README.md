@@ -58,6 +58,8 @@ This workshop starts somewhere friendlier: a tiny pixel computer in your browser
 | GitHub | `remote`, `push`, `fetch`, `pull` |
 | Terminal | `ls`, `cd`, `mkdir`, `touch`, `echo`, `cat`, `mv`, `cp`, `rm` |
 
+The **Cheat Sheet** on the desktop lists every one of them with a line on what it does, a search box, and a *Try it* button that types the command into the terminal for you, and *Copy* for pasting it into your own Git Bash later.
+
 Every folder can be its own repo. Clone one into another folder, push from the clone, and the original sees it after a `git fetch`.
 
 **The Mini laptop** around it all: open apps, open folders in the File Explorer (folders inside folders too), or right-click and *Open with VS Code*, select several things at once (Ctrl-click, Shift-click or drag a box) and drag them into folders, change the wallpaper, rescue things from the Bin. Pin VS Code or the drawing Notepad on top. The Start menu search finds lessons, apps, your files, settings and Git commands: type what you want to do, like *undo* or *upload*, and it suggests the command, with a *Try it* button. There's also a setup guide for installing the real tools afterwards, and a folder of memes.
