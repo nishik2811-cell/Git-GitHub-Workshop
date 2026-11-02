@@ -2319,7 +2319,9 @@ git log --oneline           short history          git push / git pull   sync wi
       var all2=a.some(function(x){return x==='-a'||x==='--all'||/^-a+m$/.test(x)||x==='-am'});
       var mi=a.findIndex(function(x){return x==='-m'||x==='-am'||x==='--message'}),msg=mi>=0?a[mi+1]:null;
       if(!S.cfg.name||!S.cfg.email){
-        pl('Author identity unknown\n\n*** Please tell me who you are.\n\nRun\n  git config --global user.email "you@example.com"\n  git config --global user.name "Your Name"','r');
+        /* word for word what real Git prints */
+        pl('Author identity unknown\n\n*** Please tell me who you are.\n\nRun\n\n  git config --global user.email "you@example.com"\n  git config --global user.name "Your Name"\n\nto set your account\'s default identity.\nOmit --global to set the identity only in this repository.\n');
+        perr("fatal: unable to auto-detect email address (got 'you@laptop.(none)')");
         window.gitPop&&window.gitPop('err','ERROR','Git does not know who you are yet.<br>Run these two commands first:<br><code>git config --global user.name "Your Name"</code><br><code>git config --global user.email "you@example.com"</code>');return}
       if(keys(r.conf).length){perr('error: Committing is not possible because you have unmerged files.\nhint: Fix them up, then use \'git add <file>\' to mark them resolved.');return}
       if(all2){var w5=work();keys(r.index).forEach(function(f){if(!(f in w5))delete r.index[f];else r.index[f]=w5[f]});keys(headTree()).forEach(function(f){if(f in w5&&!(f in r.index)&&!r.conf[f])r.index[f]=w5[f]})}
