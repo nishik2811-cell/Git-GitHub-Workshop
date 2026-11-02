@@ -617,6 +617,7 @@
       ['git stash pop','Bring your stashed changes back','stash pop restore unstash bring back','#t2-3','git stash pop'],
       ['git stash list','See what you have stashed','stash list see saved','#t2-3','git stash list'],
       ['git mv <old> <new>','Rename or move a file, and stage the rename','rename move mv file','#t2-3','git mv '],
+      ['git revert -m 1 <merge>','Undo a merge: keep your branch (parent 1), take out what the merge brought in','undo merge revert mainline','#t3-3','git revert -m 1 '],
       ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
       ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url add','#t2-5','git remote add origin '],
       ['git remote -v','Show which GitHub address your repo is connected to','remote address url origin show connected','#t2-5','git remote -v'],

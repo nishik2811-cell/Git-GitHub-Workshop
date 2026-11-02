@@ -354,12 +354,17 @@
     if(sub==='revert'){
       if(a[1]==='--continue'){if(!r.merge||!r.merge.revert){perr('error: no cherry-pick or revert in progress');return}git(['commit']);return}
       if(a[1]==='--abort'){if(!r.merge||!r.merge.revert){perr('error: no cherry-pick or revert in progress');return}hardTo0(headTree());pl('Revert aborted.');return}
-      var rref=a.slice(1).filter(function(x){return x[0]!=='-'})[0];if(!rref){perr('usage: git revert <commit>');return}
+      /* -m 1 (or -m1): for a merge commit, which parent is the main line to go back to */
+      var mi3=a.findIndex(function(x){return x==='-m'||x==='--mainline'||/^-m\d+$/.test(x)}),ml=null;
+      if(mi3>=0){var mv=/^-m\d+$/.test(a[mi3])?a[mi3].slice(2):a[mi3+1];if(!/^\d+$/.test(mv||'')){perr("error: option `mainline' expects a number greater than zero");return}ml=+mv;if(ml<1){perr("error: option `mainline' expects a number greater than zero");return}}
+      var rref=a.slice(1).filter(function(x,i){return x[0]!=='-'&&!(mi3>=0&&i+1===mi3+1&&!/^-m\d+$/.test(a[mi3]))})[0];if(!rref){perr('usage: git revert [-m <parent-number>] <commit>');return}
       if(!headId()){perr('fatal: bad revision \''+rref+'\'');return}
       var rid0=rev(rref);if(!rid0){perr("fatal: bad revision '"+rref+"'");return}
-      var cc=C(rid0);if(cc.p.length>1){perr('error: commit '+fullid(cc.id)+' is a merge but no -m option was given.\nfatal: revert failed');return}
+      var cc=C(rid0);if(cc.p.length>1&&!ml){perr('error: commit '+fullid(cc.id)+' is a merge but no -m option was given.\nfatal: revert failed');pl('Tip: git revert -m 1 '+cc.id+'  keeps the branch you merged into (parent 1) and undoes what the merge brought in.','y');return}
+      if(ml&&cc.p.length<2){perr('error: mainline was specified but commit '+fullid(cc.id)+' is not a merge.\nfatal: revert failed');return}
+      if(ml&&ml>cc.p.length){perr('error: commit '+fullid(cc.id)+' does not have parent '+ml+'\nfatal: revert failed');return}
       var st5=status();if(st5.staged.length||st5.unstaged.length||st5.conf.length){perr('error: your local changes would be overwritten by revert.\nhint: commit your changes or stash them to proceed.\nfatal: revert failed');return}
-      var bt=cc.files,tt=cc.p.length?C(cc.p[0]).files:{},ot=headTree(),res={},conf=[],all={};keys(bt).concat(keys(tt),keys(ot)).forEach(function(k){all[k]=1});
+      var bt=cc.files,tt=cc.p.length?C(cc.p[ml?ml-1:0]).files:{},ot=headTree(),res={},conf=[],all={};keys(bt).concat(keys(tt),keys(ot)).forEach(function(k){all[k]=1});
       keys(all).forEach(function(f){var x=bt[f],o=ot[f],t=tt[f];if(o===t){if(o!==undefined)res[f]=o}else if(o===x){if(t!==undefined)res[f]=t}else if(t===x){if(o!==undefined)res[f]=o}else{conf.push(f);res[f]='<<<<<<< HEAD\n'+(o||'')+'=======\n'+(t||'')+'>>>>>>> parent of '+cc.id+' ('+cc.msg+')\n'}});
       var rmsg='Revert "'+cc.msg+'"';
       if(conf.length){keys(res).forEach(function(f){S.files[r.root+'/'+f]=res[f]});keys(ot).forEach(function(f){if(!(f in res))delete S.files[r.root+'/'+f]});
@@ -421,12 +426,14 @@
     if(sub==='merge'){
       if(a[1]==='--abort'){if(!r.merge){perr('fatal: There is no merge to abort (MERGE_HEAD missing).');return}applyTree(headTree());r.conf={};r.merge=null;pl('Merge aborted.');return}
       if(mergeBlocked('Merging'))return;
-      var on=a[1];
-      if(on&&on.indexOf('origin/')===0&&r.rbr&&r.rbr[on.slice(7)]){var rbx=r.rbr[on.slice(7)];if(rbx===headId()||anc(headId())[rbx]){pl('Already up to date.');return}mergeInto(rbx,on,"Merge remote-tracking branch '"+on+"'");return}
+      /* -m "message" names the merge commit, like real Git */
+      var mmi=a.indexOf('-m'),mmsg=mmi>=0?a[mmi+1]:null,on=a.slice(1).filter(function(x,i){return x[0]!=='-'&&!(mmi>=0&&i+1===mmi+1)})[0];
+      if(mmi>=0&&!mmsg){perr("error: switch `m' requires a value");return}
+      if(on&&on.indexOf('origin/')===0&&r.rbr&&r.rbr[on.slice(7)]){var rbx=r.rbr[on.slice(7)];if(rbx===headId()||anc(headId())[rbx]){pl('Already up to date.');return}mergeInto(rbx,on,mmsg||"Merge remote-tracking branch '"+on+"'");return}
       if(!on||!(on in r.br)){perr('merge: '+on+' - not something we can merge');return}
       if(!r.br[on]){perr('merge: '+on+' - not something we can merge');return}
       if(on===r.head){pl('Already up to date.');return}
-      mergeInto(r.br[on],on,"Merge branch '"+on+"'");return}
+      mergeInto(r.br[on],on,mmsg||"Merge branch '"+on+"'");return}
     if(sub==='remote'){
       if(a[1]==='add'){if(!a[3]){perr('usage: git remote add <name> <url>');return}if(r.remote){perr("error: remote origin already exists.");return}
         r.remote={url:a[3],br:{},ids:{}};var src0=!RL.on&&ghSource(a[3],r);if(src0)ghCopy(src0,r);return}
