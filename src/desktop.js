@@ -370,7 +370,7 @@
   applyLook();
   function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:memes',n:'hehehe',ic:I.folder,app:'memes',dir:true},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
-    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repo&&s.repo.root===d)})});
+    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){mine.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
     mine.forEach(function(x){if(!born[x.k])born[x.k]=++bornN});
     var nm=function(a,b){var x=a.n.toLowerCase(),y=b.n.toLowerCase();return x<y?-1:x>y?1:0},ext=function(x){var m=x.n.match(/\.([^.]+)$/);return m?m[1].toLowerCase():''};
@@ -426,7 +426,7 @@
 
   function newThing(dir){var name=ML.uniq(HOME,dir?'new-folder':'new-file.txt'),r=ML.fsNew(HOME+'/'+name,dir);if(r.err)return popWarn('Cannot create',r.err);
     say('Created '+(dir?'folder ':'')+esc(name)+'.');sel=r.abs;lastSig='';ML.render();draw(true);startRename(r.abs,true)}
-  function del(k){var it=itemOf(k);if(!it||it.app)return;var s=S(),rp=s.repo&&under(s.repo.root,k),inr=s.repo&&under(k,s.repo.root)&&k!==s.repo.root;
+  function del(k){var it=itemOf(k);if(!it||it.app)return;var s=S(),rp=Object.keys(s.repos||{}).some(function(rt){return under(rt,k)}),own=ML.repoOf(k),inr=!!own&&k!==own.root;
     function go(){var r=ML.binPut(k);if(r.err)return popWarn('Cannot delete',r.err);if(clip&&under(clip.abs,k))clip=null;delete pos[k];sel=null;
       say('Moved '+esc(base(k))+' to the Bin.'+(inr?' Next: git add, then git commit.':''));ML.render()}
     if(rp)confirmPop('Delete this Git repo?','<b>'+esc(base(k))+'</b> holds a Git repo. Its history (the hidden .git folder) goes to the Bin with it. You can restore it from the Bin.',go);else go()}
@@ -510,31 +510,50 @@
     function low(x){return String(x).toLowerCase()}
     function hit(hay,words){hay=low(hay);return words.every(function(w){return hay.indexOf(w)>-1})}
     function lessons(){var out=[];document.querySelectorAll('section.phase').forEach(function(sec){var t=sec.querySelector('h2');if(!t)return;
-      sec.querySelectorAll('.idx a').forEach(function(a){out.push({h:a.getAttribute('href'),t:a.textContent.replace(/^\s*\d+\.\s*/,''),p:t.textContent})})});
+      sec.querySelectorAll('.idx a').forEach(function(a){if(a.getAttribute('href')==='#t2-3b')return;out.push({h:a.getAttribute('href'),t:a.textContent.replace(/^\s*\d+\.\s*/,''),p:t.textContent})})});
       out.push({h:'#t1-5',t:'Setup and installation',p:'Introduction'});return out}
     var APPK={ws:'lessons workshop learn read exe',lab:'practice lab terminal git bash missions stories try commands',vs:'vs code visual studio editor explorer source control',br:'browser internet web github repo search',
       draw:'notepad draw paint sketch pen',guide:'setup guide pdf install help windows linux',memes:'hehehe memes funny pictures images folder',credits:'suspects txt credits team names made by',bin:'bin trash recycle deleted restore'};
     /* everyday words people type, and the Git commands that do it */
     var CMDS=[
-      ['git restore <file>','Undo changes to a file you have not committed yet','undo discard throw away changes reset file restore go back','#t2-3','git restore '],
-      ['git revert <commit>','Undo a commit safely, by adding a new commit that reverses it','undo revert reverse commit go back mistake','#t2-3','git revert '],
-      ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
-      ['git add <file>','Put a change in the staging area, ready to save','save stage add prepare track','#t2-3','git add '],
+      ['git --version','Check that Git is installed, and which version','version installed check install setup','#t1-5','git --version'],
+      ['git config --global user.name "Name"','Tell Git your name, once per computer','name config who identity setup author','#t1-5','git config --global user.name ""'],
+      ['git config --global user.email "you@example.com"','Tell Git your email, once per computer','email config identity setup author','#t1-5','git config --global user.email ""'],
+      ['git init','Turn the current folder into a Git repo','start new repo create init begin folder','#t2-2','git init'],
+      ['git status','See what changed, what is staged, and if you are ahead or behind GitHub','status changed what happened check see state behind ahead','#t2-3','git status'],
+      ['git add <file>','Put one file\'s changes in the staging area, ready to save','save stage add prepare track file','#t2-3','git add '],
+      ['git add .','Stage every change in this folder at once','save stage add all everything','#t2-3','git add .'],
+      ['git restore --staged <file>','Take a file back out of the staging area (keeps your changes)','unstage undo add remove staging restore','#t2-3','git restore --staged '],
       ['git commit -m "message"','Save a snapshot (a save point) of what you staged','save commit snapshot message checkpoint','#t2-3','git commit -m ""'],
-      ['git status','See what changed and what is staged','status changed what happened check see state behind ahead','#t2-3','git status'],
-      ['git log --oneline','See your history of commits','history log list commits past see','#t2-3','git log --oneline'],
-      ['git init','Turn a folder into a Git repo','start new repo create init begin','#t2-2','git init'],
-      ['git push -u origin main','Upload your commits to GitHub','upload push send share github online','#t2-4','git push -u origin main'],
-      ['git pull','Download new commits from GitHub and merge them in','download pull get update latest sync teammate','#t2-4','git pull'],
-      ['git fetch','Check GitHub for new commits, without changing your files','download fetch check update look remote teammate','#t2-4','git fetch'],
-      ['git clone <url>','Copy a repo from GitHub onto your computer','download clone copy get repo','#t2-4','git clone '],
-      ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url','#t2-5','git remote add origin '],
+      ['git log','See every commit: who, when and why','history log list commits past see author','#t2-3','git log'],
+      ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#t2-3','git log --oneline'],
+      ['git restore <file>','Throw away changes to a file you have not staged yet','undo discard throw away changes reset file restore go back','#t2-3','git restore '],
+      ['git revert <commit>','Undo a commit safely, by adding a new commit that reverses it','undo revert reverse commit go back mistake','#t2-3','git revert '],
+      ['git revert HEAD','Undo the last commit you made (safely, with a new commit)','undo last commit head revert mistake','#t2-3','git revert HEAD'],
+      ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
+      ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url add','#t2-5','git remote add origin '],
+      ['git remote -v','Show which GitHub address your repo is connected to','remote address url origin show connected','#t2-5','git remote -v'],
+      ['git push -u origin main','Upload your commits to GitHub the first time (and remember where)','upload push send share github online first','#t2-4','git push -u origin main'],
+      ['git push','Upload your new commits to GitHub','upload push send share github online','#t2-4','git push'],
+      ['git fetch','Download new commits from GitHub without changing your files','download fetch check update look remote teammate','#t2-4','git fetch'],
+      ['git pull','Download new commits from GitHub and merge them into your branch','download pull get update latest sync teammate','#t2-4','git pull'],
+      ['git pull --allow-unrelated-histories','Join two histories that started separately (e.g. a README made on GitHub)','unrelated histories pull join refusing','#t2-4','git pull --allow-unrelated-histories'],
+      ['git clone <url>','Copy a whole repo from GitHub into a new folder','download clone copy get repo','#t2-4','git clone https://github.com/meera/website'],
+      ['git branch','List your branches (the * is the one you are on)','list branches see branch','#t3-2','git branch'],
+      ['git branch -a','List your branches and GitHub\'s (origin/...)','list all branches remote origin','#t3-2','git branch -a'],
+      ['git branch <name>','Make a new branch, but stay where you are','new branch create make','#t3-2','git branch '],
       ['git switch -c <name>','Make a new branch and move onto it','new branch create switch make','#t3-2','git switch -c '],
-      ['git switch <name>','Move to another branch','change branch switch go move checkout','#t3-2','git switch '],
-      ['git branch','List your branches','list branches see branch','#t3-2','git branch'],
-      ['git merge <branch>','Combine another branch into this one','combine merge join branch together','#t3-3','git merge '],
+      ['git switch <name>','Move to another branch','change branch switch go move','#t3-2','git switch '],
+      ['git checkout <name>','The older way to move to another branch','change branch checkout go move old','#t3-2','git checkout '],
+      ['git branch -d <name>','Delete a branch you have already merged','delete remove branch','#t3-2','git branch -d '],
+      ['git merge <branch>','Combine another branch into the one you are on','combine merge join branch together','#t3-3','git merge '],
+      ['git merge --abort','Give up on a merge with conflicts and go back to before it','abort cancel stop merge conflict undo','#t3-5','git merge --abort'],
       ['.gitignore','A file listing what Git should never save, like passwords','ignore secret password private hide gitignore keep out','#t4-1','echo "secret.txt" > .gitignore'],
-      ['git config --global user.name "Name"','Tell Git your name (and user.email for your email)','name email config who identity setup','#t1-5','git config --global user.name ""']];
+      ['ls -a','List the files here, hidden ones too (like .git)','list files hidden folder see ls show','#t2-2','ls -a'],
+      ['cd <folder>','Go into a folder (cd .. goes back up)','change folder go into directory cd move','#t2-2','cd '],
+      ['mkdir <folder>','Make a new folder','new folder make directory create mkdir','#t2-2','mkdir '],
+      ['echo "text" > file.txt','Create a file (or replace what is in it). >> adds a line instead','create write file text echo make new','#t2-3','echo "" > notes.txt'],
+      ['cat <file>','Show what is inside a file','read show open file view cat contents','#t2-3','cat ']];
     var THEMES=['blue','green','pink','purple','orange'];
     function settings(){var o=[];
       Object.keys(WP).forEach(function(k){o.push({t:'Wallpaper: '+WP[k].n,k:'wallpaper background desktop picture '+k+(k==='night'?' dark':''),on:wp===k,fn:function(){wp=k;store('wp',k);applyLook()}})});
@@ -552,7 +571,7 @@
         .map(function(it){return '<button type="button" class="smhit" data-i="'+act(function(){openItem(it,true)})+'"><i class="smic">'+it.ic+'</i>'+esc(it.n)+'<small>App</small></button>'});
       var les=lessons().filter(function(x){return hit(x.t+' '+x.p,words)}).slice(0,6)
         .map(function(x){return '<a class="smhit" href="'+esc(x.h)+'">'+esc(x.t)+'<small>'+esc(x.p)+'</small></a>'});
-      var cmds=CMDS.filter(function(c){return hit(c[0]+' '+c[1]+' '+c[2],words)}).slice(0,4)
+      var cmds=CMDS.filter(function(c){return hit(c[0]+' '+c[1]+' '+c[2],words)}).slice(0,6)
         .map(function(c){return '<div class="smcmd"><a class="smhit" href="'+c[3]+'"><code>'+esc(c[0])+'</code><small>'+esc(c[1])+'</small></a><button type="button" class="smtry" data-i="'+act(function(){tryCmd(c[4])})+'" title="Type it in the Practice Lab">Try it</button></div>'});
       var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
         .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
@@ -563,6 +582,7 @@
       var h=grp('Apps',apps)+grp('Lessons',les)+grp('Git commands',cmds)+grp('Your files',fs)+grp('Settings',set);
       L.hidden=true;R.hidden=false;R.innerHTML=h||'<p>Nothing found. Try "branch", "undo", "notepad" or "wallpaper".</p>'}
     function tryCmd(c){openLab();var i=$('pgIn');if(!i)return;setTimeout(function(){i.value=c;var at=c.indexOf('""');i.focus({preventScroll:true});var n=at>-1?at+1:c.length;try{i.setSelectionRange(n,n)}catch(z){}},80)}
+    var lp=L&&L.querySelector('a.smp[href="#p5"]');if(lp){var sub=lp.nextElementSibling;if(sub&&sub.classList.contains('smsub'))sub.remove();var ar=lp.querySelector('em');if(ar)ar.remove()}
     Q.addEventListener('input',search);
     Q.addEventListener('keydown',function(e){if(e.key!=='Enter')return;e.preventDefault();search();var f=R.hidden?null:R.querySelector('.smhit');if(f)f.click()});
     R.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();var fn=acts[+b.getAttribute('data-i')];sm.hidden=true;if(fn)fn()})})();

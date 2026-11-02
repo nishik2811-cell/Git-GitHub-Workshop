@@ -25,7 +25,10 @@
   })();
   (function(){var rb0=$('realBox');if(rb0&&!$('pgTrk')){var d=document.createElement('div');d.id='pgTrk';d.className='pgtrk';d.hidden=true;d.setAttribute('role','status');rb0.parentNode.insertBefore(d,rb0.nextSibling)}})();
   var out=$('pgOut'),inp=$('pgIn'),ps=$('pgPs'),HOME='/home/you',S,busy=false,queue=[],pend=false,scripting=false;
-  function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repo:null,hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1}
+  function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repos:{},hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1;
+    /* every folder can hold its own repo (like real Git); S.repo is the one for the folder you are in */
+    Object.defineProperty(S,'repo',{configurable:true,get:function(){if(S.forceRepo)return S.forceRepo;return repoOf(S.cwd)},set:function(v){if(v)S.repos[v.root]=v}})}
+  function repoOf(path){var best=null;keys(S.repos||{}).forEach(function(rt){if(under(path,rt)&&(!best||rt.length>best.length))best=rt});return best?S.repos[best]:null}
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
   function pr(h){var d=document.createElement('div');d.className='ln';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight}
   function pl(t,c){String(t).split('\n').forEach(function(l){pr('<span class="'+(c||'')+'">'+(esc(l)||'&nbsp;')+'</span>')})}
@@ -82,6 +85,15 @@
   function track(){var r=R();if(!r||!r.remote||!r.rbr)return null;var o=r.rbr[r.head],h=headId();if(!o||!h)return null;
     var A=anc(h),B=anc(o),ah=0,bh=0;keys(A).forEach(function(k){if(!B[k])ah++});keys(B).forEach(function(k){if(!A[k])bh++});return {ah:ah,bh:bh,o:'origin/'+r.head}}
   function cmt(n){return n+' commit'+(n===1?'':'s')}
+  function ghKey(u){return String(u||'').trim().replace(/\.git$/,'').replace(/\/+$/,'').toLowerCase()}
+  function ancIn(cm,id){var set={},st=[id];while(st.length){var x=st.pop();if(!x||set[x]||!cm[x])continue;set[x]=1;cm[x].p.forEach(function(q){st.push(q)})}return set}
+  /* copy GitHub's side of repo `from` into repo `to` (the commits stay hidden in `to` until it fetches them) */
+  function ghCopy(from,to){keys(from.remote.br).forEach(function(b){var tip=from.remote.br[b];
+      keys(ancIn(from.cm,tip)).forEach(function(id){if(to.cm[id])return;var c=from.cm[id],n={id:c.id,msg:c.msg,p:c.p.slice(),files:c.files,br:c.br,n:c.n,who:c.who,hidden:true};to.cm[id]=n;to.list.push(n)});
+      to.remote.br[b]=tip});to.list.sort(function(x,y){return x.n-y.n})}
+  /* after something lands on the pretend GitHub, every other local repo pointing at the same address can see it there */
+  function ghShare(r){if(RL.on||!r||!r.remote)return;var k=ghKey(r.remote.url);keys(S.repos).forEach(function(rt){var q=S.repos[rt];if(q!==r&&q.remote&&ghKey(q.remote.url)===k)ghCopy(r,q)})}
+  function ghSource(url,not){var k=ghKey(url),best=null;keys(S.repos).forEach(function(rt){var q=S.repos[rt];if(q!==not&&q.remote&&ghKey(q.remote.url)===k&&(!best||keys(q.remote.br).length>keys(best.remote.br).length))best=q});return best}
   function visible(){return R().list.filter(function(c){return !c.hidden})}
   function reach(tip){var s=anc(tip),a=[];keys(s).forEach(function(k){if(!C(k).hidden)a.push(C(k))});a.sort(function(x,y){return y.n-x.n});return a}
   /* ---------- three way merge ---------- */
@@ -151,16 +163,38 @@
       S.repo={root:S.cwd,head:'main',br:{main:null},cm:{},list:[],index:{},conf:{},merge:null,remote:null,rbr:{}};
       pl('Initialized empty Git repository in '+S.cwd+'/.git/','g');return}
     if(sub==='clone'){
-      var url=a[1];if(!url){perr('fatal: You must specify a repository to clone.');return}
-      var name=a[2]||base(url).replace(/\.git$/,'');var root=norm(name);
-      if(S.dirs[root]){perr("fatal: destination path '"+name+"' already exists and is not an empty directory.");return}
+      var url=a[1];if(!url){perr('fatal: You must specify a repository to clone.\n\nusage: git clone <repo> [<dir>]');return}
+      var name=a[2]||base(url.replace(/\/+$/,'')).replace(/\.git$/,'');var root=norm(name);
+      if(exists(root)&&!(S.dirs[root]&&!keys(S.files).some(function(f){return under(f,root)})&&!keys(S.dirs).some(function(d){return d!==root&&under(d,root)}))){perr("fatal: destination path '"+name+"' already exists and is not an empty directory.");return}
+      var isUrl=/^(https?:\/\/|git@)/.test(url),loc=!isUrl&&S.repos[norm(url)];
+      if(!isUrl&&!loc){perr("fatal: repository '"+url+"' does not exist");return}
       pl("Cloning into '"+name+"'...");
-      S.dirs[root]=1;S.repo={root:root,head:'main',br:{main:null},cm:{},list:[],index:{},conf:{},merge:null,remote:{url:url,br:{},ids:{}},rbr:{}};
-      var f1={'README.md':'# '+name+'\n'},f2={'README.md':'# '+name+'\n','index.html':'<h1>Hello</h1>\n'};
-      var c1=newCommit('first commit',[],f1,'Meera');var c2=newCommit('add index page',[c1.id],f2,'Meera');
-      R().br.main=c2.id;R().remote.br.main=c2.id;R().rbr.main=c2.id;
-      keys(f2).forEach(function(f){S.files[root+'/'+f]=f2[f]});R().index=copy(f2);
-      pl('remote: Counting objects: 100% (6/6), done.\nReceiving objects: 100% (6/6), done.');pl('Now type: cd '+name,'y');return}
+      function made(){S.dirs[root]=1;var nr={root:root,head:'main',br:{},cm:{},list:[],index:{},conf:{},merge:null,remote:{url:url,br:{},ids:{}},rbr:{}};S.repos[root]=nr;return nr}
+      /* check out GitHub's default branch, and remember every GitHub branch as origin/<name> */
+      function checkout(nr,def){var tip=nr.remote.br[def];keys(nr.remote.br).forEach(function(b){nr.rbr[b]=nr.remote.br[b]});
+        nr.list.forEach(function(c){c.hidden=false});if(!tip){nr.head=def||'main';nr.br[nr.head]=null;pl('warning: You appear to have cloned an empty repository.','y');return}
+        nr.head=def;nr.br[def]=tip;var fl=nr.cm[tip].files;keys(fl).forEach(function(f){S.files[root+'/'+f]=fl[f];var d=dirname(root+'/'+f);while(d!==root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});nr.index=copy(fl);pl('Now type: cd '+name,'y')}
+      if(RL.on&&!loc){
+        if(ghKey(url)!==ghKey('https://github.com/'+RL.repo)){perr("remote: Repository not found.\nfatal: repository '"+url+"' not found");pl('Real GitHub mode can only reach the repo you connected: https://github.com/'+RL.repo+'.git','y');return}
+        var nr=made();S.forceRepo=nr;
+        gh('GET','/repos/'+RL.repo+'/branches?per_page=100').then(function(x){return x.s===200&&x.j.length?x.j.map(function(b){return b.name}):[RL.def]},function(){return [RL.def]}).then(function(list){
+          list.sort(function(x,y){return x===RL.def?-1:y===RL.def?1:0});var i=0,bad=null;
+          (function next(){if(i>=list.length||bad){done();return}S.forceRepo=nr;realFetch(list[i++],function(res){S.forceRepo=nr;if(res&&res.err)bad=res.err;next()},true)})();
+          function done(){S.forceRepo=nr;
+            if(bad){perr(bad);delete S.repos[root];fsDelete(root);S.forceRepo=null;return}
+            var n=nr.list.length;if(n)pl('remote: Enumerating objects: '+n+', done.\nReceiving objects: 100% ('+n+'/'+n+'), done.');checkout(nr,nr.remote.br[RL.def]?RL.def:keys(nr.remote.br)[0]);S.forceRepo=null;render()}})
+        return}
+      var src=loc?{cm:loc.cm,remote:{br:loc.br}}:ghSource(url,null),nr2;
+      if(loc)url=loc.root;
+      if(src){nr2=made();ghCopy(src,nr2)}
+      else if(ghKey(url)==='https://github.com/meera/website'){nr2=made();
+        /* a public demo repo that always exists on the pretend GitHub */
+        var f1={'README.md':'# website\nMeera\'s first website.\n'},f2={'README.md':'# website\nMeera\'s first website.\n','index.html':'<h1>Hello</h1>\n'};
+        var c1={id:rid(),msg:'first commit',p:[],files:f1,br:'main',n:++S.n,who:'Meera'},c2={id:rid(),msg:'add index page',p:[c1.id],files:f2,br:'main',n:++S.n,who:'Meera'};
+        [c1,c2].forEach(function(c){nr2.cm[c.id]=c;nr2.list.push(c)});nr2.remote.br.main=c2.id}
+      else{perr("remote: Repository not found.\nfatal: repository '"+url.replace(/\/+$/,'')+"/' not found");pl('On this Mini laptop, GitHub only has the repos you pushed to, plus a public demo: git clone https://github.com/meera/website','y');return}
+      var cnt=nr2.list.length;if(cnt)pl('remote: Enumerating objects: '+cnt+', done.\nremote: Counting objects: 100% ('+cnt+'/'+cnt+'), done.\nReceiving objects: 100% ('+cnt+'/'+cnt+'), done.');
+      checkout(nr2,nr2.remote.br.main?'main':keys(nr2.remote.br)[0]);return}
     if(!needRepo())return;r=R();
     if(sub==='status'){
       S.ran.status=1;if(S.files[R().root+'/.gitignore'])S.ran.stat2=1;var st=status(),o=['On branch '+r.head];
@@ -230,16 +264,19 @@
       var da=a.indexOf('-d')>=0||a.indexOf('-D')>=0,names=a.slice(1).filter(function(x){return x[0]!=='-'});
       if(da){var n=names[0];if(!(n in r.br)){perr("error: branch '"+n+"' not found.");return}
         if(n===r.head){perr("error: Cannot delete branch '"+n+"' checked out");return}
-        var tip=r.br[n];if(tip&&!anc(headId())[tip]){perr("error: the branch '"+n+"' is not fully merged.\nIf you are sure, use 'git branch -D "+n+"'.");return}
+        var tip=r.br[n];if(tip&&a.indexOf('-D')<0&&!anc(headId())[tip]){perr("error: the branch '"+n+"' is not fully merged.\nIf you are sure, use 'git branch -D "+n+"'.");return}
         delete r.br[n];pl("Deleted branch "+n+" (was "+tip+").");return}
       if(names.length){var nb=names[0];if(nb in r.br){perr("fatal: a branch named '"+nb+"' already exists");return}
         if(!headId()){perr("fatal: not a valid object name: '"+r.head+"'.");return}r.br[nb]=headId();return}
-      keys(r.br).sort().forEach(function(b){pr(b===r.head?'<span class="g">* '+esc(b)+'</span>':'  '+esc(b))});return}
+      keys(r.br).sort().forEach(function(b){pr(b===r.head?'<span class="g">* '+esc(b)+'</span>':'  '+esc(b))});
+      if(a.indexOf('-a')>=0||a.indexOf('-r')>=0)keys(r.rbr||{}).sort().forEach(function(b){if(r.rbr[b])pr('<span class="r">  remotes/origin/'+esc(b)+'</span>')});return}
     if(sub==='switch'||sub==='checkout'){
       var mk=a.indexOf('-c')>=0||a.indexOf('-b')>=0,tn=a.slice(1).filter(function(x){return x[0]!=='-'})[0];
       if(!tn){perr('fatal: missing branch name');return}
       if(mk){if(tn in r.br){perr("fatal: a branch named '"+tn+"' already exists");return}
         r.br[tn]=headId();r.head=tn;pl("Switched to a new branch '"+tn+"'");return}
+      if(!(tn in r.br)&&r.rbr&&r.rbr[tn]){var st4=status();if(st4.staged.length||st4.unstaged.length||st4.conf.length){perr('error: Your local changes would be overwritten by checkout.\nPlease commit your changes first.');return}
+        r.br[tn]=r.rbr[tn];applyTree(C(r.rbr[tn]).files);r.head=tn;pl("branch '"+tn+"' set up to track 'origin/"+tn+"'.\nSwitched to a new branch '"+tn+"'");return}
       if(!(tn in r.br)){perr("fatal: invalid reference: "+tn);return}
       if(tn===r.head){pl("Already on '"+tn+"'");return}
       var st3=status();if(st3.staged.length||st3.unstaged.length||st3.conf.length){perr('error: Your local changes would be overwritten by checkout.\nPlease commit your changes first.');return}
@@ -255,7 +292,7 @@
       mergeInto(r.br[on],on,"Merge branch '"+on+"'");return}
     if(sub==='remote'){
       if(a[1]==='add'){if(!a[3]){perr('usage: git remote add <name> <url>');return}if(r.remote){perr("error: remote origin already exists.");return}
-        r.remote={url:a[3],br:{},ids:{}};return}
+        r.remote={url:a[3],br:{},ids:{}};var src0=!RL.on&&ghSource(a[3],r);if(src0)ghCopy(src0,r);return}
       if(a[1]==='-v'||!a[1]){if(r.remote){if(a[1])pl('origin\t'+r.remote.url+' (fetch)\norigin\t'+r.remote.url+' (push)');else pl('origin')}return}
       perr('error: unsupported remote command');return}
     if(sub==='push'){
@@ -269,7 +306,7 @@
       pl(rt?' '+rt+'..'+lt+'  '+br+' -> '+br:' * [new branch]      '+br+' -> '+br,'g');
       if(a.indexOf('-u')>=0)pl("branch '"+br+"' set up to track 'origin/"+br+"'.");
       if(RL.on){realPush(br,rt,lt);return}
-      r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;return}
+      r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;ghShare(r);return}
     if(sub==='fetch'||sub==='pull'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
       var allowU=a.indexOf('--allow-unrelated-histories')>=0;
@@ -290,7 +327,7 @@
       case 'whoami':pl('you');return;
       case 'ls':{var all=t.indexOf('-a')>=0||t.indexOf('-la')>=0;if(all)S.ran.lsa=1;var dir=norm(t.filter(function(x,i){return i>0&&x[0]!=='-'})[0]||'.');
         if(!S.dirs[dir]){perr("ls: cannot access '"+(t[1]||'')+"': No such file or directory");return}
-        var items=[];if(all&&S.repo&&S.repo.root===dir)items.push('<span class="b">.git/</span>');
+        var items=[];if(all&&S.repos[dir])items.push('<span class="b">.git/</span>');
         keys(S.dirs).forEach(function(d){if(d!==dir&&dirname(d)===dir)items.push('<span class="b">'+esc(base(d))+'/</span>')});
         keys(S.files).forEach(function(f){if(dirname(f)===dir&&(all||base(f)[0]!=='.'))items.push(esc(base(f)))});
         pr(items.length?items.join('&nbsp;&nbsp;'):'&nbsp;');return}
@@ -532,14 +569,14 @@
       keys(S.dirs).forEach(function(d){if(under(d,o)){delete S.dirs[d];S.dirs[n+d.slice(o.length)]=1}});
       keys(S.files).forEach(function(f){if(f.indexOf(o+'/')===0){var t=S.files[f];delete S.files[f];S.files[n+f.slice(o.length)]=t}});
       var mv=function(x){return under(x,o)?n+x.slice(o.length):x};
-      S.cwd=mv(S.cwd);if(S.repo)S.repo.root=mv(S.repo.root);if(S.vsPin)S.vsPin=mv(S.vsPin);if(S.vsSelDir)S.vsSelDir=mv(S.vsSelDir);
+      S.cwd=mv(S.cwd);keys(S.repos).forEach(function(rt){var nr=mv(rt);if(nr!==rt){var rp=S.repos[rt];delete S.repos[rt];rp.root=nr;S.repos[nr]=rp}});if(S.vsPin)S.vsPin=mv(S.vsPin);if(S.vsSelDir)S.vsSelDir=mv(S.vsSelDir);
       if(pin)S.vsPinSig=sigNow();if(S.fvfWant)S.fvfWant=mv(S.fvfWant)}
     else if(o in S.files){var t=S.files[o];delete S.files[o];S.files[n]=t}
     else return {err:'It is not there any more.'};
     return {abs:n}}
   function fsDelete(a){if(a===HOME)return {err:'The home folder cannot be deleted.'};
     if(S.dirs[a]){keys(S.files).forEach(function(f){if(f.indexOf(a+'/')===0)delete S.files[f]});keys(S.dirs).forEach(function(d){if(under(d,a))delete S.dirs[d]});
-      if(S.repo&&under(S.repo.root,a)){S.repo=null;S.vsMerge=null}
+      keys(S.repos).forEach(function(rt){if(under(rt,a)){delete S.repos[rt];S.vsMerge=null}});
       while(!S.dirs[S.cwd])S.cwd=dirname(S.cwd)}
     else if(a in S.files)delete S.files[a];
     else return {err:'It is not there any more.'};
@@ -559,18 +596,18 @@
     var e={id:++binSeq,name:base(a),from:dirname(a),dir:!!S.dirs[a],files:{},dirs:[]};
     if(e.dir){keys(S.dirs).forEach(function(d){if(d.indexOf(a+'/')===0)e.dirs.push(d.slice(a.length+1))});
       keys(S.files).forEach(function(f){if(f.indexOf(a+'/')===0)e.files[f.slice(a.length+1)]=S.files[f]});
-      if(S.repo&&under(S.repo.root,a)){e.repo=S.repo;e.repoRel=S.repo.root.slice(a.length)}}
+      e.repos=keys(S.repos).filter(function(rt){return under(rt,a)}).map(function(rt){return {repo:S.repos[rt],rel:rt.slice(a.length)}});e.repo=e.repos.length>0}
     else e.files['']=S.files[a];
     var r=fsDelete(a);if(r.err)return r;(S.bin||(S.bin=[])).push(e);return {abs:a,repo:!!e.repo}}
   function binRestore(id){var b=S.bin||[],i=-1;b.forEach(function(x,k){if(x.id===id)i=k});if(i<0)return {err:'It is not in the Bin any more.'};var e=b[i];
     var p=e.from,need=[];while(!S.dirs[p]){need.unshift(p);p=dirname(p)}need.forEach(function(d){S.dirs[d]=1});
     var dst=e.from+'/'+uniq(e.from,e.name),note='';
     if(e.dir){S.dirs[dst]=1;e.dirs.forEach(function(d){S.dirs[dst+'/'+d]=1});keys(e.files).forEach(function(f){S.files[dst+'/'+f]=e.files[f]});
-      if(e.repo){if(S.repo)note='Its Git history could not come back, because another repo is open on the Mini laptop.';else{S.repo=e.repo;S.repo.root=dst+e.repoRel}}}
+      (e.repos||[]).forEach(function(x){x.repo.root=dst+x.rel;S.repos[x.repo.root]=x.repo})}
     else S.files[dst]=e.files[''];
     b.splice(i,1);return {abs:dst,note:note}}
   function binEmpty(id){if(id==null)S.bin=[];else S.bin=(S.bin||[]).filter(function(x){return x.id!==id})}
-  function gitMark(a){var r=S.repo;if(!r||!under(a,r.root)||a===r.root||!(a in S.files))return '';var f=a.slice(r.root.length+1);
+  function gitMark(a){var r=repoOf(a);if(!r||!under(a,r.root)||a===r.root||!(a in S.files))return '';var f=a.slice(r.root.length+1);
     if(r.conf[f])return 'C';if(!(f in r.index))return 'U';var h=headTree();return S.files[a]!==r.index[f]?'M':r.index[f]!==h[f]?(f in h?'M':'A'):''}
   /* VS Code shows the terminal's repo or folder, unless the desktop opened another folder in it */
   function vsMode(){var r=S.repo;
@@ -942,7 +979,7 @@
     var tip=r.remote.br[r.head],tf=copy(C(tip).files),t=tf['plan.txt']||'';
     if(n===1)tf['plan.txt']=t+'Meera: I will make the logo\n';
     else{var ls=t.replace(/\n$/,'').split('\n');ls[0]='Plan: build an app';tf['plan.txt']=ls.join('\n')+'\n'}
-    var c={id:rid(),msg:n===1?'Add Meera\'s line':'Make it an app',p:[tip],files:tf,br:r.head,n:++S.n,who:'Meera',hidden:true};r.cm[c.id]=c;r.list.push(c);r.remote.br[r.head]=c.id;S['mate'+n]=c.id;
+    var c={id:rid(),msg:n===1?'Add Meera\'s line':'Make it an app',p:[tip],files:tf,br:r.head,n:++S.n,who:'Meera',hidden:true};r.cm[c.id]=c;r.list.push(c);r.remote.br[r.head]=c.id;S['mate'+n]=c.id;ghShare(r);
     pr('<span class="y">[Meanwhile on GitHub: Meera pushed "'+esc(c.msg)+'". Your laptop does not know yet.]</span>')}
   var STORIES=[{n:'1. Pasta, branch, conflict',h:'GUIDED STORY: PASTA, BRANCH, CONFLICT',ST:ST1,TT:TT1,PR:PR1},{n:'2. Deleting files',h:'GUIDED STORY: DELETING FILES',ST:ST2,TT:TT2,PR:PR2},{n:'3. The .gitignore file',h:'GUIDED STORY: THE .GITIGNORE FILE',ST:ST3,TT:TT3,PR:PR3},{n:'4. Teammates: fetch and pull',h:'GUIDED STORY: TEAMMATES, FETCH AND PULL',ST:ST4,TT:TT4,PR:PR4}];
   STORIES[2].h='GUIDED STORY: THE .gitignore FILE';
@@ -1020,13 +1057,15 @@
     if(busy)return;var r=S.repo;
     if(!r||!r.remote||!r.remote.br[r.head]){window.gitPop&&window.gitPop('warn','NOT YET','Push something to GitHub first. Finish the missions up to <b>git push</b>, or press Watch a demo then push.');return}
     var tip=r.remote.br[r.head],tf=copy(C(tip).files);tf['from-meera.txt']='Hi from Meera\n';
-    var cur=r.head;var c={id:rid(),msg:'Meera adds a note',p:[tip],files:tf,br:cur,n:++S.n,who:'Meera',hidden:true};r.cm[c.id]=c;r.list.push(c);r.remote.br[cur]=c.id;
+    var cur=r.head;var c={id:rid(),msg:'Meera adds a note',p:[tip],files:tf,br:cur,n:++S.n,who:'Meera',hidden:true};r.cm[c.id]=c;r.list.push(c);r.remote.br[cur]=c.id;ghShare(r);
     pr('<span class="y">[A teammate (Meera) just pushed a commit to GitHub.]</span>');
     window.gitPop&&window.gitPop('warn','NEW ON GITHUB','Meera pushed new work to GitHub.<br>You do not have it yet. Type <code>git pull</code> to bring it down.');render();
   };
 
   /* ---------- REAL GitHub mode ---------- */
-  var RL={on:false,repo:'',tok:'',def:'main',view:'main',seen:{},timer:null,known:{},map:{},blobs:{}};
+  var RL={on:false,repo:'',tok:'',def:'main',view:'main',seen:{},timer:null,blobs:{}};
+  /* known and map belong to each local repo (a clone has its own commits), so they live on the repo */
+  ['known','map'].forEach(function(k){Object.defineProperty(RL,k,{get:function(){var r=S&&S.repo;if(!r)return {};return r['rl'+k]||(r['rl'+k]={})},set:function(v){var r=S&&S.repo;if(r)r['rl'+k]=v}})});
   /* known[branch]: the GitHub commit our copy of that branch matches. map: GitHub commit id -> our commit, for commits we already have. */
   var EMPTY_TREE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'; // Git's id for "no files at all"; GitHub answers 404 for it
   function realTree(sha){if(sha===EMPTY_TREE)return Promise.resolve({});return gh('GET','/repos/'+RL.repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read the files of one commit ('+t.s+')');
@@ -1038,8 +1077,8 @@
   function pool(items,n,fn){var i=0;function next(){if(i>=items.length)return Promise.resolve();var it=items[i++];return fn(it).then(next)}var w=[];for(var k=0;k<Math.min(n,items.length);k++)w.push(next());return Promise.all(w)}
   /* git fetch / git pull in Real GitHub mode, like real Git: download every commit GitHub has that we do not have yet
      (the whole history the first time), with its real parents, so merges stay merges */
-  function realFetch(br,done){var r=R();pend=true;busy=true;inp.disabled=true;RL.map=RL.map||{};
-    pl('Fetching from github.com/'+RL.repo+' (this one is real)...','y');
+  function realFetch(br,done,quiet){var r=R();pend=true;busy=true;inp.disabled=true;
+    if(!quiet)pl('Fetching from github.com/'+RL.repo+' (this one is real)...','y');
     function fin(res){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}try{done(res||{})}catch(e){perr('error: '+e.message)}setPrompt();render()}
     gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
       if(x.s!==200)return {};
@@ -1054,7 +1093,7 @@
         /* only what the branch really contains: walk back from GitHub's newest commit, stopping at commits we already have */
         var need=[],seen={},stack=[head];while(stack.length){var q=stack.pop();if(seen[q]||RL.map[q]||!bySha[q])continue;seen[q]=1;need.push(bySha[q]);(bySha[q].parents||[]).forEach(function(pp){stack.push(pp.sha)})}
         fresh=need;
-        pl('Receiving '+fresh.length+' commit'+(fresh.length===1?'':'s')+'...');
+        if(!quiet)pl('Receiving '+fresh.length+' commit'+(fresh.length===1?'':'s')+'...');
         return pool(fresh,6,function(c){return realTree(c.commit.tree.sha).then(function(f){trees[c.sha]=f;got++})}).then(function(){
           var made={};
           function build(sha){if(RL.map[sha])return RL.map[sha];var c=bySha[sha];if(!c)return null;if(made[sha])return made[sha];
@@ -1063,7 +1102,7 @@
             r.cm[sc.id]=sc;r.list.push(sc);made[sha]=sc.id;RL.map[sha]=sc.id;return sc.id}
           build(head);
           if(RL.map[head]){r.remote.br[br]=RL.map[head];RL.known[br]=head}
-          pl('Receiving objects: 100% ('+got+'/'+fresh.length+'), done.');return {}})})
+          if(!quiet)pl('Receiving objects: 100% ('+got+'/'+fresh.length+'), done.');return {}})})
     }).then(fin,function(e){fin({err:'fatal: could not read from GitHub ('+((e&&e.message)||'network error')+')'})})}
   var rb=$('realBox'),rbody=$('realB');
   function gh(method,path,body){
@@ -1152,7 +1191,7 @@
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
-  window.ML={S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
+  window.ML={repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
     fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,
     ctxMenu:ctxMenu,ctxClose:ctxClose,longPress:longPress,ficon:ficon,openInVS:vsOpenPath,showVS:vsShowWin};
   reset();
