@@ -119,6 +119,39 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 #wsIn .wiz .wbtns{bottom:0}
 #wsIn .wiz .wnav{top:var(--lwh,0px)}
 #wsWin{min-width:320px;min-height:220px}
+/* start menu search groups */
+.smres .smg{font:800 11px/1 'Nunito',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#6b78a8;padding:9px 12px 4px}
+.smres button.smhit{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
+.smres button.smhit{background:none;border:0;box-shadow:none;transform:none;font:inherit;color:inherit;padding:7px 12px;cursor:pointer;border-radius:0}
+.smres button.smhit:hover,.smres button.smhit:focus-visible{background:#dfe8ff}
+.smres button.smhit small{margin-left:auto;display:inline;font-weight:600;opacity:.65;font-size:11.5px}
+.smres .smic{display:inline-flex;width:18px;height:18px;flex:none}
+.smres .smic svg{width:18px;height:18px}
+.smres .smcmd{display:flex;align-items:stretch}
+.smres .smcmd .smhit{flex:1;min-width:0;display:block}
+.smres .smcmd code{font-family:'Fira Code',monospace;font-size:12.5px;font-weight:700;display:block}
+.smres .smcmd small{display:block;margin:2px 0 0}
+.smres .smtry{flex:none;align-self:center;margin:0 8px;padding:4px 9px;font-size:12px;border:2px solid var(--ink3);border-radius:5px;background:#8fe39a;color:#16327a;box-shadow:none;transform:none;cursor:pointer}
+.smres .smon{color:#2e9e4f}
+/* box 4: what your laptop knows about GitHub, as of the last fetch / pull / push */
+.pgtrk{margin:-4px 0 0;padding:8px 12px;background:#fffbe6;border:3px solid var(--ink);border-radius:12px;font-size:13.5px;line-height:1.45;color:#16327a;text-align:left}
+.pgtrk code{font-family:'Fira Code',monospace;font-size:12px;background:#16327a;color:#fff;padding:1px 5px;border-radius:4px}
+.pgtrk small{display:block;opacity:.7;font-size:11.5px;margin-top:2px}
+.pgtrk.flash{animation:pzflash .9s}
+@keyframes pzflash{0%{background:#ffe36e}100%{background:#fffbe6}}
+/* Notepad's pin button */
+.dwh button.dpin svg{width:14px;height:14px;display:block;transform:rotate(45deg);transition:transform .15s}
+.dwh button.dpin.on{background:#ffd34e;color:#16327a}
+.dwh button.dpin.on svg{transform:none}
+/* practice lab window */
+#labWin{min-width:320px;min-height:220px}
+#labWin .dwb{background-color:#efece2;background-image:linear-gradient(rgba(29,75,166,.09) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(29,75,166,.09) 1.5px,transparent 1.5px);background-size:30px 30px;background-attachment:local;overflow-x:hidden}
+#labIn{padding:4px 26px 26px;text-align:center}
+#labIn .pg{text-align:left}
+#labIn p.note{margin-left:auto;margin-right:auto}
+#labIn .pgb{justify-content:center}
+.labgo{justify-content:center;margin:6px 0 4px}
+.labgo button{font-size:17px;padding:10px 22px}
 
 /* browser */
 .brbar{display:flex;align-items:center;gap:6px;padding:7px 8px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
@@ -257,6 +290,11 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
   /* phones: the workshop opens beside the icon column; the full-screen button makes it fill the screen */
   #wsWin{left:var(--wsl,0px)!important;right:0;top:0!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
   #wsWin.max{left:0!important;border-width:0}
+  #labWin{left:var(--wsl,0px)!important;right:0;top:0!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
+  #labWin.max{left:0!important;border-width:0}
+  #labIn{padding:2px 10px 20px}
+  /* start screen: the warning wraps to two lines on phones, so START sits closer under it */
+  #boot .scene .start{top:51%}
   .dwh{cursor:default}
   .dwr{display:none}
   .tk.tkapp{display:flex;padding:3px 8px}

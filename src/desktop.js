@@ -22,6 +22,7 @@
     repo:px(['................','..KKKKKKKKKKK...','..KBBBBBBBBBBK..','..KBWWWWWWWWBK..','..KBBBBBBBBBBK..','..KBWWWWWBBBBK..','..KBBBBBBBBBBK..','..KBWWWWWWWBBK..','..KBBBBBBBBBBK..','..KBBBBBBBBBBK..','..KKKKKKKKKKKK..','....KPPK........','....KPPK........','....KPKPK.......','................','................'],{K:'#16327a',B:'#1d4ba6',W:'#cfe3ff',P:'#e8336d'}),
     pad:px(['..K.K.K.K.K.....','.KWKWKWKWKWK....','.KWWWWWWWWWK..KK','.KWBBBBBBBWK.KOK','.KWWWWWWWWWKKOOK','.KWBBBBBBWWKOOK.','.KWWWWWWWWKOOK..','.KWPPWWWWKOOKK..','.KWPWPWWWKKKK...','.KWWPWPWKKKKK...','.KWWWWPPWWWWK...','.KWWWWWWWWWWK...','.KWBBBBBBBWWK...','.KWWWWWWWWWWK...','.KKKKKKKKKKKK...','................'],{K:'#16327a',W:'#ffffff',B:'#a9c4f0',P:'#e8336d',O:'#ffb74d'}),
     pdf:px(['..KKKKKKKKK.....','..KWWWWWWWKK....','..KWWWWWWWKGK...','..KWWWWWWWKKKK..','..KWBBBBBBWWWK..','..KWWWWWWWWWWK..','..KWBBBBBBBWWK..','.KRRRRRRRRRRRK..','.KRWWRWWRRWWRK..','.KRWRRWRWRWRRK..','.KRWWRWRWRWWRK..','.KRWRRWWRRWRRK..','.KRRRRRRRRRRRK..','..KWWWWWWWWWWK..','..KKKKKKKKKKKK..','................'],{K:'#16327a',W:'#ffffff',G:'#cfd8ee',B:'#7fa3e0',R:'#d93a3a'}),
+    lab:px(['................','KKKKKKKKKKKKKKKK','KBBBBBBBBBPPYYGK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDGDDDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDDDGDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDGDDDGGGGGDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','.....KKKKKK.....','...KKKKKKKKKK...'],{K:'#16327a',B:'#1d4ba6',D:'#1b2440',G:'#5cf08a',P:'#e8336d',Y:'#ffd34e'}),
     power:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 7.2a8 8 0 1 0 11.4 0"/></svg>',
     lock:'<svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" fill="#2e9e4f"/><path d="M3.5 5V3.6a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#2e9e4f" stroke-width="1.5"/></svg>'
   };
@@ -55,6 +56,7 @@
   tkShow.onclick=function(){minAll()};
   var tkWS=tkBtn('tkWS','git-and-github-workshop.exe',I.ws);tkWS.classList.add('on');
   if(oldTk)oldTk.replaceWith(tkWS);else tbar.insertBefore(tkWS,tray);
+  var tkLab=tkBtn('tkLab','Practice Lab',I.lab);tkLab.hidden=true;tbar.insertBefore(tkLab,tray);
   var tkBR=tkBtn('tkBR','Browser',I.br);tkBR.hidden=true;tbar.insertBefore(tkBR,tray);
   var tkDraw=tkBtn('tkDraw','Notepad',I.pad);tkDraw.hidden=true;tbar.insertBefore(tkDraw,tray);
   var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
@@ -73,7 +75,7 @@
   function bootGo(hash,instant){if(boot.hidden)return;html.classList.remove('booting');try{sessionStorage.setItem('mlStarted','1')}catch(z){}
     if(instant)boot.hidden=true;else{boot.classList.add('out');setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360)}
     desk.hidden=false;draw(true);
-    if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)}
+    if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700);if(hash==='#p5'||hash==='#t2-3b')setTimeout(openLab,60)}
     setTimeout(function(){if(location.hash)history.replaceState(null,'',location.pathname+location.search)},50)}
   var wasOn=false;
   /* only START leaves the start screen; Yes, No and the folder just show a pop-up */
@@ -117,9 +119,10 @@
   var wins={};
   function zOrder(w){var all=[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).filter(Boolean);
     all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);
-    var npe=$('notepad');if(vsPinned&&npe&&w!==npe){all.splice(all.indexOf(npe),1);all.push(npe)} // pinned VS Code always stays on top
+    /* pinned windows (VS Code, Notepad) always stay above the others; the one you clicked last is on top among them */
+    var pinOn=function(x){return x.id==='notepad'?vsPinned:x.id==='drawWin'?padPinned:false};all=all.filter(function(x){return !pinOn(x)}).concat(all.filter(pinOn));
     all.forEach(function(x,i){x.style.zIndex=51+i});active=w;tkSync()}
-  var active=null,vsPinned=store('vspin')==='1';
+  var active=null,vsPinned=store('vspin')==='1',padPinned=store('padpin')==='1';
   /* which windows are on screen, which one is in front, and what a click on its taskbar button or desktop icon does */
   function isVis(el){if(!el)return false;if(el.id==='notepad')return el.classList.contains('show')&&!el.classList.contains('docked');return !el.hidden&&!el.classList.contains('docked')}
   function topWin(){if(active&&isVis(active))return active;var t=null,tz=-1;[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).forEach(function(el){if(!isVis(el))return;var z=+el.style.zIndex||55;if(z>=tz){tz=z;t=el}});return t}
@@ -150,7 +153,7 @@
     g.addEventListener('pointerup',function(){on=false;el.classList.remove('sizing')});
     el.querySelector('.dmin').onclick=function(){winDock(id,true)};
     if(!o.noClose){el.querySelector('.dx').onclick=function(){winClose(id)};
-      el.addEventListener('keydown',function(e){if(e.key==='Escape'&&!e.defaultPrevented&&!document.querySelector('.ctxm')){winClose(id)}})}
+      if(!o.noEsc)el.addEventListener('keydown',function(e){if(e.key==='Escape'&&!e.defaultPrevented&&!document.querySelector('.ctxm')){winClose(id)}})}
     if(o.max){el.querySelector('.dmax').onclick=function(){winMax(id)};hd.addEventListener('dblclick',function(e){if(!e.target.closest('button')&&innerWidth>700)winMax(id)})}
     tk.onclick=function(){activate(el)};
     return W}
@@ -222,6 +225,30 @@
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
   addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
 
+
+  /* ---------- the Practice Lab is its own app: the terminal, the four boxes and the stories live in this window ---------- */
+  var LAB=makeWin('labWin','Practice Lab',I.lab,tkLab,1060,720,{max:true,noEsc:true});
+  var labBody=LAB.body;labBody.id='labBody';var labIn=document.createElement('div');labIn.id='labIn';labBody.appendChild(labIn);
+  (function(){var card=$('t2-3b'),cb=card&&card.querySelector('.body'),pg=$('pg');if(!cb||!pg)return;
+    var lead=cb.querySelector('p.lead');if(lead)labIn.appendChild(lead);
+    [pg,cb.querySelector('.btns.pgb'),$('pgBar'),cb.querySelector('p.note')].forEach(function(x){if(x)labIn.appendChild(x)});
+    cb.insertAdjacentHTML('afterbegin','<p class="lead">The practice lab is an <mark>app</mark> on your Mini laptop. It opens in its own window, so a lesson can stay open right beside it.</p>'
+      +'<div class="btns labgo"><button type="button" class="greenbtn" id="labGo">Open the Practice Lab</button></div>'
+      +'<p class="note">You can also double-click <b>Practice Lab</b> on the desktop, or search for it in the Start menu.</p>');
+    $('labGo').onclick=function(){openLab()}})();
+  LAB.place=function(){if(innerWidth<=700){LAB.el.style.setProperty('--wsl','0px');return} /* phones: the terminal needs the whole width */
+    var c=cell(),l=Math.min(c.x0+appCols()*c.w+40,Math.round(innerWidth*0.3)+28),w=Math.max(340,Math.min(1060,innerWidth-l-20));
+    LAB.el.style.left=l+'px';LAB.el.style.top='22px';LAB.el.style.width=w+'px';LAB.el.style.height=Math.max(240,innerHeight-38-40)+'px'};
+  var LABBASE=1000;
+  function labZoom(){var w=labBody.clientWidth;if(!w)return;var nz=innerWidth>700&&w<LABBASE*0.97?String(Math.round(w/LABBASE*1000)/1000):'';if(nz!==labIn.style.zoom)labIn.style.zoom=nz}
+  if(window.ResizeObserver)new ResizeObserver(labZoom).observe(labBody);else addEventListener('resize',labZoom);
+  function openLab(){var was=isVis(LAB.el);activate(LAB.el,true);labZoom();
+    /* VS Code is the lab's editor: bring it along, in front */
+    if(!was&&np&&np.classList.contains('show')&&!np.classList.contains('docked'))zOrder(np)}
+  ML.openLab=openLab;
+  /* links to the practice lab (the Start menu, the lesson index) open the app */
+  document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href="#t2-3b"],a[href="#p5"]');if(a)setTimeout(openLab,30)});
+
   /* browser: the address is locked to the workshop repo; Search opens it in a new tab */
   var BR=makeWin('brWin','Browser',I.br,tkBR,560,400);
   BR.body.parentNode.insertBefore((function(){var d=document.createElement('div');d.className='brbar';
@@ -237,6 +264,12 @@
 
   /* drawing notepad */
   var DW=makeWin('drawWin','Notepad',I.pad,tkDraw,580,430);
+  /* pin Notepad on top, like VS Code */
+  (function(){var b=document.createElement('button');b.type='button';b.className='dpin';
+    b.innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1.5h6l-1 4 2.5 2.5h-9L6 5.5z" fill="currentColor"/><path d="M8 8v6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    function sync(){b.classList.toggle('on',padPinned);b.setAttribute('aria-pressed',padPinned?'true':'false');b.title=padPinned?'Unpin (stop keeping Notepad on top)':'Pin on top (keep Notepad above other windows)';b.setAttribute('aria-label',b.title)}
+    b.onclick=function(e){e.stopPropagation();padPinned=!padPinned;store('padpin',padPinned?'1':'0');sync();zOrder(DW.el)};
+    var mn=DW.el.querySelector('.dwh .dmin');mn.parentNode.insertBefore(b,mn);sync()})();
   var PCOL=[['#16327a','Blue ink'],['#222222','Black'],['#e8336d','Pink'],['#2e9e4f','Green'],['#e07f22','Orange'],['#7653d1','Purple']],PSZ=[[2,'Thin'],[5,'Medium'],[11,'Thick']];
   DW.body.classList.add('padb');
   DW.body.innerHTML='<div class="padtools" role="toolbar" aria-label="Drawing tools"><span class="padgrp">'
@@ -335,7 +368,7 @@
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:memes',n:'hehehe',ic:I.folder,app:'memes',dir:true},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:memes',n:'hehehe',ic:I.folder,app:'memes',dir:true},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repo&&s.repo.root===d)})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){mine.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
@@ -345,7 +378,7 @@
        (the setup guide counts as a .pdf file); by date created keeps the apps first, then your things oldest first */
     if(sortBy==='name')return o.concat(mine).sort(nm);
     if(sortBy==='date'){mine.sort(function(a,b){return born[a.k]-born[b.k]});return o.concat(mine)}
-    var grp=function(x){return x.app&&x.app!=='guide'&&x.app!=='memes'&&x.app!=='credits'?0:x.dir?1:2},ord=function(x){return x.app?['ws','vs','br','draw','bin'].indexOf(x.app):0};
+    var grp=function(x){return x.app&&x.app!=='guide'&&x.app!=='memes'&&x.app!=='credits'?0:x.dir?1:2},ord=function(x){return x.app?['ws','lab','vs','br','draw','bin'].indexOf(x.app):0};
     return o.concat(mine).sort(function(a,b){return grp(a)!==grp(b)?grp(a)-grp(b):grp(a)===0?ord(a)-ord(b):ext(a)!==ext(b)?(ext(a)<ext(b)?-1:1):nm(a,b)})}
   var SORTS={name:'name',type:'type',date:'date created'},sortBy=SORTS[store('sort')]?store('sort'):'type',born={},bornN=0;
   function arrange(k){sortBy=k;store('sort',k);pos={};lastSig='';draw(true);say('Arranged the icons by '+SORTS[k]+'.')}
@@ -374,7 +407,7 @@
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
-    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
+    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
     openVS(it.k)}
 
   /* rename right on the icon */
@@ -460,7 +493,7 @@
   desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;
     var it=itemOf(b.getAttribute('data-k'));if(appOpen(it))return;openItem(it)});
   /* once an app's window is open (even minimised), one click on its icon minimises or restores it, like the taskbar */
-  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
+  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
   function appOpen(it){var el=appEl(it);if(!el)return false;return el.id==='notepad'?el.classList.contains('show'):!el.hidden}
   desk.addEventListener('keydown',function(e){if(e.target.closest('.dren'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k);
     if(e.key==='Enter'&&it){e.preventDefault();openItem(it)}
@@ -470,4 +503,67 @@
     else if((e.ctrlKey||e.metaKey)&&!e.altKey&&it&&!it.app&&(e.key==='c'||e.key==='x')){e.preventDefault();clip={mode:e.key==='x'?'cut':'copy',abs:k};lastSig='';draw(true)}
     else if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();paste(it&&it.dir?k:HOME)}});
   desk.addEventListener('focusin',function(e){var b=e.target.closest&&e.target.closest('.dico');if(b&&!renaming){sel=b.getAttribute('data-k');markSel()}});
+  /* ---------- Start menu search: lessons, apps, your files, Git commands and settings, in groups ---------- */
+  (function(){var Q=$('smQ'),R=$('smRes'),L=$('smList'),sm=$('startMenu');if(!Q||!R||!sm)return;
+    Q.placeholder='Search lessons, apps, files...';Q.setAttribute('aria-label','Search lessons, apps, files, Git commands and settings');
+    var acts=[];
+    function low(x){return String(x).toLowerCase()}
+    function hit(hay,words){hay=low(hay);return words.every(function(w){return hay.indexOf(w)>-1})}
+    function lessons(){var out=[];document.querySelectorAll('section.phase').forEach(function(sec){var t=sec.querySelector('h2');if(!t)return;
+      sec.querySelectorAll('.idx a').forEach(function(a){out.push({h:a.getAttribute('href'),t:a.textContent.replace(/^\s*\d+\.\s*/,''),p:t.textContent})})});
+      out.push({h:'#t1-5',t:'Setup and installation',p:'Introduction'});return out}
+    var APPK={ws:'lessons workshop learn read exe',lab:'practice lab terminal git bash missions stories try commands',vs:'vs code visual studio editor explorer source control',br:'browser internet web github repo search',
+      draw:'notepad draw paint sketch pen',guide:'setup guide pdf install help windows linux',memes:'hehehe memes funny pictures images folder',credits:'suspects txt credits team names made by',bin:'bin trash recycle deleted restore'};
+    /* everyday words people type, and the Git commands that do it */
+    var CMDS=[
+      ['git restore <file>','Undo changes to a file you have not committed yet','undo discard throw away changes reset file restore go back','#t2-3','git restore '],
+      ['git revert <commit>','Undo a commit safely, by adding a new commit that reverses it','undo revert reverse commit go back mistake','#t2-3','git revert '],
+      ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
+      ['git add <file>','Put a change in the staging area, ready to save','save stage add prepare track','#t2-3','git add '],
+      ['git commit -m "message"','Save a snapshot (a save point) of what you staged','save commit snapshot message checkpoint','#t2-3','git commit -m ""'],
+      ['git status','See what changed and what is staged','status changed what happened check see state behind ahead','#t2-3','git status'],
+      ['git log --oneline','See your history of commits','history log list commits past see','#t2-3','git log --oneline'],
+      ['git init','Turn a folder into a Git repo','start new repo create init begin','#t2-2','git init'],
+      ['git push -u origin main','Upload your commits to GitHub','upload push send share github online','#t2-4','git push -u origin main'],
+      ['git pull','Download new commits from GitHub and merge them in','download pull get update latest sync teammate','#t2-4','git pull'],
+      ['git fetch','Check GitHub for new commits, without changing your files','download fetch check update look remote teammate','#t2-4','git fetch'],
+      ['git clone <url>','Copy a repo from GitHub onto your computer','download clone copy get repo','#t2-4','git clone '],
+      ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url','#t2-5','git remote add origin '],
+      ['git switch -c <name>','Make a new branch and move onto it','new branch create switch make','#t3-2','git switch -c '],
+      ['git switch <name>','Move to another branch','change branch switch go move checkout','#t3-2','git switch '],
+      ['git branch','List your branches','list branches see branch','#t3-2','git branch'],
+      ['git merge <branch>','Combine another branch into this one','combine merge join branch together','#t3-3','git merge '],
+      ['.gitignore','A file listing what Git should never save, like passwords','ignore secret password private hide gitignore keep out','#t4-1','echo "secret.txt" > .gitignore'],
+      ['git config --global user.name "Name"','Tell Git your name (and user.email for your email)','name email config who identity setup','#t1-5','git config --global user.name ""']];
+    var THEMES=['blue','green','pink','purple','orange'];
+    function settings(){var o=[];
+      Object.keys(WP).forEach(function(k){o.push({t:'Wallpaper: '+WP[k].n,k:'wallpaper background desktop picture '+k+(k==='night'?' dark':''),on:wp===k,fn:function(){wp=k;store('wp',k);applyLook()}})});
+      THEMES.forEach(function(k){o.push({t:'Colours: '+k[0].toUpperCase()+k.slice(1),k:'colour color colours theme personalise personalize '+k,on:theme===k,fn:function(){theme=k;store('theme',k);applyLook()}})});
+      o.push({t:'Icons: Large',k:'icons icon size view large big',on:view==='large',fn:function(){setView('large')}});
+      o.push({t:'Icons: Small',k:'icons icon size view small little',on:view==='small',fn:function(){setView('small')}});
+      Object.keys(SORTS).forEach(function(k){o.push({t:'Arrange icons by '+SORTS[k],k:'arrange sort order icons '+SORTS[k],on:sortBy===k,fn:function(){arrange(k)}})});
+      return o}
+    function tilde(p){return p===HOME?'~':'~'+p.slice(HOME.length)}
+    function act(fn){acts.push(fn);return acts.length-1}
+    function grp(t,rows){return rows.length?'<div class="smg">'+t+'</div>'+rows.join(''):''}
+    function search(){var v=low(Q.value.trim());if(!v)return;var words=v.split(/\s+/);acts=[];
+      var apps=items().filter(function(it){return it.app&&hit(it.n+' '+(APPK[it.app]||''),words)})
+        .sort(function(a,b){return (low(a.n).indexOf(v)===0?0:1)-(low(b.n).indexOf(v)===0?0:1)}).slice(0,5)
+        .map(function(it){return '<button type="button" class="smhit" data-i="'+act(function(){openItem(it,true)})+'"><i class="smic">'+it.ic+'</i>'+esc(it.n)+'<small>App</small></button>'});
+      var les=lessons().filter(function(x){return hit(x.t+' '+x.p,words)}).slice(0,6)
+        .map(function(x){return '<a class="smhit" href="'+esc(x.h)+'">'+esc(x.t)+'<small>'+esc(x.p)+'</small></a>'});
+      var cmds=CMDS.filter(function(c){return hit(c[0]+' '+c[1]+' '+c[2],words)}).slice(0,4)
+        .map(function(c){return '<div class="smcmd"><a class="smhit" href="'+c[3]+'"><code>'+esc(c[0])+'</code><small>'+esc(c[1])+'</small></a><button type="button" class="smtry" data-i="'+act(function(){tryCmd(c[4])})+'" title="Type it in the Practice Lab">Try it</button></div>'});
+      var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
+        .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
+        .filter(function(x){return x[0].indexOf('/.git')<0&&hit(base(x[0]),words)}).slice(0,6)
+        .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){openVS(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
+      var set=settings().filter(function(o){return hit(o.t+' '+o.k,words)}).slice(0,5)
+        .map(function(o){return '<button type="button" class="smhit" data-i="'+act(o.fn)+'">'+esc(o.t)+(o.on?' <b class="smon">&#10003;</b>':'')+'<small>Setting</small></button>'});
+      var h=grp('Apps',apps)+grp('Lessons',les)+grp('Git commands',cmds)+grp('Your files',fs)+grp('Settings',set);
+      L.hidden=true;R.hidden=false;R.innerHTML=h||'<p>Nothing found. Try "branch", "undo", "notepad" or "wallpaper".</p>'}
+    function tryCmd(c){openLab();var i=$('pgIn');if(!i)return;setTimeout(function(){i.value=c;var at=c.indexOf('""');i.focus({preventScroll:true});var n=at>-1?at+1:c.length;try{i.setSelectionRange(n,n)}catch(z){}},80)}
+    Q.addEventListener('input',search);
+    Q.addEventListener('keydown',function(e){if(e.key!=='Enter')return;e.preventDefault();search();var f=R.hidden?null:R.querySelector('.smhit');if(f)f.click()});
+    R.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();var fn=acts[+b.getAttribute('data-i')];sm.hidden=true;if(fn)fn()})})();
 })();

@@ -23,6 +23,7 @@
     tkb.onclick=function(){vsDock(!np.classList.contains('docked'))};
     if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){np.classList.add('show');tkb.hidden=false;tkb.classList.add('on');io.disconnect()}},{threshold:0});io.observe($('pg'))}else{np.classList.add('show');tkb.hidden=false;tkb.classList.add('on')}
   })();
+  (function(){var rb0=$('realBox');if(rb0&&!$('pgTrk')){var d=document.createElement('div');d.id='pgTrk';d.className='pgtrk';d.hidden=true;d.setAttribute('role','status');rb0.parentNode.insertBefore(d,rb0.nextSibling)}})();
   var out=$('pgOut'),inp=$('pgIn'),ps=$('pgPs'),HOME='/home/you',S,busy=false,queue=[],pend=false,scripting=false;
   function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repo:null,hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1}
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -77,12 +78,16 @@
   function refsOf(id){var r=R(),a=[];keys(r.br).forEach(function(b){if(r.br[b]===id){a.push(b===r.head?'HEAD -> '+b:b)}});
     keys(r.rbr||{}).forEach(function(b){if(r.rbr[b]===id)a.push('origin/'+b)});
     a.sort(function(x,y){return x.indexOf('HEAD')===0?-1:y.indexOf('HEAD')===0?1:0});return a}
+  /* how your branch compares with origin/<branch>: your laptop's memory of GitHub (only fetch, pull and push update it) */
+  function track(){var r=R();if(!r||!r.remote||!r.rbr)return null;var o=r.rbr[r.head],h=headId();if(!o||!h)return null;
+    var A=anc(h),B=anc(o),ah=0,bh=0;keys(A).forEach(function(k){if(!B[k])ah++});keys(B).forEach(function(k){if(!A[k])bh++});return {ah:ah,bh:bh,o:'origin/'+r.head}}
+  function cmt(n){return n+' commit'+(n===1?'':'s')}
   function visible(){return R().list.filter(function(c){return !c.hidden})}
   function reach(tip){var s=anc(tip),a=[];keys(s).forEach(function(k){if(!C(k).hidden)a.push(C(k))});a.sort(function(x,y){return y.n-x.n});return a}
   /* ---------- three way merge ---------- */
   /* git push refused, worded exactly like real Git: "fetch first" when GitHub has commits you never downloaded,
      "non-fast-forward" when you downloaded them but have not merged them in yet (for example, mid-conflict) */
-  function pushRejected(url,br,fetched){var r=R();S.pushRej=true;
+  function pushRejected(url,br,fetched){var r=R();S.pushRej=true;if(S.mate2)S.ran.rej2=1;
     pl('To '+url+'\n ! [rejected]        '+br+' -> '+br+(fetched?' (non-fast-forward)':' (fetch first)'),'r');
     perr("error: failed to push some refs to '"+url+"'\n"+(fetched?"hint: Updates were rejected because the tip of your current branch is behind\nhint: its remote counterpart. If you want to integrate the remote changes,\nhint: use 'git pull' before pushing again.":"hint: Updates were rejected because the remote contains work that you do not\nhint: have locally. This is usually caused by another repository pushing to\nhint: the same ref. If you want to integrate the remote changes, use\nhint: 'git pull' before pushing again.")+"\nhint: See the 'Note about fast-forwards' in 'git push --help' for details.");
     if(window.gitPop&&!scripting){if(r&&r.merge)window.gitPop('err','ERROR: PUSH REJECTED','You are in the middle of a merge.<br>Fix the conflict, then <code>git add</code> and <code>git commit</code> to finish it. Then push.');
@@ -100,7 +105,9 @@
     if(r.rbr[r.head]!==rb){pl('From '+r.remote.url+'\n   '+(r.rbr[r.head]||'0000000')+'..'+rb+'  '+r.head+'       -> origin/'+r.head)}
     keys(anc(rb)).forEach(function(k){C(k).hidden=false});r.rbr[r.head]=rb;
     if(sub==='fetch')return;
+    if(S.mate2&&S.ran.rej2)S.ran.pc2=1;
     var cur=headId();
+    if(S.ran.f1&&!S.mate2&&cur&&cur!==rb&&!anc(cur)[rb])S.ran.p1=1; // only when the pull really brings something new
     if(!cur){var s0=diffStat({},C(rb).files);applyTree(C(rb).files);r.br[r.head]=rb;pl('Fast-forward','y');pl(statLine(s0));return}
     if(cur===rb||anc(cur)[rb]){pl('Already up to date.');return}
     if(!anc(rb)[cur]&&!lca(cur,rb)&&!allowU){perr('fatal: refusing to merge unrelated histories');pl("Your laptop's history and GitHub's started separately (for example, the repo was created with a README on GitHub). To join them, type:  git pull --allow-unrelated-histories",'y');return}
@@ -157,6 +164,12 @@
     if(!needRepo())return;r=R();
     if(sub==='status'){
       S.ran.status=1;if(S.files[R().root+'/.gitignore'])S.ran.stat2=1;var st=status(),o=['On branch '+r.head];
+      var tk=track();
+      if(tk){if(!tk.ah&&!tk.bh)o.push("Your branch is up to date with '"+tk.o+"'.");
+        else if(!tk.ah)o.push("Your branch is behind '"+tk.o+"' by "+cmt(tk.bh)+', and can be fast-forwarded.\n  (use "git pull" to update your local branch)');
+        else if(!tk.bh)o.push("Your branch is ahead of '"+tk.o+"' by "+cmt(tk.ah)+'.\n  (use "git push" to publish your local commits)');
+        else o.push("Your branch and '"+tk.o+"' have diverged,\nand have "+tk.ah+' and '+tk.bh+' different commits each, respectively.\n  (use "git pull" if you want to integrate the remote branch with yours)')}
+      if(S.mate1&&!S.ran.f1)S.ran.st1=1;if(S.ran.f1&&tk&&tk.bh)S.ran.st2=1;
       if(!headId())o.push('\nNo commits yet');
       if(r.merge||st.conf.length){o.push('You have unmerged paths.\n  (fix conflicts and run "git commit")');
         if(st.conf.length){o.push('\nUnmerged paths:\n  (use "git add <file>..." to mark resolution)');st.conf.forEach(function(f){o.push('\tboth modified:   '+f)})}}
@@ -261,6 +274,7 @@
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
       var allowU=a.indexOf('--allow-unrelated-histories')>=0;
       if(sub==='pull'&&mergeBlocked('Pulling'))return;
+      if(S.mate1)S.ran.f1=1;
       if(RL.on){realFetch(r.head,function(res){syncPull(sub,allowU,res)});return}
       syncPull(sub,allowU,null);return}
     perr("git: '"+sub+"' is not a git command here. Try: git help");
@@ -345,9 +359,14 @@
     }
     z3=graph();
     if(S.repo&&S.repo.remote){var rm=S.repo.remote;var bs=keys(rm.br);
-      z4='<div class="url">'+esc(rm.url)+'</div>'+(bs.length?bs.map(function(b){var tip=rm.br[b];var n=reach(tip).length;var ahead=R().br[b]&&R().br[b]!==tip&&!anc(R().br[b])[tip]?' <span class="tagr">you are behind</span>':'';return '<div class="rb"><b>'+esc(b)+'</b> <span>'+tip+'</span> <small>'+Math.max(n,1)+' commit'+(n===1?'':'s')+'</small>'+ahead+'</div>'}).join(''):'<i class="empty">Connected, but empty. Try: git push -u origin main</i>')}
+      z4='<div class="url">'+esc(rm.url)+'</div>'+(bs.length?bs.map(function(b){var tip=rm.br[b];var n=reach(tip).length;var ahead='';return '<div class="rb"><b>'+esc(b)+'</b> <span>'+tip+'</span> <small>'+Math.max(n,1)+' commit'+(n===1?'':'s')+'</small>'+ahead+'</div>'}).join(''):'<i class="empty">Connected, but empty. Try: git push -u origin main</i>')}
     else z4='<i class="empty">Not connected. Try: git remote add origin URL</i>';
-    return {z1:z1,z2:z2,z3:z3,z4:z4};
+    var z5='';if(S.repo&&S.repo.remote){var tk=track();
+      z5=!tk?(S.repo.rbr[S.repo.head]?'':'<b>Your laptop:</b> has not talked to GitHub about <b>'+esc(S.repo.head)+'</b> yet.')
+        :'<b>As of your last fetch:</b> '+(!tk.ah&&!tk.bh?'up to date with GitHub.':!tk.ah?'GitHub has <b>'+cmt(tk.bh)+'</b> you don\'t have. <code>git pull</code> brings '+(tk.bh===1?'it':'them')+' in.'
+          :!tk.bh?'you have <b>'+cmt(tk.ah)+'</b> GitHub doesn\'t have. <code>git push</code> sends '+(tk.ah===1?'it':'them')+' up.':'you and GitHub both have new commits ('+tk.ah+' and '+tk.bh+'). <code>git pull</code> joins them.')
+          +' <small>Git only checks GitHub when you type git fetch or git pull.</small>'}
+    return {z1:z1,z2:z2,z3:z3,z4:z4,z5:z5};
   }
   function graph(){
     if(!S.repo)return '<i class="empty">Your commits will be drawn here.</i>';
@@ -355,6 +374,7 @@
     var bn=keys(r.br).filter(function(b){return r.br[b]}).sort(function(x,y){return x==='main'?-1:y==='main'?1:x<y?-1:1});
     var ln=0,owner={},laneName=[];
     bn.forEach(function(b){var x=r.br[b],mine=false;while(x&&!(x in owner)){if(!C(x).hidden){owner[x]=ln;mine=true}x=C(x).p[0]}if(mine){laneName[ln]=b;ln++}});
+    keys(r.rbr||{}).sort().forEach(function(b){var x=r.rbr[b],mine=false;while(x&&!(x in owner)){if(!C(x).hidden){owner[x]=ln;mine=true}x=C(x).p[0]}if(mine){laneName[ln]='origin/'+b;ln++}});
     ln=Math.max(ln,1);if(!laneName[0])laneName[0]=r.head;
     /* commits keep a readable spacing; a long history makes the graph wider and it scrolls sideways (newest end first) */
     var n=cs.length,G=86,W0=470,step=n>1?84:0,W=Math.max(W0,G+44+(n-1)*step+50),mc=Math.max(7,Math.floor(step/7.6)),pad=64,LH=96;
@@ -362,14 +382,16 @@
     cs.forEach(function(c,i){var l=owner[c.id];if(l===undefined)l=0;pos[c.id]={x:X(i),y:Y(l),l:l}});
     var s=(W>W0?'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+(W/W0*100).toFixed(1)+'%;max-width:none" role="img" aria-label="Commit graph, scroll sideways to see older commits">':'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Commit graph">');
     var lanes='<svg class="glanes" viewBox="0 0 '+(G-4)+' '+H+'" style="width:'+((G-4)/W0*100).toFixed(2)+'%" aria-hidden="true"><rect x="0" y="0" width="'+(G-4)+'" height="'+H+'" fill="#fff"/>';
-    for(var l=0;l<ln;l++){var nm=laneName[l]||'';var w=Math.min(78,nm.length*7.4+16);
+    for(var l=0;l<ln;l++){var nm=laneName[l]||'';var og=nm.indexOf('origin/')===0,w=og?Math.min(78,nm.length*6.1+10):Math.min(78,nm.length*7.4+16);
       s+='<line x1="'+(G-6)+'" y1="'+Y(l)+'" x2="'+(W-8)+'" y2="'+Y(l)+'" stroke="#e1e9fb" stroke-width="2" stroke-dasharray="3 5"/>';
-      lanes+='<rect x="6" y="'+(Y(l)-11)+'" width="'+w+'" height="22" rx="5" fill="'+LC[l%5]+'" stroke="#16327a" stroke-width="2"/><text x="'+(6+w/2)+'" y="'+(Y(l)+4)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Nunito,sans-serif">'+esc(nm.length>9?nm.slice(0,8)+'…':nm)+'</text>'}
+      if(og)lanes+='<rect x="6" y="'+(Y(l)-11)+'" width="'+w+'" height="22" rx="5" fill="#fff" stroke="#16327a" stroke-width="2" stroke-dasharray="4 2"/><text x="'+(6+w/2)+'" y="'+(Y(l)+4)+'" text-anchor="middle" font-size="10.5" font-weight="800" fill="#16327a" font-family="Nunito,sans-serif">'+esc(nm.length>12?nm.slice(0,11)+'…':nm)+'</text>';
+      else lanes+='<rect x="6" y="'+(Y(l)-11)+'" width="'+w+'" height="22" rx="5" fill="'+LC[l%5]+'" stroke="#16327a" stroke-width="2"/><text x="'+(6+w/2)+'" y="'+(Y(l)+4)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Nunito,sans-serif">'+esc(nm.length>9?nm.slice(0,8)+'…':nm)+'</text>'}
     lanes+='</svg>';
     cs.forEach(function(c){c.p.forEach(function(q){var a=pos[q],b=pos[c.id];if(!a)return;
       if(a.y===b.y)s+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+LC[b.l%5]+'" stroke-width="5" stroke-linecap="round"/>';
       else s+='<path d="M'+a.x+' '+a.y+' C '+(a.x+step*.55)+' '+a.y+' '+(b.x-step*.55)+' '+b.y+' '+b.x+' '+b.y+'" fill="none" stroke="'+LC[Math.max(a.l,b.l)%5]+'" stroke-width="5" stroke-linecap="round"/>'})});
     var tips={};bn.forEach(function(b){var t=r.br[b];if(t&&pos[t])(tips[t]=tips[t]||[]).push(b)});
+    keys(r.rbr||{}).sort().forEach(function(b){var t=r.rbr[b];if(t&&pos[t])(tips[t]=tips[t]||[]).push('origin/'+b)});
     var cloud='<path d="M0 6a3 3 0 0 1 4.6-2.5A3.8 3.8 0 0 1 11.8 5a2.5 2.5 0 0 1-.6 4.9H2.4A2.6 2.6 0 0 1 0 6z" fill="#fff" stroke="#16327a" stroke-width="1.2"/>';
     cs.forEach(function(c){var p=pos[c.id],mrg=c.p.length>1;
       var msg=c.msg.length>mc?c.msg.slice(0,mc-1)+'…':c.msg;
@@ -377,11 +399,11 @@
        +'<text x="'+p.x+'" y="'+(p.y+31)+'" text-anchor="middle" font-size="11.5" font-weight="800" font-family="Nunito,sans-serif" fill="#16327a">'+esc(msg)+'</text>'
        +'<text x="'+p.x+'" y="'+(p.y+44)+'" text-anchor="middle" font-size="10" font-family="Fira Code,monospace" fill="#7a86b0">'+c.id+'</text></g>';
       var k=0;(tips[c.id]||[]).forEach(function(b){
-        var head=b===r.head,up=r.rbr&&r.rbr[b]===c.id,label=(head?'HEAD > ':'')+b,w=label.length*6.9+16+(up?18:0),y=p.y-30-k*24;
-        s+='<rect x="'+(p.x-w/2)+'" y="'+(y-14)+'" width="'+w+'" height="21" rx="5" fill="'+(head?'#e8336d':LC[p.l%5])+'" stroke="#16327a" stroke-width="2"/><text x="'+(p.x-w/2+8)+'" y="'+(y+1)+'" font-size="12" font-weight="800" fill="#fff" font-family="Nunito,sans-serif">'+esc(label)+'</text>'
+        var up=b.indexOf('origin/')===0,head=!up&&b===r.head,label=(head?'HEAD > ':'')+b,w=label.length*6.9+16+(up?18:0),y=p.y-30-k*24;
+        s+='<rect class="'+(up?'gorig':'gtag')+'" x="'+(p.x-w/2)+'" y="'+(y-14)+'" width="'+w+'" height="21" rx="5" fill="'+(up?'#fff':head?'#e8336d':LC[p.l%5])+'" stroke="#16327a" stroke-width="2"'+(up?' stroke-dasharray="4 2"':'')+'/><text x="'+(p.x-w/2+8)+'" y="'+(y+1)+'" font-size="12" font-weight="800" fill="'+(up?'#16327a':'#fff')+'" font-family="Nunito,sans-serif">'+esc(label)+'</text>'
          +(up?'<g transform="translate('+(p.x+w/2-20)+','+(y-9)+')">'+cloud+'</g>':'');k++});
     });
-    return s+'</svg></div>'+lanes+'</div><div class="glg">'+(W>W0?n+' commits: scroll sideways to see older ones. ':'')+'Pink tag = where you are now. Cloud = this commit is also on GitHub.</div>'}
+    return s+'</svg></div>'+lanes+'</div><div class="glg">'+(W>W0?n+' commits: scroll sideways to see older ones. ':'')+'Pink tag = where you are now. White tag with a cloud = <b>origin/main</b>: where GitHub was the last time you fetched, pulled or pushed.</div>'}
   /* missions */
   var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',merge:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 8c0 3 4 4 9.5 4"/></svg>',more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',nd:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
   function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
@@ -726,13 +748,14 @@
   function render(){
     fvDraw();
     var z=zones(),ids=['z1','z2','z3','z4'];
+    var tz=$('pgTrk');if(tz&&S.sig.z5!==z.z5){tz.innerHTML=z.z5;tz.hidden=!z.z5;if(S.sig.z5!==undefined&&z.z5){tz.classList.remove('flash');void tz.offsetWidth;tz.classList.add('flash')}S.sig.z5=z.z5}
     ids.forEach(function(id){var el=$(id),h=z[id];if(S.sig[id]!==h){el.innerHTML=h;var gs=el.querySelector('.gscroll');if(gs)gs.scrollLeft=gs.scrollWidth;if(S.sig[id]!==undefined){el.parentNode.classList.remove('flash');void el.parentNode.offsetWidth;el.parentNode.classList.add('flash')}S.sig[id]=h}});
     si=prog();var n=si,cur=si<ST.length?si:-1;
     $('pgCount').textContent=n+' / '+ST.length+' missions';
     var mc=$('pgMission');
     if(cur<0){mc.innerHTML='<div class="mdone">&#9733; All missions done! You just used Git for real. &#9733;</div>';
       if(!S.finished){S.finished=1;setTimeout(function(){window.gitPop&&window.gitPop('warn','MISSION COMPLETE','You made a repo, saved commits, branched, merged, fixed a conflict and pushed.<br><b>That is the whole Git workflow.</b>',[{t:'Yay!'}])},500)}}
-    else{mc.innerHTML='<div class="mnum">MISSION '+(cur+1)+' OF '+ST.length+'</div><div class="mtxt">'+TT[cur]+'</div><div class="mcmd">'+ST[cur].cmds.map(function(c){return '<code>'+esc(c.replace('@URL@',ghUrl()).replace('@FIX@','echo "...your choice..." > pasta.txt').replace('@CH@','your choice'))+'</code>'}).join('')+'</div><button id="pgType" class="greenbtn">Type it for me</button>';
+    else{mc.innerHTML='<div class="mnum">MISSION '+(cur+1)+' OF '+ST.length+'</div><div class="mtxt">'+TT[cur]+'</div><div class="mcmd">'+ST[cur].cmds.map(function(c){return '<code>'+esc(c.replace('@URL@',ghUrl()).replace('@FIX@','echo "...your choice..." > pasta.txt').replace('@CH@','your choice').replace(/^@MATE(\d)@$/,function(m,n){return RL.on?'(edit plan.txt on github.com)':'(Meera pushes to GitHub)'}))+'</code>'}).join('')+'</div><button id="pgType" class="greenbtn">Type it for me</button>';
       $('pgType').onclick=function(){sStep()}}
     var l='';TT.forEach(function(t,i){l+='<li class="'+(i<si?'d':i===cur?'c':'')+'">'+t+'</li>'});$('pgList').innerHTML=l;
     if(window.sDraw)sDraw();
@@ -808,7 +831,7 @@
     if(!S.repo||!S.cfg.name){window.gitPop&&window.gitPop('warn','MAKE A REPO FIRST','A README lives inside a repo. Run <code>git init</code> and set your name and email first, or press Start the story.');return}
     var cm=['echo "# My Project" > README.md','echo "What it is: a small demo project." >> README.md','echo "How to use it: open the files and read." >> README.md','git add README.md','git commit -m "Add README"'];
     if(S.repo.remote)cm.push('git push');scriptRun(cm,900,null,true)};
-  function ghUrl(){return 'https://github.com/'+(RL.on?RL.repo:'you/'+(['recipes','notes','shop'][cs]||'recipes'))+'.git'}
+  function ghUrl(){return 'https://github.com/'+(RL.on?RL.repo:'you/'+(['recipes','notes','shop','team'][cs]||'recipes'))+'.git'}
   /* ---------- guided story ---------- */
   var si=0;
   var ST1=[
@@ -875,7 +898,53 @@
    function(){return !!(S.repo&&S.repo.remote&&S.repo.remote.br.main)},
    function(){return !!S.ran.lsa}
   ];
-  var STORIES=[{n:'1. Pasta, branch, conflict',h:'GUIDED STORY: PASTA, BRANCH, CONFLICT',ST:ST1,TT:TT1,PR:PR1},{n:'2. Deleting files',h:'GUIDED STORY: DELETING FILES',ST:ST2,TT:TT2,PR:PR2},{n:'3. The .gitignore file',h:'GUIDED STORY: THE .GITIGNORE FILE',ST:ST3,TT:TT3,PR:PR3}];
+  var TT4=['Make a folder called team and set up Git','Write plan.txt and commit it','Connect GitHub and push','Your teammate pushes to GitHub','Ask git status (it says up to date!)','Download her commit with git fetch','Ask git status again: behind by 1','Bring it in with git pull','Bonus: your teammate changes line 1','Change line 1 yourself and commit','Push (GitHub refuses)','Pull: a merge conflict','Fix the file','Finish the merge and push'];
+  var ST4=[
+   {say:'A new project called <b>team</b>. You and your teammate <b>Meera</b> will both work on it.',cmds:['mkdir team','cd team','git init','git config --global user.name "Nishita"','git config --global user.email "you@example.com"']},
+   {say:'You write the plan and save it as the first commit.',cmds:['echo "Plan: build a website" > plan.txt','git add plan.txt','git commit -m "Add the plan"']},
+   {say:'Connect GitHub and push. Now Meera can clone the repo and work on it too.',cmds:['git remote add origin @URL@','git push -u origin main']},
+   {say:'Meanwhile, on her own laptop, <b>Meera pushes a commit</b>: she adds a line to plan.txt. Look at box 4: GitHub has a new commit. Your laptop has no idea yet.',cmds:['@MATE1@'],mate:1},
+   {say:'Ask Git. It says <b>up to date</b>! <b>git status</b> never asks GitHub. It compares with <b>origin/main</b>: your laptop\'s memory of GitHub from the last time they talked.',cmds:['git status']},
+   {say:'<b>git fetch</b> downloads Meera\'s commit but does <b>not</b> touch your files. Watch the graph: only the white <b>origin/main</b> tag moves. main and plan.txt stay as they were.',cmds:['git fetch']},
+   {say:'Ask again. Now Git knows: your branch is <b>behind origin/main by 1 commit</b>. Box 4 says so too.',cmds:['git status']},
+   {say:'<b>git pull</b> is git fetch plus git merge. <b>main</b> moves up to origin/main, and plan.txt now has Meera\'s line. Look at VS Code.',cmds:['git pull','cat plan.txt']},
+   {say:'<b>Bonus ending: a conflict.</b> Meera changes <b>line 1</b> and pushes: she wants an app, not a website.',cmds:['@MATE2@'],mate:2},
+   {say:'At the same time you change <b>the same line</b> on your laptop and commit it, without pulling first.',cmds:['echo "Plan: build a game" > plan.txt','echo "Meera: I will make the logo" >> plan.txt','git add plan.txt','git commit -m "Make it a game"']},
+   {say:'Push. GitHub <b>refuses</b>: it has Meera\'s new commit and you do not. Real Git says <b>fetch first</b>.',cmds:['git push'],stop:true},
+   {say:'Pull to bring Meera\'s commit down. You both changed line 1, so Git stops with a <b>merge conflict</b> in plan.txt.',cmds:['git pull'],stop:true},
+   {say:'Talk to your teammate and decide together. Here you keep <b>both ideas</b>: a game app. (In VS Code you could also use the Accept buttons.)',cmds:['echo "Plan: build a game app" > plan.txt','echo "Meera: I will make the logo" >> plan.txt']},
+   {say:'Mark it fixed, finish the merge and push. GitHub now has both of your work, and <b>git log</b> shows the whole story.',cmds:['git add plan.txt','git commit -m "Merge Meera\'s plan"','git push','git log --oneline']}
+  ];
+  function inTeam(){return !!(S.repo&&S.dirs[HOME+'/team'])}
+  var PR4=[
+   function(){return !!(S.repo&&S.cfg.name&&S.cfg.email&&S.dirs[HOME+'/team'])},
+   function(){return inTeam()&&hasC('plan.txt')},
+   function(){return inTeam()&&!!(S.repo.remote&&S.repo.remote.br.main)},
+   function(){return !!S.mate1},
+   function(){return !!S.ran.st1},
+   function(){return !!S.ran.f1},
+   function(){return !!(S.ran.st2||S.ran.p1)},
+   function(){return !!S.ran.p1},
+   function(){return !!S.mate2},
+   function(){return !!S.mate2&&/build a game/.test(headTree()['plan.txt']||'')},
+   function(){return !!S.ran.rej2},
+   function(){return !!S.ran.pc2},
+   function(){return !!S.ran.pc2&&(!S.repo.merge||!/<<<<<<</.test(work()['plan.txt']||''))},
+   function(){return !!S.ran.pc2&&!S.repo.merge&&!!S.ran.log&&S.repo.remote.br.main===S.repo.br.main}
+  ];
+  /* the teammate: in the simulator Meera pushes to the pretend GitHub; in Real GitHub mode, you play her on github.com */
+  function mateEdit(n){var url='https://github.com/'+RL.repo+'/edit/'+(R()?R().head:'main')+'/plan.txt';
+    return 'Now <b>you</b> play Meera. Open <a href="'+url+'" target="_blank" rel="noopener">plan.txt on GitHub</a> (the pencil icon edits it), '
+      +(n===1?'add a new line <code>Meera: I will make the logo</code>':'change line 1 to <code>Plan: build an app</code>')
+      +' and press <b>Commit changes</b>. Then come back here and press <b>Next step</b>. Your laptop will not notice by itself, just like real Git.'}
+  function mateDo(n){var r=R();if(!r||!r.remote||!r.remote.br[r.head]){pl('(Meera can only push after you have pushed to GitHub.)','y');return}
+    if(RL.on){S['mate'+n]=1;pr('<span class="y">[Your turn to play Meera: edit plan.txt on github.com, then press Next step.]</span>');return}
+    var tip=r.remote.br[r.head],tf=copy(C(tip).files),t=tf['plan.txt']||'';
+    if(n===1)tf['plan.txt']=t+'Meera: I will make the logo\n';
+    else{var ls=t.replace(/\n$/,'').split('\n');ls[0]='Plan: build an app';tf['plan.txt']=ls.join('\n')+'\n'}
+    var c={id:rid(),msg:n===1?'Add Meera\'s line':'Make it an app',p:[tip],files:tf,br:r.head,n:++S.n,who:'Meera',hidden:true};r.cm[c.id]=c;r.list.push(c);r.remote.br[r.head]=c.id;S['mate'+n]=c.id;
+    pr('<span class="y">[Meanwhile on GitHub: Meera pushed "'+esc(c.msg)+'". Your laptop does not know yet.]</span>')}
+  var STORIES=[{n:'1. Pasta, branch, conflict',h:'GUIDED STORY: PASTA, BRANCH, CONFLICT',ST:ST1,TT:TT1,PR:PR1},{n:'2. Deleting files',h:'GUIDED STORY: DELETING FILES',ST:ST2,TT:TT2,PR:PR2},{n:'3. The .gitignore file',h:'GUIDED STORY: THE .GITIGNORE FILE',ST:ST3,TT:TT3,PR:PR3},{n:'4. Teammates: fetch and pull',h:'GUIDED STORY: TEAMMATES, FETCH AND PULL',ST:ST4,TT:TT4,PR:PR4}];
   STORIES[2].h='GUIDED STORY: THE .gitignore FILE';
   ST=ST1;TT=TT1;PR=PR1;
   (function(){var h='';STORIES.forEach(function(s,k){h+='<button data-k="'+k+'" class="'+(k===0?'on':'')+'">'+s.n+'</button>'});$('stTabs').innerHTML=h;
@@ -920,14 +989,16 @@
         var adv=si>k;
         if(si>=ST.length){sAuto=false;holdCap=false;sDraw();return}
         /* the step ran but its goal is still not met (e.g. a file was renamed by hand): say so instead of looping */
+        if(!adv&&si<=k&&!st.choose&&!(R()&&R().merge)&&RL.on&&cs===3&&S.mate1){sAuto=false;holdCap=true;
+          $('stSay').innerHTML='<span class="stn stwarn">STUCK AT STEP '+(si+1)+'</span> Git found nothing new on GitHub. Did you press <b>Commit changes</b> on github.com? '+mateEdit(S.mate2?2:1).replace(/ Then come back here and press <b>Next step<\/b>\./,'')+' Then type <b>git fetch</b> and <b>git status</b> here (or <b>git pull</b> for the bonus ending).';return}
         if(!adv&&si<=k&&!st.choose&&!(R()&&R().merge)){sAuto=false;holdCap=true;
-          $('stSay').innerHTML='<span class="stn stwarn">STUCK AT STEP '+(si+1)+'</span> This step needs: <b>'+TT[si]+'</b>. Something on your Mini laptop is different from what the story expects (for example, a file with another name). Press <b>Restart story</b> to start again cleanly, or fix it by hand in the terminal.';return}
+          $('stSay').innerHTML='<span class="stn stwarn">STUCK AT STEP '+(si+1)+'</span> This step needs: <b>'+TT[si]+'</b>. Something on your Mini laptop is different from what the story expects (for example, a file with another name). Press <b>Restart story</b> to start again cleanly, or fix it by hand in the terminal.'+(RL.on&&cs===3&&S.mate1?' In Real GitHub mode, check that you pressed <b>Commit changes</b> on github.com, then type <b>git fetch</b> and <b>git status</b> again.':'');return}
         if(sAuto&&adv&&!st.stop)sTimer=setTimeout(sStep,3600);
         else if(sAuto){sAuto=false;sDraw();if(st.stop)$('stSay').innerHTML+=' <b>Press Next step to continue.</b>'}}
     /* Real GitHub mode, like real Git: a push is refused when the demo repo already has commits from before
        (even after "Delete everything", which keeps the history). Bring them down first, then push again. */
     function afterRun(){if(g!==sGen)return;
-      if(RL.on&&S.pushRej&&R()&&!R().merge){S.pushRej=false;
+      if(RL.on&&S.pushRej&&R()&&!R().merge&&!S.mate2){S.pushRej=false;
         $('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> GitHub refused: your demo repo already has commits from before (<b>Delete everything</b> removes files but keeps the history). Real Git makes you bring them down first with <b>git pull --allow-unrelated-histories</b>, then push again.';
         scriptRun(['git pull --allow-unrelated-histories','git push -u origin '+R().head],1300,function(){if(g!==sGen)return;
           if(R()&&R().merge){sAuto=false;$('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> The old files on GitHub clash with this story (a merge conflict). Fix the file in VS Code, then <b>git add</b>, <b>git commit</b> and <b>git push</b>. Or press <b>Delete everything in this repo</b> and <b>Restart story</b>.'}
@@ -935,6 +1006,9 @@
       finish()}
     sTimer=setTimeout(function(){
       if(g!==sGen)return;
+      var mates=cmds.filter(function(c){return /^@MATE\d@$/.test(c)});cmds=cmds.filter(function(c){return !/^@MATE\d@$/.test(c)});
+      mates.forEach(function(m){mateDo(+m.charAt(5))});
+      if(mates.length&&RL.on){render();sAuto=false;$('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> '+mateEdit(+mates[0].charAt(5));sBusy=false;$('stNext').disabled=false;sDraw();return}
       var ok=scriptRun(cmds,1100,afterRun,true);
       if(!ok){sBusy=false;holdCap=false;$('stNext').disabled=false;sDraw()}
     },900);
