@@ -23,6 +23,7 @@
     pad:px(['..K.K.K.K.K.....','.KWKWKWKWKWK....','.KWWWWWWWWWK..KK','.KWBBBBBBBWK.KOK','.KWWWWWWWWWKKOOK','.KWBBBBBBWWKOOK.','.KWWWWWWWWKOOK..','.KWPPWWWWKOOKK..','.KWPWPWWWKKKK...','.KWWPWPWKKKKK...','.KWWWWPPWWWWK...','.KWWWWWWWWWWK...','.KWBBBBBBBWWK...','.KWWWWWWWWWWK...','.KKKKKKKKKKKK...','................'],{K:'#16327a',W:'#ffffff',B:'#a9c4f0',P:'#e8336d',O:'#ffb74d'}),
     pdf:px(['..KKKKKKKKK.....','..KWWWWWWWKK....','..KWWWWWWWKGK...','..KWWWWWWWKKKK..','..KWBBBBBBWWWK..','..KWWWWWWWWWWK..','..KWBBBBBBBWWK..','.KRRRRRRRRRRRK..','.KRWWRWWRRWWRK..','.KRWRRWRWRWRRK..','.KRWWRWRWRWWRK..','.KRWRRWWRRWRRK..','.KRRRRRRRRRRRK..','..KWWWWWWWWWWK..','..KKKKKKKKKKKK..','................'],{K:'#16327a',W:'#ffffff',G:'#cfd8ee',B:'#7fa3e0',R:'#d93a3a'}),
     lab:px(['................','KKKKKKKKKKKKKKKK','KBBBBBBBBBPPYYGK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDGDDDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDDDGDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDGDDDGGGGGDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','.....KKKKKK.....','...KKKKKKKKKK...'],{K:'#16327a',B:'#1d4ba6',D:'#1b2440',G:'#5cf08a',P:'#e8336d',Y:'#ffd34e'}),
+    setup:px(['.......KK.......','......KGGK......','......KGGK......','......KGGK......','...KKKKGGKKKK...','....KGGGGGGK....','.....KGGGGK.....','......KGGK......','.......KK.......','..KK........KK..','..KSK......KSK..','..KSKKKKKKKKSK..','..KSSSSSSSSSSK..','..KKKKKKKKKKKK..','................','................'],{K:'#16327a',G:'#2e9e4f',S:'#cfd8ee'}),
     cheat:px(['..KKKKKKKKKKK...','..KYYYYYYYYYKK..','..KYKKYYYYYYKYK.','..KYYYYYYYYYKKKK','..KYGYBBBBBYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBBYYK','..KYYYYYYYYYYYYK','..KYGYBBBBYYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBYYYK','..KYYYYYYYYYYYYK','..KYGYBBBBBYYYYK','..KYYYYYYYYYYYYK','..KKKKKKKKKKKKKK','................'],{K:'#16327a',Y:'#fff6c9',G:'#2e9e4f',B:'#7fa3e0'}),
     pic:px(['................','KKKKKKKKKKKKKKKK','KSSSSSSSSSSSSSSK','KSSSSSSSSSSYYSSK','KSSSSSSSSSYYYYSK','KSSSSSSSSSSYYSSK','KSSSSGSSSSSSSSSK','KSSSGGGSSSSSSSSK','KSSGGGGGSSSGSSSK','KSGGGGGGGSGGGSSK','KGGGGGGGGGGGGGGK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','................','................'],{K:'#16327a',S:'#9fd0ff',Y:'#ffd34e',G:'#4caf50',D:'#2e7d32'}),
     power:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 7.2a8 8 0 1 0 11.4 0"/></svg>',
@@ -287,7 +288,7 @@
   var SETUP='https://first-things-first-roan.vercel.app/',brTabNow='repo',brTimer=0,brLoaded=false,brSized=false;
   function brNewTab(u){var a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
   (function(){var tb=document.createElement('div');tb.className='brtabs';tb.setAttribute('role','tablist');tb.setAttribute('aria-label','Browser tabs');
-    tb.innerHTML='<button type="button" class="brtab on" data-t="repo" role="tab" aria-selected="true">'+I.repo+'<span>GitHub repo</span></button><button type="button" class="brtab" data-t="setup" role="tab" aria-selected="false">'+I.br+'<span>Setup guide</span></button>';
+    tb.innerHTML='<button type="button" class="brtab on" data-t="repo" role="tab" aria-selected="true">'+I.repo+'<span>GitHub repo</span></button><button type="button" class="brtab" data-t="setup" role="tab" aria-selected="false">'+I.setup+'<span>Setup guide</span></button>';
     var bar=BR.el.querySelector('.brbar');bar.parentNode.insertBefore(tb,bar);
     tb.addEventListener('click',function(e){var b=e.target.closest('.brtab');if(b)brTab(b.getAttribute('data-t'))});
     var pg=BR.body.querySelector('.brpage');pg.id='brRepo';
@@ -318,8 +319,18 @@
   ML.openSetup=openSetup;
   /* Start menu: a Setup guide entry under "Setup and installation" */
   (function(){var L=$('smList');if(!L)return;var d=document.createElement('div');d.className='smi';
-    d.innerHTML='<a class="smp" id="smSetup" href="'+SETUP+'"><b class="smweb">'+I.br+'</b>Setup guide (website)</a>';L.appendChild(d);
+    d.innerHTML='<a class="smp" id="smSetup" href="'+SETUP+'"><b class="smweb">'+I.setup+'</b>Setup guide (website)</a>';L.appendChild(d);
     d.querySelector('a').addEventListener('click',function(e){e.preventDefault();$('startMenu').hidden=true;openSetup()})})();
+  /* the Start menu list scrolls when it is taller than the screen (9 modules + more);
+     on laptops the side menus are placed against the screen, so the scrolling list cannot cut them off */
+  (function(){var sm=$('startMenu'),L=$('smList');if(!sm||!L)return;
+    function fit(){if(sm.hidden)return;L.style.maxHeight='';var other=sm.offsetHeight-L.offsetHeight,room=innerHeight-38-other-6;L.style.maxHeight=Math.max(120,room)+'px'}
+    $('startBtn').addEventListener('click',function(){setTimeout(fit,0)});addEventListener('resize',fit);
+    var wide=function(){return innerWidth>700&&matchMedia('(hover: hover)').matches};
+    L.addEventListener('mouseover',function(e){var it=e.target.closest&&e.target.closest('.smi');if(!it||!wide())return;var sub=it.querySelector('.smsub');if(!sub)return;
+      var r=it.getBoundingClientRect(),m=sm.getBoundingClientRect();sub.style.position='fixed';sub.style.left=(m.right-3)+'px';sub.style.bottom='auto';
+      sub.style.display='block';var h=sub.offsetHeight;sub.style.display='';sub.style.top=Math.max(6,Math.min(r.bottom-h+1,innerHeight-38-h-4))+'px'});
+    L.addEventListener('scroll',function(){L.querySelectorAll('.smi:hover').forEach(function(x){x.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}))})},{passive:true})})();
   $('brUrl').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();brSearch()}});
   ['paste','cut','drop'].forEach(function(n){$('brUrl').addEventListener(n,function(e){e.preventDefault()})});
 
@@ -544,7 +555,7 @@
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:setup',n:'Setup guide',ic:I.br,app:'setup'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:setup',n:'Setup guide',ic:I.setup,app:'setup'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){var pic=ML.isPic(s.files[f]);mine.push({k:f,n:base(f),ic:pic?'<img class="dthumb" src="'+ML.binUrl(s.files[f])+'" alt="">':I.file,mark:ML.gitMark(f)})});
@@ -657,6 +668,18 @@
       {t:'Rename',k:'F2',fn:function(){startRename(it.k)}},{t:'Delete',k:'Del',fn:function(){del(it.k)}}]))}
   function setView(v){view=v;store('view',v);pos={};applyLook();lastSig='';draw(true)}
   function refresh(){lastSig='';draw(true);desk.classList.remove('flash');void desk.offsetWidth;desk.classList.add('flash')}
+  /* F5 is the Mini laptop's own Refresh wherever you are (the same as right-click > Refresh), so it never wipes your work.
+     Ctrl+F5 / Shift+F5 still reload the page, and reloading or closing asks first when there is work to lose. */
+  document.addEventListener('keydown',function(e){if(e.key!=='F5'||e.defaultPrevented||e.ctrlKey||e.metaKey||e.shiftKey||!boot.hidden)return;e.preventDefault();refresh()});
+  function hashS(t){var h=5381;t=String(t);for(var i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return h}
+  function workSig(){var s=S();if(!s)return '';var f=s.files||{},d=s.dirs||{},r=s.repos||{};
+    return Object.keys(f).sort().map(function(k){return k+':'+hashS(f[k])}).join('|')+'#'+Object.keys(d).sort().join('|')+'#'
+      +Object.keys(r).sort().map(function(k){var x=r[k]||{};return k+':'+Object.keys(x.cm||{}).length+':'+JSON.stringify(x.br||{})+':'+JSON.stringify(x.index||{}).length}).join('|')+'#'+(s.bin||[]).length}
+  var workBase=null;function workMark(){try{workBase=workSig()}catch(z){}}
+  addEventListener('load',function(){setTimeout(workMark,600)});
+  ML.workChanged=function(){try{return (workBase!==null&&workSig()!==workBase)||strokes.length>0}catch(z){return false}};
+  ML.workMark=workMark;
+  addEventListener('beforeunload',function(e){if(!boot.hidden||!ML.workChanged())return;e.preventDefault();e.returnValue='';return ''});
   function markSel(){icons.querySelectorAll('.dico').forEach(function(b){b.classList.toggle('sel',!!sels[b.getAttribute('data-k')])});selBarDraw()}
   function clearSel(){sels={};sel=null;selMode=false;markSel()}
   function selectAll(){sels={};items().forEach(function(x){sels[x.k]=1});markSel()}
@@ -753,23 +776,23 @@
     ['git --version','Check that Git is installed, and which version','version installed check install setup','#t1-5','git --version'],
     ['git config --global user.name "Name"','Tell Git your name (once per computer). It goes on every commit you make','name config who identity setup author','#t1-5','git config --global user.name ""'],
     ['git config --global user.email "you@example.com"','Tell Git your email (once per computer)','email config identity setup author','#t1-5','git config --global user.email ""'],
-    ['git config --list','See the settings Git is using, like your name and email','config list settings show','#t1-5','git config --list'],
+    ['git config --list','See the settings Git is using, like your name and email','config list settings show','#n2-1','git config --list'],
     ['git help','List the Git commands, grouped by what they are for','help commands list usage','#t2-3','git help']]},
    {g:'Start a repo',l:[
     ['git init','Turn the folder you are in into a Git repo','start new repo create init begin folder','#t2-2','git init'],
     ['git clone <url>','Copy a whole repo from GitHub into a new folder. Try it with GitHub\'s own sample repo; in Real GitHub mode any repo you can see on github.com works','download clone copy get repo github','#t2-4','git clone https://github.com/octocat/Hello-World'],
     ['git clone <folder> <new-folder>','Clone a repo that is already on this laptop into another folder','clone copy local folder repo','#t2-4','git clone ']]},
    {g:'Save your work',l:[
-    ['git status','See what changed, what is staged, and if you are ahead of or behind GitHub','status changed what happened check see state behind ahead','#t2-3','git status'],
+    ['git status','See what changed, what is staged, and if you are ahead of or behind GitHub','status changed what happened check see state behind ahead','#n3-1','git status'],
     ['git add <file>','Put one file\'s changes in the staging area, ready to save','save stage add prepare track file','#t2-3','git add '],
     ['git add .','Stage every change in this folder at once','save stage add all everything','#t2-3','git add .'],
     ['git commit -m "message"','Save a snapshot (a save point) of what you staged','save commit snapshot message checkpoint','#t2-3','git commit -m ""'],
-    ['git commit -am "message"','Stage every change to files Git already tracks, and commit, in one go (new files still need git add)','save commit all stage tracked shortcut','#t2-3','git commit -am ""'],
+    ['git commit -am "message"','Stage every change to files Git already tracks, and commit, in one go (new files still need git add)','save commit all stage tracked shortcut','#n3-1','git commit -am ""'],
     ['git diff','See exactly which lines you changed (not staged yet)','diff difference changes compare what changed lines see','#t2-3','git diff'],
     ['git diff --staged','See the changes you staged, before you commit them','diff staged cached compare before commit','#t2-3','git diff --staged'],
     ['git diff HEAD~1 HEAD','Compare two commits: here, the one before last with the last one','diff compare commits two versions','#t2-3','git diff HEAD~1 HEAD'],
-    ['git log','See every commit: who, when and why','history log list commits past see author','#t2-3','git log'],
-    ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#t2-3','git log --oneline'],
+    ['git log','See every commit: who, when and why','history log list commits past see author','#n3-2','git log'],
+    ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#n3-2','git log --oneline'],
     ['git show','See the last commit and the lines it changed','show last commit details lines changed','#t2-3','git show'],
     ['git show HEAD~1','See the commit before the last one (HEAD~2 goes two back, and so on)','show older commit previous details','#t2-3','git show HEAD~1'],
     ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#t2-3','git ls-files']]},
@@ -785,14 +808,14 @@
     ['git revert --continue','Finish a revert after you fixed its conflict and used git add','revert continue conflict finish','#t3-5','git revert --continue'],
     ['git revert --abort','Give up on a revert that hit a conflict','revert abort cancel conflict','#t3-5','git revert --abort']]},
    {g:'Put work aside (stash)',l:[
-    ['git stash','Put your unfinished changes away for later, leaving a clean folder','stash save later shelve put away hide changes switch','#t2-3','git stash'],
-    ['git stash -m "message"','Stash with a note, so you remember what it was','stash message note name','#t2-3','git stash -m ""'],
-    ['git stash -u','Stash new (untracked) files too','stash untracked new files include','#t2-3','git stash -u'],
-    ['git stash list','See what you have stashed','stash list see saved','#t2-3','git stash list'],
-    ['git stash pop','Bring your stashed changes back (and remove them from the list)','stash pop restore unstash bring back','#t2-3','git stash pop'],
-    ['git stash apply','Bring your stashed changes back, but keep them in the list too','stash apply restore keep','#t2-3','git stash apply'],
-    ['git stash show','See which files a stash changed','stash show files see','#t2-3','git stash show'],
-    ['git stash drop','Throw away the newest stash','stash drop delete remove','#t2-3','git stash drop']]},
+    ['git stash','Put your unfinished changes away for later, leaving a clean folder','stash save later shelve put away hide changes switch','#n5-3','git stash'],
+    ['git stash -m "message"','Stash with a note, so you remember what it was','stash message note name','#n5-3','git stash -m ""'],
+    ['git stash -u','Stash new (untracked) files too','stash untracked new files include','#n5-3','git stash -u'],
+    ['git stash list','See what you have stashed','stash list see saved','#n5-3','git stash list'],
+    ['git stash pop','Bring your stashed changes back (and remove them from the list)','stash pop restore unstash bring back','#n5-3','git stash pop'],
+    ['git stash apply','Bring your stashed changes back, but keep them in the list too','stash apply restore keep','#n5-3','git stash apply'],
+    ['git stash show','See which files a stash changed','stash show files see','#n5-3','git stash show'],
+    ['git stash drop','Throw away the newest stash','stash drop delete remove','#n5-3','git stash drop']]},
    {g:'Files in Git',l:[
     ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
     ['git mv <old> <new>','Rename or move a file, and stage the rename','rename move mv file','#t2-3','git mv '],
@@ -810,26 +833,26 @@
     ['git merge <branch>','Combine another branch into the one you are on','combine merge join branch together','#t3-3','git merge '],
     ['git merge <branch> -m "message"','Merge, and give the merge commit your own message','merge message name','#t3-3','git merge '],
     ['git merge --abort','Give up on a merge with conflicts and go back to before it','abort cancel stop merge conflict undo','#t3-5','git merge --abort'],
-    ['git rebase <branch>','Replay your commits on top of another branch, so the history is one straight line (your commits get new ids)','rebase replay move commits straight line history linear','#t3-3','git rebase main'],
-    ['git rebase --continue','After fixing a rebase conflict and using git add, carry on with the next commit','rebase continue conflict','#t3-5','git rebase --continue'],
-    ['git rebase --skip','Leave out the commit that caused the conflict, and carry on','rebase skip drop commit','#t3-5','git rebase --skip'],
-    ['git rebase --abort','Give up on a rebase and go back to exactly how things were','rebase abort cancel undo','#t3-5','git rebase --abort'],
-    ['git pull --rebase','Download new commits and put yours on top of them, instead of making a merge commit','pull rebase download update straight','#t2-4','git pull --rebase']]},
+    ['git rebase <branch>','Replay your commits on top of another branch, so the history is one straight line (your commits get new ids)','rebase replay move commits straight line history linear','#n5-4','git rebase main'],
+    ['git rebase --continue','After fixing a rebase conflict and using git add, carry on with the next commit','rebase continue conflict','#n5-4','git rebase --continue'],
+    ['git rebase --skip','Leave out the commit that caused the conflict, and carry on','rebase skip drop commit','#n5-4','git rebase --skip'],
+    ['git rebase --abort','Give up on a rebase and go back to exactly how things were','rebase abort cancel undo','#n5-4','git rebase --abort'],
+    ['git pull --rebase','Download new commits and put yours on top of them, instead of making a merge commit','pull rebase download update straight','#n5-4','git pull --rebase']]},
    {g:'Versions (tags)',l:[
-    ['git tag','List your tags','tag list versions','#t4-3','git tag'],
-    ['git tag v1.0','Put a name (a version label) on the current commit','tag version release label name','#t4-3','git tag v1.0'],
-    ['git tag -a v1.0 -m "message"','A version label with a message (an annotated tag)','tag annotated version release message','#t4-3','git tag -a v1.0 -m ""'],
-    ['git tag -d v1.0','Delete a tag','tag delete remove','#t4-3','git tag -d v1.0'],
-    ['git push origin v1.0','Upload a tag to GitHub','push tag upload release version','#t4-3','git push origin v1.0'],
-    ['git push --tags','Upload all your tags to GitHub','push tags all upload','#t4-3','git push --tags']]},
+    ['git tag','List your tags','tag list versions','#n5-5','git tag'],
+    ['git tag v1.0','Put a name (a version label) on the current commit','tag version release label name','#n5-5','git tag v1.0'],
+    ['git tag -a v1.0 -m "message"','A version label with a message (an annotated tag)','tag annotated version release message','#n5-5','git tag -a v1.0 -m ""'],
+    ['git tag -d v1.0','Delete a tag','tag delete remove','#n5-5','git tag -d v1.0'],
+    ['git push origin v1.0','Upload a tag to GitHub','push tag upload release version','#n5-5','git push origin v1.0'],
+    ['git push --tags','Upload all your tags to GitHub','push tags all upload','#n5-5','git push --tags']]},
    {g:'GitHub',l:[
-    ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url add','#t2-5','git remote add origin '],
-    ['git remote -v','Show which GitHub address your repo is connected to','remote address url origin show connected','#t2-5','git remote -v'],
+    ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url add','#n6-1','git remote add origin '],
+    ['git remote -v','Show which GitHub address your repo is connected to','remote address url origin show connected','#n6-1','git remote -v'],
     ['git push -u origin main','Upload your commits to GitHub the first time (and remember where)','upload push send share github online first','#t2-4','git push -u origin main'],
     ['git push','Upload your new commits to GitHub','upload push send share github online','#t2-4','git push'],
     ['git push origin <branch>','Upload one branch to GitHub, even if you are on another','push branch upload','#t2-4','git push origin '],
-    ['git fetch','Download new commits from GitHub without changing your files (origin/main moves)','download fetch check update look remote teammate','#t2-4','git fetch'],
-    ['git pull','Download new commits from GitHub and merge them into your branch','download pull get update latest sync teammate','#t2-4','git pull'],
+    ['git fetch','Download new commits from GitHub without changing your files (origin/main moves)','download fetch check update look remote teammate','#n6-2','git fetch'],
+    ['git pull','Download new commits from GitHub and merge them into your branch','download pull get update latest sync teammate','#n6-2','git pull'],
     ['git pull --allow-unrelated-histories','Join two histories that started separately (e.g. a README made on GitHub)','unrelated histories pull join refusing','#t2-4','git pull --allow-unrelated-histories'],
     ['git merge origin/main','Merge what you fetched, by hand (git pull does fetch + this)','merge origin fetched remote','#t2-4','git merge origin/main']]},
    {g:'Terminal (Git Bash)',l:[

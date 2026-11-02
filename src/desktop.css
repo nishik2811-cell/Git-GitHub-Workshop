@@ -426,3 +426,6 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .brhint{flex:none;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:4px 10px;border-top:2px solid var(--line);background:#fff8d6;font-size:12.5px;color:var(--ink2)}
 .brhint a{font-weight:800;color:#1d4ba6}
 .smweb svg{width:16px;height:16px}
+
+/* Start menu: the topic list scrolls when it does not fit the screen */
+#smList{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
