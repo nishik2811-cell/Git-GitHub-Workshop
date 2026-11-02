@@ -153,6 +153,22 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .notepad .vsimg img{max-width:100%;max-height:calc(100% - 30px);object-fit:contain;background:#fff}
 .notepad .vsimg small{color:#9da5b4;font-size:11.5px;text-align:center}
 .mmbtn[disabled]{opacity:.45;cursor:default}
+/* VS Code: the editor scrolls up/down and sideways inside the window (the grid keeps the window's height instead of growing with the file) */
+.notepad .vsmain{grid-template-rows:minmax(0,1fr);min-height:0}
+.notepad .vsed,.notepad .vsside{min-height:0}
+.notepad .vscode{overflow:auto}
+.notepad .vsedit{min-width:100%;width:max-content}
+.notepad #vsTa{overflow:hidden;flex:1 0 auto}
+.notepad .vstabs{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.notepad .vscode,.notepad .vsside{scrollbar-width:thin;scrollbar-color:#5a5a5a #1e1e1e}
+/* the Top button inside the workshop and the Practice Lab */
+.dwin .totop{position:absolute;right:18px;bottom:16px;z-index:6;padding:6px 12px;font:800 13px 'Nunito',sans-serif;color:#fff;background:#1d4ba6;border:2px solid #16327a;border-radius:20px;box-shadow:2px 2px 0 rgba(22,50,122,.45);cursor:pointer;transform:none}
+.dwin .totop[hidden]{display:none}
+.dwin .totop:hover{background:#2f6fe0}
+/* step-by-step guides: Back and Next share the bar, and wrap onto two rows when the window is narrow (no button sticks out) */
+#wsIn .wiz .wbtns{flex-wrap:wrap;gap:8px}
+#wsIn .wiz .wbtns>*{flex:1 1 100px;min-width:0;max-width:100%;box-sizing:border-box;justify-content:center;text-align:center}
+@media(max-width:700px){#wsIn .wiz .wbtns{padding:8px 10px}}
 /* Cheat Sheet */
 .dwb.csb{display:flex;flex-direction:column;background:#fffdf3}
 .cshead{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
@@ -386,3 +402,27 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
   .brgo{padding:0 10px}
 }
 @media(prefers-reduced-motion:reduce){.boot{transition:none}.dico{transition:none}.desk.flash,.dwin.flash{animation:none}}
+
+/* GitHub tab rows in the lessons wrap on narrow windows instead of being cut off at the edge */
+.tabsrow{flex-wrap:wrap;row-gap:2px}
+
+/* Browser tabs: GitHub repo and the Setup guide website */
+.brtabs{display:flex;gap:4px;padding:6px 8px 0;background:#d3defa;flex:none;overflow-x:auto;scrollbar-width:thin}
+.brtab{display:flex;align-items:center;gap:6px;flex:none;max-width:200px;padding:5px 12px 6px;border:2px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;background:#bccdf3;color:var(--ink);font:700 13px 'Nunito',sans-serif;box-shadow:none;transform:none;cursor:pointer;white-space:nowrap}
+.brtab svg{width:16px;height:16px;flex:none}
+.brtab span{overflow:hidden;text-overflow:ellipsis}
+.brtab.on{background:#e9efff;position:relative;top:2px}
+.brtab:focus-visible{outline:2px solid #2f6fe0;outline-offset:-4px}
+.dwb.brsetupon{overflow:hidden;display:flex;flex-direction:column;background:#fff}
+#brSetup{flex:1;min-height:0;display:flex;flex-direction:column}
+#brSetup[hidden],#brRepo[hidden],.brfail[hidden],#brFrame[hidden]{display:none!important}
+.brframe{position:relative;flex:1;min-height:0;background:#fff}
+.brframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.brfail{position:absolute;inset:0;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:18px;text-align:center;background:#f7f9ff}
+.brfail p{max-width:360px;margin:6px 0 10px;font-size:14px;color:var(--ink2)}
+.brfbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.brfbtns .brnew{display:inline-flex;align-items:center;text-decoration:none}
+.brretry{height:30px;padding:0 14px;border:2px solid var(--ink);border-radius:15px;background:#fff;color:var(--ink);font:700 13px 'Nunito',sans-serif;box-shadow:none;transform:none;cursor:pointer}
+.brhint{flex:none;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:4px 10px;border-top:2px solid var(--line);background:#fff8d6;font-size:12.5px;color:var(--ink2)}
+.brhint a{font-weight:800;color:#1d4ba6}
+.smweb svg{width:16px;height:16px}

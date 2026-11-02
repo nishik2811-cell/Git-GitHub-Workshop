@@ -176,7 +176,8 @@
   function winOpen(id,auto){var W=wins[id],el=W.el,was=isVis(el);el.hidden=false;el.classList.remove('docked');W.tk.hidden=false;
     if(!W.placed&&W.place){W.placed=true;W.place()}
     if(!W.placed){W.placed=true;var w=Math.min(W.w,innerWidth-24),h=Math.min(W.h,innerHeight-110);el.style.width=w+'px';el.style.height=h+'px';
-      var n=Object.keys(wins).indexOf(id);el.style.left=Math.max(8,Math.round((innerWidth-w)/2)+n*28)+'px';el.style.top=Math.max(8,Math.round((innerHeight-38-h)/2)-20+n*24)+'px'}
+      var n=Object.keys(wins).indexOf(id);/* cascade a little, but never past the screen edge, so every part of the window can be reached */
+      el.style.left=Math.max(8,Math.min(innerWidth-w-8,Math.round((innerWidth-w)/2)+(n%6)*28))+'px';el.style.top=Math.max(8,Math.min(innerHeight-38-h-8,Math.round((innerHeight-38-h)/2)-20+(n%6)*24))+'px'}
     zOrder(el,auto);if(was)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');var f=el.querySelector('[data-focus]')||el.querySelector('.dx');if(f&&f.tagName==='INPUT'&&(innerWidth<=700||matchMedia('(hover: none)').matches))f=el.querySelector('.dx')||el.querySelector('.dmin');if(f)f.focus({preventScroll:true})}
   function winMax(id,on){var el=wins[id].el;if(on==null)on=!el.classList.contains('max');el.classList.toggle('max',on);var b=el.querySelector('.dmax');
     if(b){b.innerHTML=on?'&#10064;':'&#9633;';b.title=on?'Restore down':'Full screen';b.setAttribute('aria-label',b.title)}}
@@ -263,18 +264,62 @@
     /* VS Code is the lab's editor: bring it along, in front */
     if(!was&&np&&np.classList.contains('show')&&!np.classList.contains('docked'))zOrder(np,true)}
   ML.openLab=openLab;
+  /* a small "Top" button inside the workshop and the Practice Lab: it shows once you scroll down, and takes you back to the start */
+  [[WS,wsBody],[LAB,labBody]].forEach(function(x){var W=x[0],bd=x[1],t=document.createElement('button');t.type='button';t.className='totop';t.hidden=true;t.innerHTML='&#9650; Top';t.title='Back to the top';t.setAttribute('aria-label','Back to the top');W.el.appendChild(t);
+    t.onclick=function(){bd.scrollTo({top:0,behavior:'smooth'})};bd.addEventListener('scroll',function(){t.hidden=bd.scrollTop<500},{passive:true})});
   /* links to the practice lab (the Start menu, the lesson index) open the app */
   document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href="#t2-3b"],a[href="#p5"]');if(a)setTimeout(openLab,30)});
 
   /* browser: the address is locked to the workshop repo; Search opens it in a new tab */
-  var BR=makeWin('brWin','Browser',I.br,tkBR,560,400);
+  var BR=makeWin('brWin','Browser',I.br,tkBR,560,400,{max:true});
   BR.body.parentNode.insertBefore((function(){var d=document.createElement('div');d.className='brbar';
     d.innerHTML='<button type="button" class="brnav" disabled aria-label="Back">&#9664;</button><button type="button" class="brnav" disabled aria-label="Forward">&#9654;</button><label class="brurl" title="This address is locked">'+I.lock+'<input id="brUrl" readonly value="'+REPO+'" aria-label="Address (locked)"></label><button type="button" class="brgo" id="brGo" data-focus>Search</button>';return d})(),BR.body);
   BR.body.innerHTML='<div class="brpage"><div class="brlogo">Git<b>Hub</b> repo</div><p>This is the workshop\'s own repository on GitHub. Press <b>Search</b> to open it in a new tab.</p>'
     +'<div class="brcard"><span class="rpic">'+I.repo+'</span><div><b>nishik2811-cell / Git-GitHub-Workshop</b><small>The code for this whole workshop: one HTML file.</small></div></div><p class="brmsg" id="brMsg" role="status"></p></div>';
   function brSearch(){var a=document.createElement('a');a.href=REPO;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
     $('brMsg').innerHTML='Opened in a new tab. Nothing happened? <a href="'+REPO+'" target="_blank" rel="noopener">Open the repo</a>'}
-  $('brGo').onclick=brSearch;
+  $('brGo').onclick=function(){if(brTabNow==='setup')brNewTab(SETUP);else brSearch()};
+
+  /* Setup guide tab: the setup website shown right inside the Browser window.
+     No internet, or it does not load: a message and an "Open in a new tab" button instead.
+     A site can refuse to be shown inside another page, and the page cannot tell when that happens,
+     so a slim bar under it always offers the new tab too. */
+  var SETUP='https://first-things-first-roan.vercel.app/',brTabNow='repo',brTimer=0,brLoaded=false,brSized=false;
+  function brNewTab(u){var a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
+  (function(){var tb=document.createElement('div');tb.className='brtabs';tb.setAttribute('role','tablist');tb.setAttribute('aria-label','Browser tabs');
+    tb.innerHTML='<button type="button" class="brtab on" data-t="repo" role="tab" aria-selected="true">'+I.repo+'<span>GitHub repo</span></button><button type="button" class="brtab" data-t="setup" role="tab" aria-selected="false">'+I.br+'<span>Setup guide</span></button>';
+    var bar=BR.el.querySelector('.brbar');bar.parentNode.insertBefore(tb,bar);
+    tb.addEventListener('click',function(e){var b=e.target.closest('.brtab');if(b)brTab(b.getAttribute('data-t'))});
+    var pg=BR.body.querySelector('.brpage');pg.id='brRepo';
+    var sd=document.createElement('div');sd.id='brSetup';sd.hidden=true;
+    sd.innerHTML='<div class="brframe"><div class="brfail" id="brFail" hidden role="status"><div class="brlogo">Setup <b>guide</b></div><p id="brFailMsg"></p>'
+      +'<div class="brfbtns"><a class="brgo brnew" href="'+SETUP+'" target="_blank" rel="noopener">Open in a new tab</a><button type="button" class="brretry" id="brRetry">Try again</button></div></div></div>'
+      +'<div class="brhint">Page blank? <a href="'+SETUP+'" target="_blank" rel="noopener">Open in a new tab</a></div>';
+    BR.body.appendChild(sd);$('brRetry').onclick=brLoad})();
+  function brFail(why){clearTimeout(brTimer);var f=$('brFrame');if(f)f.hidden=true;$('brFailMsg').textContent=why==='offline'?'No internet right now, so the Setup guide cannot load here. Connect to the internet and press Try again, or open it in a new tab later.':'The Setup guide did not load inside this window. Open it in a new tab instead.';$('brFail').hidden=false}
+  function brLoad(){var fr=BR.body.querySelector('.brframe'),f=$('brFrame');$('brFail').hidden=true;clearTimeout(brTimer);brLoaded=false;
+    if(f)f.remove();f=document.createElement('iframe');f.id='brFrame';f.title='Setup guide';f.setAttribute('referrerpolicy','no-referrer');
+    f.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms');fr.insertBefore(f,fr.firstChild);
+    if(navigator.onLine===false){brFail('offline');return}
+    f.addEventListener('load',function(){if(f.getAttribute('src')){brLoaded=true;clearTimeout(brTimer)}});
+    brTimer=setTimeout(function(){if(!brLoaded)brFail('slow')},10000);
+    f.src=SETUP;
+    /* a quick check that the site can be reached at all: fails straight away when offline */
+    try{fetch(SETUP,{mode:'no-cors',cache:'no-store'}).catch(function(){brFail('offline')})}catch(e){}}
+  function brTab(t){brTabNow=t;BR.el.querySelectorAll('.brtab').forEach(function(b){var on=b.getAttribute('data-t')===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false')});
+    var setup=t==='setup';$('brRepo').hidden=setup;$('brSetup').hidden=!setup;BR.body.classList.toggle('brsetupon',setup);
+    $('brUrl').value=setup?SETUP:REPO;$('brGo').textContent=setup?'Open':'Search';$('brGo').title=setup?'Open the Setup guide in a new tab':'Open the repo in a new tab';
+    if(setup){if(!$('brFrame'))brLoad();
+      /* a website needs room: the first time, make a small Browser window bigger (laptops) */
+      if(!brSized&&innerWidth>700&&!BR.el.classList.contains('max')){brSized=true;var w=Math.min(1000,innerWidth-24),h=Math.min(720,innerHeight-60);if(BR.el.offsetWidth<w){BR.el.style.width=w+'px';BR.el.style.height=h+'px';BR.el.style.left=Math.max(8,Math.round((innerWidth-w)/2))+'px';BR.el.style.top=Math.max(8,Math.round((innerHeight-38-h)/2))+'px'}}}}
+  addEventListener('offline',function(){if(brTabNow==='setup'&&!BR.el.hidden)brFail('offline')});
+  addEventListener('online',function(){if(brTabNow==='setup'&&!$('brFail').hidden)brLoad()});
+  function openSetup(){winOpen('brWin');brTab('setup')}
+  ML.openSetup=openSetup;
+  /* Start menu: a Setup guide entry under "Setup and installation" */
+  (function(){var L=$('smList');if(!L)return;var d=document.createElement('div');d.className='smi';
+    d.innerHTML='<a class="smp" id="smSetup" href="'+SETUP+'"><b class="smweb">'+I.br+'</b>Setup guide (website)</a>';L.appendChild(d);
+    d.querySelector('a').addEventListener('click',function(e){e.preventDefault();$('startMenu').hidden=true;openSetup()})})();
   $('brUrl').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();brSearch()}});
   ['paste','cut','drop'].forEach(function(n){$('brUrl').addEventListener(n,function(e){e.preventDefault()})});
 
@@ -499,7 +544,7 @@
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:setup',n:'Setup guide',ic:I.br,app:'setup'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){var pic=ML.isPic(s.files[f]);mine.push({k:f,n:base(f),ic:pic?'<img class="dthumb" src="'+ML.binUrl(s.files[f])+'" alt="">':I.file,mark:ML.gitMark(f)})});
@@ -544,7 +589,8 @@
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
-    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',cheat:'cheatWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
+    if(it.app==='setup'){openSetup();return}
+    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',cheat:'cheatWin',br:'brWin',setup:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
     openFile(it.k)}
 
   /* rename right on the icon */
@@ -689,7 +735,7 @@
   desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;
     var it=itemOf(b.getAttribute('data-k'));if(appOpen(it))return;openItem(it)});
   /* once an app's window is open (even minimised), one click on its icon minimises or restores it, like the taskbar */
-  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',cheat:'cheatWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
+  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',cheat:'cheatWin',br:'brWin',setup:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
   function appOpen(it){var el=appEl(it);if(!el)return false;return el.id==='notepad'?el.classList.contains('show'):!el.hidden}
   desk.addEventListener('keydown',function(e){if(e.target.closest('.dren')||e.target.closest('.selbar'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k),l=selList(),many=l.length>1;
     if(e.key==='Enter'&&(it||many)){e.preventDefault();if(many)openMany(l);else openItem(it)}
@@ -725,7 +771,8 @@
     ['git log','See every commit: who, when and why','history log list commits past see author','#t2-3','git log'],
     ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#t2-3','git log --oneline'],
     ['git show','See the last commit and the lines it changed','show last commit details lines changed','#t2-3','git show'],
-    ['git show HEAD~1','See the commit before the last one (HEAD~2 goes two back, and so on)','show older commit previous details','#t2-3','git show HEAD~1']]},
+    ['git show HEAD~1','See the commit before the last one (HEAD~2 goes two back, and so on)','show older commit previous details','#t2-3','git show HEAD~1'],
+    ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#t2-3','git ls-files']]},
    {g:'Undo things',l:[
     ['git restore <file>','Throw away changes to a file you have not staged yet','undo discard throw away changes reset file restore go back','#t2-3','git restore '],
     ['git restore --staged <file>','Take a file back out of the staging area (keeps your changes)','unstage undo add remove staging restore','#t2-3','git restore --staged '],
@@ -762,7 +809,12 @@
     ['git branch -D <name>','Delete a branch even if it is not merged (its commits are dropped)','delete force branch remove','#t3-2','git branch -D '],
     ['git merge <branch>','Combine another branch into the one you are on','combine merge join branch together','#t3-3','git merge '],
     ['git merge <branch> -m "message"','Merge, and give the merge commit your own message','merge message name','#t3-3','git merge '],
-    ['git merge --abort','Give up on a merge with conflicts and go back to before it','abort cancel stop merge conflict undo','#t3-5','git merge --abort']]},
+    ['git merge --abort','Give up on a merge with conflicts and go back to before it','abort cancel stop merge conflict undo','#t3-5','git merge --abort'],
+    ['git rebase <branch>','Replay your commits on top of another branch, so the history is one straight line (your commits get new ids)','rebase replay move commits straight line history linear','#t3-3','git rebase main'],
+    ['git rebase --continue','After fixing a rebase conflict and using git add, carry on with the next commit','rebase continue conflict','#t3-5','git rebase --continue'],
+    ['git rebase --skip','Leave out the commit that caused the conflict, and carry on','rebase skip drop commit','#t3-5','git rebase --skip'],
+    ['git rebase --abort','Give up on a rebase and go back to exactly how things were','rebase abort cancel undo','#t3-5','git rebase --abort'],
+    ['git pull --rebase','Download new commits and put yours on top of them, instead of making a merge commit','pull rebase download update straight','#t2-4','git pull --rebase']]},
    {g:'Versions (tags)',l:[
     ['git tag','List your tags','tag list versions','#t4-3','git tag'],
     ['git tag v1.0','Put a name (a version label) on the current commit','tag version release label name','#t4-3','git tag v1.0'],
@@ -784,6 +836,8 @@
     ['pwd','Show which folder you are in','where folder path pwd current','#t2-2','pwd'],
     ['ls','List the files and folders here','list files folder see ls show','#t2-2','ls'],
     ['ls -a','List everything, hidden files too (like .git)','list files hidden folder see ls show all','#t2-2','ls -a'],
+    ['ls -l','A long list: one line per file, with its size and date (folders end in /)','list long details size date ls','#t2-2','ls -l'],
+    ['ls -la','The long list with hidden files too','list long all hidden details ls','#t2-2','ls -la'],
     ['cd <folder>','Go into a folder','change folder go into directory cd move','#t2-2','cd '],
     ['cd ..','Go up one folder','back up parent folder cd','#t2-2','cd ..'],
     ['cd ~','Go to your home folder (the desktop)','home desktop cd tilde','#t2-2','cd ~'],
@@ -831,7 +885,7 @@
     function lessons(){var out=[];document.querySelectorAll('section.phase').forEach(function(sec){var t=sec.querySelector('h2');if(!t)return;
       sec.querySelectorAll('.idx a').forEach(function(a){if(a.getAttribute('href')==='#t2-3b')return;out.push({h:a.getAttribute('href'),t:a.textContent.replace(/^\s*\d+\.\s*/,''),p:t.textContent})})});
       out.push({h:'#t1-5',t:'Setup and installation',p:'Introduction'});return out}
-    var APPK={ws:'lessons workshop learn read exe',lab:'practice lab terminal git bash missions stories try commands',cheat:'cheat sheet commands list reference help all git bash terminal',vs:'vs code visual studio editor explorer source control',br:'browser internet web github repo search',
+    var APPK={ws:'lessons workshop learn read exe',lab:'practice lab terminal git bash missions stories try commands',cheat:'cheat sheet commands list reference help all git bash terminal',vs:'vs code visual studio editor explorer source control',br:'browser internet web github repo search',setup:'setup guide website install installation first things first help web browser',
       draw:'notepad draw paint sketch pen',guide:'setup guide pdf install help windows linux',memes:'hehehe memes funny pictures images folder',credits:'suspects txt credits team names made by',bin:'bin trash recycle deleted restore'};
     /* everyday words people type, and the Git commands that do it */
     var CMDS=[];CHEAT.forEach(function(g){g.l.forEach(function(c){CMDS.push(c)})});

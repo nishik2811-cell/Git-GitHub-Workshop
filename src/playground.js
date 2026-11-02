@@ -106,6 +106,9 @@
   function track(){var r=R();if(!r||!r.remote||!r.rbr)return null;var o=r.rbr[r.head],h=headId();if(!o||!h)return null;
     var A=anc(h),B=anc(o),ah=0,bh=0;keys(A).forEach(function(k){if(!B[k])ah++});keys(B).forEach(function(k){if(!A[k])bh++});return {ah:ah,bh:bh,o:'origin/'+r.head}}
   function cmt(n){return n+' commit'+(n===1?'':'s')}
+  function isSsh(u){return /^(git@|ssh:\/\/)/.test(String(u||''))}
+  function sshRefused(u){perr('git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.');
+    var m=String(u).match(/github\.com[:\/]([^\s]+?)(?:\.git)?$/);pl('This Mini laptop has no SSH key. Use the HTTPS address instead'+(m?': https://github.com/'+m[1]+'.git':' (it starts with https://github.com/)'),'y')}
   function ghKey(u){return String(u||'').trim().replace(/\.git$/,'').replace(/\/+$/,'').toLowerCase()}
   function ancIn(cm,id){var set={},st=[id];while(st.length){var x=st.pop();if(!x||set[x]||!cm[x])continue;set[x]=1;cm[x].p.forEach(function(q){st.push(q)})}return set}
   /* copy GitHub's side of repo `from` into repo `to` (the commits stay hidden in `to` until it fetches them) */
@@ -132,7 +135,7 @@
     else perr('error: You have not concluded your merge (MERGE_HEAD exists).\nhint: Please, commit your changes before merging.\nfatal: Exiting because of unfinished merge.');
     return true}
   /* the second half of git fetch / git pull, once GitHub's commits are known (pretend or real) */
-  function syncPull(sub,allowU,res){var r=R();if(!r||!r.remote)return;
+  function syncPull(sub,allowU,res,reb){var r=R();if(!r||!r.remote)return;
     if(res&&res.err){perr(res.err);return}
     var rb=r.remote.br[r.head];
     if(!rb){if(sub==='pull'){perr("fatal: couldn't find remote ref "+r.head);pl('GitHub does not have the branch '+r.head+' yet. Push it first:  git push -u origin '+r.head,'y')}return}
@@ -146,7 +149,33 @@
     if(!cur){var s0=diffStat({},C(rb).files);applyTree(C(rb).files);r.br[r.head]=rb;pl('Fast-forward','y');pl(statLine(s0));return}
     if(cur===rb||anc(cur)[rb]){pl('Already up to date.');return}
     if(!anc(rb)[cur]&&!lca(cur,rb)&&!allowU){perr('fatal: refusing to merge unrelated histories');pl("Your laptop's history and GitHub's started separately (for example, the repo was created with a README on GitHub). To join them, type:  git pull --allow-unrelated-histories",'y');return}
+    if(reb){rebaseOnto(rb,'origin/'+r.head);return}
     mergeInto(rb,'origin/'+r.head,"Merge branch '"+r.head+"' of "+r.remote.url)}
+  /* ---------- git rebase: replay your commits, one by one, on top of another branch (new commits, new ids) ---------- */
+  function merge3(bt,ot,tt,lo,lt){var res={},conf=[],all={};keys(bt).concat(keys(ot),keys(tt)).forEach(function(k){all[k]=1});
+    keys(all).forEach(function(f){var x=bt[f],a=ot[f],t=tt[f];
+      if(a===t){if(a!==undefined)res[f]=a}else if(a===x){if(t!==undefined)res[f]=t}else if(t===x){if(a!==undefined)res[f]=a}
+      else if(isBin(a)||isBin(t)){conf.push(f);res[f]=a!==undefined?a:t}
+      else{conf.push(f);res[f]='<<<<<<< '+lo+'\n'+(a||'')+'=======\n'+(t||'')+'>>>>>>> '+lt+'\n'}});return {res:res,conf:conf}}
+  function setWork(files){var r=R(),old={};keys(r.index).concat(keys(headTree())).forEach(function(f){old[f]=1});
+    keys(old).forEach(function(f){if(!(f in files))delete S.files[r.root+'/'+f]});
+    keys(files).forEach(function(f){S.files[r.root+'/'+f]=files[f];var d=dirname(r.root+'/'+f);while(d!==r.root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});r.index=copy(files);r.conf={}}
+  function rebaseOnto(up,upName){var r=R(),cur=headId();
+    if(!cur){perr('fatal: your current branch \''+r.head+'\' does not have any commits yet');return}
+    if(cur===up||anc(cur)[up]){pl('Current branch '+r.head+' is up to date.');return}
+    if(anc(up)[cur]){setWork(copy(C(up).files));r.br[r.head]=up;pl('Successfully rebased and updated refs/heads/'+r.head+'.');S.ran.rebase=1;return}
+    var A=anc(up),todo=keys(anc(cur)).filter(function(k){return !A[k]&&C(k).p.length<2}).map(C).sort(function(x,y){return x.n-y.n}).map(function(c){return c.id});
+    r.rebase={orig:cur,onto:up,name:upName,todo:todo,cur:null};r.br[r.head]=up;setWork(copy(C(up).files));rebaseNext()}
+  function rebaseNext(){var r=R(),rb=r.rebase;
+    while(rb.todo.length){var id=rb.todo.shift(),c=C(id),tip=headId(),m=merge3(c.p.length?C(c.p[0]).files:{},C(tip).files,c.files,'HEAD','('+id+' ('+c.msg+'))');
+      if(m.conf.length){rb.cur=id;keys(m.res).forEach(function(f){S.files[r.root+'/'+f]=m.res[f]});keys(C(tip).files).forEach(function(f){if(!(f in m.res))delete S.files[r.root+'/'+f]});
+        keys(m.res).forEach(function(f){if(m.conf.indexOf(f)<0)r.index[f]=m.res[f]});m.conf.forEach(function(f){r.conf[f]=1;pl('Auto-merging '+f+'\nCONFLICT (content): Merge conflict in '+f,'r')});
+        perr('error: could not apply '+id+'... '+c.msg+'\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: "git add/rm <conflicted_files>", then run "git rebase --continue".\nhint: You can instead skip this commit: run "git rebase --skip".\nhint: To abort and get back to the state before "git rebase", run "git rebase --abort".');
+        pl('Could not apply '+id+'... '+c.msg);return}
+      var same=keys(m.res).length===keys(C(tip).files).length&&keys(m.res).every(function(f){return C(tip).files[f]===m.res[f]});
+      if(same)continue; /* already there: real Git drops it too */
+      var nc=newCommit(c.msg,[tip],m.res,c.who);r.br[r.head]=nc.id;setWork(copy(m.res))}
+    r.rebase=null;S.ran.rebase=1;pl('Successfully rebased and updated refs/heads/'+r.head+'.')}
   function mergeInto(otherId,label,msg){
     var r=R(),cur=headId(),o=C(otherId),st=status();
     if(st.staged.length||st.unstaged.length){perr('error: Your local changes would be overwritten by merge.\nCommit your changes first.');return false}
@@ -175,7 +204,7 @@
   /* ---------- commands ---------- */
   function git(a){
     var sub=a[0],r;
-    if(!sub||sub==='help'){pl('usage: git <command>\n\nstart:    init, clone\nwork:     status, add, commit, diff, restore, rm, mv\nundo:     restore, reset, revert, stash\nhistory:  log, show, tag\nbranches: branch, switch, checkout, merge\nonline:   remote, push, pull, fetch\nsetup:    config, --version');return}
+    if(!sub||sub==='help'){pl('usage: git <command>\n\nstart:    init, clone\nwork:     status, add, commit, diff, restore, rm, mv\nundo:     restore, reset, revert, stash\nhistory:  log, show, tag, ls-files\nbranches: branch, switch, checkout, merge, rebase\nonline:   remote, push, pull, fetch\nsetup:    config, --version');return}
     if(sub==='--version'||sub==='version'){pl('git version 2.43.0');return}
     if(sub==='config'){
       var gi=a.indexOf('--global');if(gi>=0)a.splice(gi,1);
@@ -188,6 +217,7 @@
       pl('Initialized empty Git repository in '+S.cwd+'/.git/','g');return}
     if(sub==='clone'){
       var url=a[1];if(!url){perr('fatal: You must specify a repository to clone.\n\nusage: git clone <repo> [<dir>]');return}
+      if(isSsh(url)){pl("Cloning into '"+(a[2]||base(url.replace(/\/+$/,'')).replace(/\.git$/,''))+"'...");sshRefused(url);return}
       var name=a[2]||base(url.replace(/\/+$/,'')).replace(/\.git$/,'');var root=norm(name);
       if(exists(root)&&!(S.dirs[root]&&!keys(S.files).some(function(f){return under(f,root)})&&!keys(S.dirs).some(function(d){return d!==root&&under(d,root)}))){perr("fatal: destination path '"+name+"' already exists and is not an empty directory.");return}
       var isUrl=/^(https?:\/\/|git@)/.test(url),loc=!isUrl&&S.repos[norm(url)];
@@ -200,7 +230,7 @@
         nr.head=def;nr.br[def]=tip;var fl=nr.cm[tip].files;keys(fl).forEach(function(f){S.files[root+'/'+f]=fl[f];var d=dirname(root+'/'+f);while(d!==root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});nr.index=copy(fl);pl('Now type: cd '+name,'y')}
       if(RL.on&&!loc){
         /* Real GitHub mode: any GitHub repo your token can read (every public repo, and your own private ones) */
-        var m=url.match(/^(?:https?:\/\/(?:www\.)?github\.com\/|git@github\.com:)([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
+        var m=url.match(/^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
         if(!m){perr("fatal: repository '"+url+"' not found");pl('Real GitHub mode can only clone from github.com, like https://github.com/owner/repo','y');return}
         var full=m[1]+'/'+m[2];pend=true;busy=true;inp.disabled=true;
         /* the terminal stays locked until every branch has arrived, like a real clone */
@@ -273,6 +303,24 @@
     /* make the files on disk match a commit's files (tracked files only; untracked files are left alone) */
     function hardTo(files){var w=work();keys(tracked()).forEach(function(f){if(!(f in files))delete S.files[r.root+'/'+f]});
       keys(files).forEach(function(f){S.files[r.root+'/'+f]=files[f];var d=dirname(r.root+'/'+f);while(d!==r.root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});r.index=copy(files);r.conf={};r.merge=null}
+    if(sub==='rebase'){
+      if(a.indexOf('-i')>=0||a.indexOf('--interactive')>=0){perr('error: this Mini laptop has no text editor for git rebase -i (interactive rebase).');pl('Plain  git rebase <branch>  works here.','y');return}
+      if(a[1]==='--abort'){if(!r.rebase){perr('fatal: No rebase in progress?');return}r.br[r.head]=r.rebase.orig;setWork(copy(C(r.rebase.orig).files));r.rebase=null;return}
+      if(a[1]==='--skip'){if(!r.rebase){perr('fatal: No rebase in progress?');return}setWork(copy(headTree()));r.rebase.cur=null;rebaseNext();return}
+      if(a[1]==='--continue'){if(!r.rebase){perr('fatal: No rebase in progress?');return}
+        if(keys(r.conf).length){perr('error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use \'git add/rm <file>\'\nhint: as appropriate to mark resolution and make a commit.');keys(r.conf).forEach(function(f){pl(f+': needs merge')});
+          perr('You must edit all merge conflicts and then\nmark them as resolved using git add');return}
+        var cc=r.rebase.cur&&C(r.rebase.cur);if(cc){var st6=status();if(st6.staged.length){var nc=newCommit(cc.msg,[headId()],copy(r.index),cc.who);r.br[r.head]=nc.id;pl('['+'detached HEAD '+nc.id+'] '+cc.msg,'g')}}
+        r.rebase.cur=null;rebaseNext();return}
+      if(r.rebase){perr('fatal: It seems that there is already a rebase-merge directory, and\nI wonder if you are in the middle of another rebase.\nhint: Use "git rebase --continue", "--skip" or "--abort".');return}
+      if(r.merge){perr('error: cannot rebase: You are in the middle of a merge.');return}
+      var stR=status();if(stR.staged.length||stR.unstaged.length){perr('error: cannot rebase: You have unstaged changes.\nerror: Please commit or stash them.');return}
+      var upR=a.slice(1).filter(function(x){return x[0]!=='-'})[0];
+      if(!upR){if(r.rbr&&r.rbr[r.head]){upR='origin/'+r.head}else{perr('fatal: There is no tracking information for the current branch.\nPlease specify which branch you want to rebase against.\n\n    git rebase <branch>');return}}
+      var upId=rev(upR);if(!upId){perr("fatal: invalid upstream '"+upR+"'");return}
+      rebaseOnto(upId,upR);return}
+    if(sub==='ls-files'){var root=r.root,pre=S.cwd===root?'':S.cwd.slice(root.length+1)+'/';
+      keys(r.index).sort().forEach(function(f){if(!pre||f.indexOf(pre)===0)pl(f.slice(pre.length))});return}
     if(sub==='diff'){S.ran.diff=1;
       var dd=a.indexOf('--'),flags=a.slice(1,dd<0?a.length:dd).filter(function(x){return x[0]==='-'}),words=a.slice(1,dd<0?a.length:dd).filter(function(x){return x[0]!=='-'}),paths=dd<0?[]:a.slice(dd+1);
       var revs=[];words.forEach(function(x){var id=rev(x);if(id)revs.push(id);else{var f=rel(norm(x));if(f!==null&&(f in work()||f in r.index||f in headTree()))paths.push(x);else revs.push(false),badRev(x)}});
@@ -356,7 +404,8 @@
         else o.push("Your branch and '"+tk.o+"' have diverged,\nand have "+tk.ah+' and '+tk.bh+' different commits each, respectively.\n  (use "git pull" if you want to integrate the remote branch with yours)')}
       if(S.mate1&&!S.ran.f1)S.ran.st1=1;if(S.ran.f1&&tk&&tk.bh)S.ran.st2=1;
       if(!headId())o.push('\nNo commits yet');
-      if(r.merge||st.conf.length){o.push('You have unmerged paths.\n  (fix conflicts and run "git commit")');
+      if(r.rebase){o.push('interactive rebase in progress; onto '+r.rebase.onto+'\nYou are currently rebasing branch \''+r.head+'\' on \''+r.rebase.onto+'\'.\n  (fix conflicts and then run "git rebase --continue")\n  (use "git rebase --skip" to skip this patch)\n  (use "git rebase --abort" to check out the original branch)')}
+      else if(r.merge||st.conf.length){o.push('You have unmerged paths.\n  (fix conflicts and run "git commit")');
         if(st.conf.length){o.push('\nUnmerged paths:\n  (use "git add <file>..." to mark resolution)');st.conf.forEach(function(f){o.push('\tboth modified:   '+f)})}}
       if(st.staged.length){o.push('\nChanges to be committed:\n  (use "git restore --staged <file>..." to unstage)');
         var hT=headTree(),gone=st.staged.filter(function(x){return x[1]==='deleted'}),used={};
@@ -474,6 +523,7 @@
         r.remote={url:a[3],br:{},ids:{}};var src0=!RL.on&&ghSource(a[3],r);if(src0)ghCopy(src0,r);return}
       if(a[1]==='-v'||!a[1]){if(r.remote){if(a[1])pl('origin\t'+r.remote.url+' (fetch)\norigin\t'+r.remote.url+' (push)');else pl('origin')}return}
       perr('error: unsupported remote command');return}
+    if((sub==='push'||sub==='fetch'||sub==='pull')&&r.remote&&isSsh(r.remote.url)){sshRefused(r.remote.url);return}
     if(sub==='push'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
       var pw=a.slice(1).filter(function(x){return x[0]!=='-'}),allTags=a.indexOf('--tags')>=0;
@@ -497,11 +547,12 @@
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;ghShare(r);return}
     if(sub==='fetch'||sub==='pull'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
-      var allowU=a.indexOf('--allow-unrelated-histories')>=0;
+      var allowU=a.indexOf('--allow-unrelated-histories')>=0,reb=a.indexOf('--rebase')>=0||a.indexOf('-r')>=0;
+      if(r.rebase){perr('error: Pulling is not possible because you are in the middle of a rebase.\nhint: Use "git rebase --continue", "--skip" or "--abort".');return}
       if(sub==='pull'&&mergeBlocked('Pulling'))return;
       if(S.mate1)S.ran.f1=1;
-      if(RL.on){realFetch(r.head,function(res){syncPull(sub,allowU,res)});return}
-      syncPull(sub,allowU,null);return}
+      if(RL.on){realFetch(r.head,function(res){syncPull(sub,allowU,res,reb)});return}
+      syncPull(sub,allowU,null,reb);return}
     perr("git: '"+sub+"' is not a git command here. Try: git help");
   }
   function statusColor(l,txt){var idx=txt.indexOf(l);var sIdx=txt.indexOf('Changes to be committed'),uIdx=txt.indexOf('Changes not staged'),tIdx=txt.indexOf('Untracked files'),mIdx=txt.indexOf('Unmerged paths');
@@ -513,11 +564,19 @@
     switch(cmd){
       case 'pwd':pl(S.cwd);return;
       case 'whoami':pl('you');return;
-      case 'ls':{var all=t.indexOf('-a')>=0||t.indexOf('-la')>=0;if(all)S.ran.lsa=1;var dir=norm(t.filter(function(x,i){return i>0&&x[0]!=='-'})[0]||'.');
+      case 'ls':{var fl=t.filter(function(x,i){return i>0&&x[0]==='-'}).join(''),all=/a/.test(fl),lng=/l/.test(fl);if(all)S.ran.lsa=1;var dir=norm(t.filter(function(x,i){return i>0&&x[0]!=='-'})[0]||'.');
         if(!S.dirs[dir]){perr("ls: cannot access '"+(t[1]||'')+"': No such file or directory");return}
         var items=[];if(all&&S.repos[dir])items.push('<span class="b">.git/</span>');
         keys(S.dirs).forEach(function(d){if(d!==dir&&dirname(d)===dir)items.push('<span class="b">'+esc(base(d))+'/</span>')});
         keys(S.files).forEach(function(f){if(dirname(f)===dir&&(all||base(f)[0]!=='.'))items.push(esc(base(f)))});
+        if(lng){/* ls -l: one line each, with permissions, owner, size in bytes, date and name, like Git Bash */
+          var dt=new Date(),MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],when=MO[dt.getMonth()]+' '+('  '+dt.getDate()).slice(-2)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+          var sz=function(f){var v=S.files[f];return isBin(v)?binSize(v):unescape(encodeURIComponent(v||'')).length};
+          var row=function(dirp,n,size){return (dirp?'drwxr-xr-x':'-rw-r--r--')+' 1 you 197121 '+('      '+size).slice(-6)+' '+when+' '+(dirp?'<span class="b">'+esc(n)+'/</span>':esc(n))};
+          var rows=[],tot=0;if(all){rows.push(row(1,'.',0));rows.push(row(1,'..',0));if(S.repos[dir])rows.push(row(1,'.git',0))}
+          keys(S.dirs).filter(function(d){return d!==dir&&dirname(d)===dir&&(all||base(d)[0]!=='.')}).sort().forEach(function(d){rows.push(row(1,base(d),0))});
+          keys(S.files).filter(function(f){return dirname(f)===dir&&(all||base(f)[0]!=='.')}).sort().forEach(function(f){var z=sz(f);tot+=Math.ceil(z/1024);rows.push(row(0,base(f),z))});
+          pr('total '+tot);rows.forEach(function(x){pr(x)});return}
         pr(items.length?items.join('&nbsp;&nbsp;'):'&nbsp;');return}
       case 'cd':{var d=norm(t[1]||'~');if(!S.dirs[d]){perr('bash: cd: '+(t[1]||'')+': No such file or directory');return}S.cwd=d;return}
       case 'mkdir':{if(!t[1]){perr('mkdir: missing operand');return}var d2=norm(t[1]);if(S.dirs[d2]){perr("mkdir: cannot create directory '"+t[1]+"': File exists");return}if(!S.dirs[dirname(d2)]){perr("mkdir: cannot create directory '"+t[1]+"': No such file or directory");return}S.dirs[d2]=1;return}
@@ -552,7 +611,7 @@
         if(hit&&S.repo)pl('Files removed from your folder. Now git add . (or git rm) , commit, push.','y');return}
       case 'rm_old':{if(!t[1]){perr('rm: missing operand');return}var f3=norm(t[1]);if(!(f3 in S.files)){perr("rm: cannot remove '"+t[1]+"': No such file or directory");return}delete S.files[f3];return}
       case 'clear':out.innerHTML='';return;
-      case 'help':pl('Try these:\n  rm file | rm -r folder | rm *    (delete things)\n  git rm .    (remove all tracked files)\n  wipe-github    (Real mode: delete EVERYTHING in the GitHub repo, start fresh)\n\n  pwd  ls  cd  mkdir  touch  cat  rm  mv  cp  clear\n  mv old.txt new.txt    (rename or move)   cp a.txt b.txt   (copy; cp -r for folders)\n  echo "text" > file      (make or change a file)\n  git init | clone | status | add | commit | diff | log | show\n  git restore | reset | revert | stash | rm | mv | tag\n  git branch | switch | checkout | merge\n  git remote | push | fetch | pull\n  git help    (all git commands, grouped)\n\nEvery command, with what it does: open the Cheat Sheet on the desktop.','y');return;
+      case 'help':pl('Try these:\n  rm file | rm -r folder | rm *    (delete things)\n  git rm .    (remove all tracked files)\n  wipe-github    (Real mode: delete EVERYTHING in the GitHub repo, start fresh)\n\n  pwd  ls  cd  mkdir  touch  cat  rm  mv  cp  clear\n  mv old.txt new.txt    (rename or move)   cp a.txt b.txt   (copy; cp -r for folders)\n  echo "text" > file      (make or change a file)\n  git init | clone | status | add | commit | diff | log | show\n  git restore | reset | revert | stash | rm | mv | tag\n  git branch | switch | checkout | merge | rebase\n  ls -l | ls -la | git ls-files    (long list, hidden files too, files Git tracks)\n  git remote | push | fetch | pull\n  git help    (all git commands, grouped)\n\nEvery command, with what it does: open the Cheat Sheet on the desktop.','y');return;
     }
     perr('bash: '+cmd+': command not found');
   }
@@ -674,8 +733,8 @@
     var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?'<a class="vsbr" data-brpick="1" title="Switch branch">'+VI.br+esc(branch)+'</a>'+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
     return '<div class="vsmain'+(scm?' scm':'')+'">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
   function vsEdit(t){if(isBin(t))return isPic(t)?'<div class="vsimg"><img src="'+binUrl(t)+'" alt="'+esc(base(S.fvf||'picture'))+'"><small>'+esc(base(S.fvf||''))+' &middot; '+binSize(t)+' bytes &middot; a picture, so there is nothing to type here</small></div>':'<div class="vsempty">This is a binary file ('+binSize(t)+' bytes). VS Code cannot show it as text.</div>';
-    t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
-    return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
+    t=t||'';var ls=t.replace(/\n$/,'').split('\n'),n=Math.max(1,ls.length),w=0;ls.forEach(function(l){w=Math.max(w,l.replace(/\t/g,'  ').length)});var g='';for(var i=1;i<=n;i++)g+=i+'\n';
+    return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" style="min-width:calc('+(w+2)+'ch + 16px)" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
   function vsPop(title,text,btns){
     var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);
     var d=document.createElement('div');d.className='vsdlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
@@ -878,10 +937,10 @@
     el.addEventListener('click',function(e){if(el._lp&&Date.now()-el._lp<900){e.preventDefault();e.stopPropagation();el._lp=0}},true)}
   function vsPath(){return vsAbs(S.fvf)}
   var vsSel=null;
-  function vsKeep(){var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);ta.scrollTop=vsSel.t;ta.scrollLeft=vsSel.l}vsSel=null}
+  function vsKeep(){var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l}}vsSel=null}
   $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
     S.files[vsPath()]=v===''||/\n$/.test(v)?v:v+'\n';
-    vsSel={f:S.fvf,s:ta.selectionStart,e:ta.selectionEnd,t:ta.scrollTop,l:ta.scrollLeft};render()});
+    var sc=ta.closest('.vscode');vsSel={f:S.fvf,s:ta.selectionStart,e:ta.selectionEnd,t:sc?sc.scrollTop:0,l:sc?sc.scrollLeft:0};render()});
   $('fvB').addEventListener('input',function(e){if(e.target.id==='scmMsg')S.scmMsg=e.target.value});
   $('fvB').addEventListener('focusin',function(e){S.scmFocus=e.target.id==='scmMsg'});
   $('fvB').addEventListener('keydown',function(e){
