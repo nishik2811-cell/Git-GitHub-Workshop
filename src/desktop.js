@@ -123,9 +123,9 @@
   function zOrder(w){var all=[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).filter(Boolean);
     all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);
     /* pinned windows (VS Code, Notepad) always stay above the others; the one you clicked last is on top among them */
-    var pinOn=function(x){return x.id==='notepad'?vsPinned:x.id==='drawWin'?padPinned:false};all=all.filter(function(x){return !pinOn(x)}).concat(all.filter(pinOn));
+    var pinOn=function(x){return x.id==='notepad'?vsPinned:!!winPin[x.id]};all=all.filter(function(x){return !pinOn(x)}).concat(all.filter(pinOn));
     all.forEach(function(x,i){x.style.zIndex=51+i});active=w;tkSync()}
-  var active=null,vsPinned=store('vspin')==='1',padPinned=store('padpin')==='1';
+  var active=null,vsPinned=store('vspin')==='1',winPin={};
   /* which windows are on screen, which one is in front, and what a click on its taskbar button or desktop icon does */
   function isVis(el){if(!el)return false;if(el.id==='notepad')return el.classList.contains('show')&&!el.classList.contains('docked');return !el.hidden&&!el.classList.contains('docked')}
   function topWin(){if(active&&isVis(active))return active;var t=null,tz=-1;[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).forEach(function(el){if(!isVis(el))return;var z=+el.style.zIndex||55;if(z>=tz){tz=z;t=el}});return t}
@@ -149,7 +149,7 @@
     document.body.appendChild(el);var W={el:el,body:el.querySelector('.dwb'),tk:tk,placed:false,w:w,h:h};wins[id]=W;
     el.addEventListener('pointerdown',function(){zOrder(el)},true);
     var hd=el.querySelector('.dwh'),ox,oy,dr=false;
-    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button')||innerWidth<=700||el.classList.contains('max'))return;dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;hd.setPointerCapture(e.pointerId)});
+    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button')||innerWidth<=700||el.classList.contains('max'))return;dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{hd.setPointerCapture(e.pointerId)}catch(z){}});
     hd.addEventListener('pointermove',function(e){if(!dr)return;el.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(innerHeight-80,e.clientY-oy))+'px'});
     hd.addEventListener('pointerup',function(){dr=false});
     var g=el.querySelector('.dwr'),sx,sy,sw,sh,on=false;
@@ -213,7 +213,8 @@
       z=parseFloat(getComputedStyle(wsIn).zoom)||1,wr=wsIn.getBoundingClientRect(),blocks=[];
     bg.dataset.w=W;
     wsIn.querySelectorAll('.card,.banner,.idx,.signoff,.marquee,.icons,footer,.loadwrap').forEach(function(el){var r=el.getBoundingClientRect();if(!r.width)return;
-      var off=el.classList.contains('rv')&&!el.classList.contains('in')?24*z:0; // cards not shown yet sit 24px lower until they slide in
+      /* a card may be sliding in right now: take off whatever slide offset it has at this moment, so this works at any time */
+      var tf=getComputedStyle(el).transform,off=tf&&tf!=='none'?(parseFloat(tf.split(',')[5])||0)*z:0;
       blocks.push([(r.left-wr.left)/z-10,(r.top-off-wr.top)/z-10,(r.right-wr.left)/z+10,(r.bottom-off-wr.top)/z+10])});
     function free(x,y,sz){if(x<6||x+sz>W-6)return false;for(var i=0;i<blocks.length;i++){var b=blocks[i];if(x<b[2]&&x+sz>b[0]&&y<b[3]&&y+sz>b[1])return false}return true}
     /* which decoration: small sparkles most often, the bigger ones less */
@@ -226,6 +227,7 @@
       if(!free(x,y,sz)||near(cx,cy))continue;grid[Math.floor(cx/cs)+','+Math.floor(cy/cs)]=[cx,cy];
       var e=document.createElement('i');e.className='sp '+q[0]+(Math.random()<0.5?' bob':' bob2');
       e.style.left=(x/W*100)+'%';e.style.top=y+'px';e.style.height=sz+'px';e.style.animationDelay=(-Math.random()*4).toFixed(2)+'s';bg.appendChild(e);k++}}
+  wsIn.querySelectorAll('.wiz').forEach(function(w){var c=w.closest('.rv');if(c)c.classList.add('rvfade')});
   function wsFit(){wsZoom();wsLw();wsRestore();clearTimeout(decoT);decoT=setTimeout(decoFill,250)}
   if(window.ResizeObserver)new ResizeObserver(wsFit).observe(wsBody);else addEventListener('resize',wsFit);
   addEventListener('resize',function(){if(innerWidth<=700){WS.place();return}if(WS.el.classList.contains('max'))return;var r=WS.el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight-38){WS.place()}});
@@ -270,12 +272,13 @@
 
   /* drawing notepad */
   var DW=makeWin('drawWin','Notepad',I.pad,tkDraw,580,430);
-  /* pin Notepad on top, like VS Code */
-  (function(){var b=document.createElement('button');b.type='button';b.className='dpin';
+  /* a pin in the title bar keeps a window above the others (Notepad, Cheat Sheet), like VS Code's pin; it is remembered */
+  function addPin(W,key,name){var id=W.el.id;winPin[id]=store(key)==='1';var b=document.createElement('button');b.type='button';b.className='dpin';
     b.innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1.5h6l-1 4 2.5 2.5h-9L6 5.5z" fill="currentColor"/><path d="M8 8v6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
-    function sync(){b.classList.toggle('on',padPinned);b.setAttribute('aria-pressed',padPinned?'true':'false');b.title=padPinned?'Unpin (stop keeping Notepad on top)':'Pin on top (keep Notepad above other windows)';b.setAttribute('aria-label',b.title)}
-    b.onclick=function(e){e.stopPropagation();padPinned=!padPinned;store('padpin',padPinned?'1':'0');sync();zOrder(DW.el)};
-    var mn=DW.el.querySelector('.dwh .dmin');mn.parentNode.insertBefore(b,mn);sync()})();
+    function sync(){var on=winPin[id];b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');b.title=on?'Unpin (stop keeping '+name+' on top)':'Pin on top (keep '+name+' above other windows)';b.setAttribute('aria-label',b.title)}
+    b.onclick=function(e){e.stopPropagation();winPin[id]=!winPin[id];store(key,winPin[id]?'1':'0');sync();zOrder(W.el)};
+    var mn=W.el.querySelector('.dwh .dmin');mn.parentNode.insertBefore(b,mn);sync()}
+  addPin(DW,'padpin','Notepad');
   var PCOL=[['#16327a','Blue ink'],['#222222','Black'],['#e8336d','Pink'],['#2e9e4f','Green'],['#e07f22','Orange'],['#7653d1','Purple']],PSZ=[[2,'Thin'],[5,'Medium'],[11,'Thick']];
   DW.body.classList.add('padb');
   DW.body.innerHTML='<div class="padtools" role="toolbar" aria-label="Drawing tools"><span class="padgrp">'
@@ -679,7 +682,7 @@
     ['git help','List the Git commands, grouped by what they are for','help commands list usage','#t2-3','git help']]},
    {g:'Start a repo',l:[
     ['git init','Turn the folder you are in into a Git repo','start new repo create init begin folder','#t2-2','git init'],
-    ['git clone <url>','Copy a whole repo from GitHub into a new folder (try the public demo)','download clone copy get repo github','#t2-4','git clone https://github.com/roli/website'],
+    ['git clone <url>','Copy a whole repo from GitHub into a new folder. Try it with GitHub\'s own sample repo; in Real GitHub mode any repo you can see on github.com works','download clone copy get repo github','#t2-4','git clone https://github.com/octocat/Hello-World'],
     ['git clone <folder> <new-folder>','Clone a repo that is already on this laptop into another folder','clone copy local folder repo','#t2-4','git clone ']]},
    {g:'Save your work',l:[
     ['git status','See what changed, what is staged, and if you are ahead of or behind GitHub','status changed what happened check see state behind ahead','#t2-3','git status'],
@@ -774,7 +777,7 @@
   function tryCmd(c){openLab();var i=$('pgIn');if(!i)return;setTimeout(function(){i.value=c;var at=c.indexOf('""');i.focus({preventScroll:true});var n=at>-1?at+1:c.length;try{i.setSelectionRange(n,n)}catch(z){}},80)}
 
   /* ---------- the Cheat Sheet app ---------- */
-  var CS=makeWin('cheatWin','Cheat Sheet',I.cheat,tkCheat,560,600,{max:true});CS.body.classList.add('csb');
+  var CS=makeWin('cheatWin','Cheat Sheet',I.cheat,tkCheat,560,600,{max:true});CS.body.classList.add('csb');addPin(CS,'cheatpin','the Cheat Sheet');
   CS.body.innerHTML='<div class="cshead"><input type="search" id="csQ" placeholder="Search commands, e.g. undo, branch, upload" autocomplete="off" aria-label="Search the cheat sheet" data-focus><small id="csN"></small></div><div class="cslist" id="csL"></div>';
   (function(){var h='';CHEAT.forEach(function(g,gi){h+='<section class="csg" data-g="'+gi+'"><h3>'+esc(g.g)+'</h3>'+g.l.map(function(c,ci){return '<div class="csr" data-g="'+gi+'" data-c="'+ci+'"><div class="cst"><code>'+esc(c[0])+'</code><button type="button" class="cscopy" data-copy="'+gi+'.'+ci+'" title="Copy it, to paste into your own Git Bash">Copy</button><button type="button" class="smtry" data-try="'+gi+'.'+ci+'" title="Type it in the Practice Lab">Try it</button></div><p>'+esc(c[1])+'</p></div>'}).join('')+'</section>'});
     $('csL').innerHTML=h+'<p class="csnone" id="csNone" hidden>Nothing found. Try "undo", "branch" or "upload".</p>'})();

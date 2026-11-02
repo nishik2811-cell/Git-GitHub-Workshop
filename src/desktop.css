@@ -144,6 +144,8 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .taskbar{z-index:80}
 .tktip{z-index:81}
 .startmenu{z-index:82}
+/* cards holding a step-by-step guide fade in without sliding (the guide's Back/Next bar sticks to the window bottom) */
+#wsIn .rv.rvfade{transform:none}
 /* Cheat Sheet */
 .dwb.csb{display:flex;flex-direction:column;background:#fffdf3}
 .cshead{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}

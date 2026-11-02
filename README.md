@@ -64,7 +64,7 @@ Every folder can be its own repo. Clone one into another folder, push from the c
 
 **The Mini laptop** around it all: open apps, open folders in the File Explorer (folders inside folders too), or right-click and *Open with VS Code*, select several things at once (Ctrl-click, Shift-click or drag a box) and drag them into folders, change the wallpaper, rescue things from the Bin. Pin VS Code or the drawing Notepad on top. The Start menu search finds lessons, apps, your files, settings and Git commands: type what you want to do, like *undo* or *upload*, and it suggests the command, with a *Try it* button. There's also a setup guide for installing the real tools afterwards, and a folder of memes.
 
-**Real GitHub mode** for when you're ready: connect a throwaway repo, and your `git push` lands on GitHub for real. Make a folder on the desktop, write a file in VS Code, and push it. In the Teammates story you play the teammate yourself, editing a file on github.com, and *Your own project* goes straight to your real repo. Use a token you delete straight after the workshop.
+**Real GitHub mode** for when you're ready: connect a throwaway repo, and your `git push` lands on GitHub for real. Make a folder on the desktop, write a file in VS Code, and push it. `git clone` works with any repo on github.com you can see (big ones come down with their newest 50 commits). In the Teammates story you play the teammate yourself, editing a file on github.com, and *Your own project* goes straight to your real repo. Use a token you delete straight after the workshop.
 
 ## How it's different
 

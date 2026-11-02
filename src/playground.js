@@ -184,26 +184,41 @@
         nr.list.forEach(function(c){c.hidden=false});if(!tip){nr.head=def||'main';nr.br[nr.head]=null;pl('warning: You appear to have cloned an empty repository.','y');return}
         nr.head=def;nr.br[def]=tip;var fl=nr.cm[tip].files;keys(fl).forEach(function(f){S.files[root+'/'+f]=fl[f];var d=dirname(root+'/'+f);while(d!==root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});nr.index=copy(fl);pl('Now type: cd '+name,'y')}
       if(RL.on&&!loc){
-        if(ghKey(url)!==ghKey('https://github.com/'+RL.repo)){perr("remote: Repository not found.\nfatal: repository '"+url+"' not found");pl('Real GitHub mode can only reach the repo you connected: https://github.com/'+RL.repo+'.git','y');return}
-        var nr=made();S.forceRepo=nr;pend=true;busy=true;inp.disabled=true;
+        /* Real GitHub mode: any GitHub repo your token can read (every public repo, and your own private ones) */
+        var m=url.match(/^(?:https?:\/\/(?:www\.)?github\.com\/|git@github\.com:)([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
+        if(!m){perr("fatal: repository '"+url+"' not found");pl('Real GitHub mode can only clone from github.com, like https://github.com/owner/repo','y');return}
+        var full=m[1]+'/'+m[2];pend=true;busy=true;inp.disabled=true;
         /* the terminal stays locked until every branch has arrived, like a real clone */
         function unlock(){pend=false;if(!scripting){busy=false;inp.disabled=false;try{inp.focus({preventScroll:true})}catch(z){}}setPrompt()}
-        gh('GET','/repos/'+RL.repo+'/branches?per_page=100').then(function(x){return x.s===200&&x.j.length?x.j.map(function(b){return b.name}):[RL.def]},function(){return [RL.def]}).then(function(list){
-          list.sort(function(x,y){return x===RL.def?-1:y===RL.def?1:0});var i=0,bad=null;
-          (function next(){if(i>=list.length||bad){done();return}S.forceRepo=nr;realFetch(list[i++],function(res){S.forceRepo=nr;if(res&&res.err)bad=res.err;next()},true)})();
-          function done(){S.forceRepo=nr;
-            if(bad){perr(bad);delete S.repos[root];fsDelete(root);S.forceRepo=null;unlock();render();return}
-            var n=nr.list.length;if(n)pl('remote: Enumerating objects: '+n+', done.\nReceiving objects: 100% ('+n+'/'+n+'), done.');checkout(nr,nr.remote.br[RL.def]?RL.def:keys(nr.remote.br)[0]);S.forceRepo=null;unlock();render()}})
+        var DEPTH=50,nr=null;
+        gh('GET','/repos/'+full).then(function(info){
+          if(info.s===404||info.s===403||info.s===401){perr("remote: Repository not found.\nfatal: repository 'https://github.com/"+full+"/' not found");unlock();render();return}
+          if(info.s!==200){perr('fatal: unable to access \'https://github.com/'+full+'/\': GitHub said '+info.s);unlock();render();return}
+          var def=info.j.default_branch||'main';full=info.j.full_name||full;
+          nr=made();nr.ghRepo=full;nr.ghDef=def;nr.remote.url='https://github.com/'+full+'.git';S.forceRepo=nr;RL.trunc=false;
+          return gh('GET','/repos/'+full+'/branches?per_page=100').then(function(x){return x.s===200&&x.j.length?x.j.map(function(b){return b.name}):[def]},function(){return [def]}).then(function(list){
+            list.sort(function(x,y){return x===def?-1:y===def?1:0});list=list.slice(0,20);var i=0,bad=null,shallow=false;
+            (function next(){if(i>=list.length||bad||(shallow&&i>0)){done();return}S.forceRepo=nr;realFetch(list[i++],function(res){S.forceRepo=nr;if(res&&res.err)bad=res.err;if(res&&res.shallow)shallow=true;next()},true,DEPTH)})();
+            function done(){S.forceRepo=nr;
+              if(bad){perr(bad);delete S.repos[root];fsDelete(root);S.forceRepo=null;unlock();render();return}
+              var n=nr.list.length;if(n)pl('remote: Enumerating objects: '+n+', done.\nReceiving objects: 100% ('+n+'/'+n+'), done.');
+              if(shallow)pl('This repo has a long history: cloned the newest '+DEPTH+' commits of '+def+' only, like  git clone --depth '+DEPTH,'y');
+              if(RL.trunc)pl('Big repo: the Mini laptop shows the first 200 files of each commit.','y');
+              checkout(nr,nr.remote.br[def]?def:keys(nr.remote.br)[0]);S.forceRepo=null;unlock();render()}})
+        }).catch(function(e){perr('fatal: could not read from GitHub ('+((e&&e.message)||'network error')+')');if(nr){delete S.repos[root];fsDelete(root)}S.forceRepo=null;unlock();render()});
         return}
       var src=loc?{cm:loc.cm,remote:{br:loc.br}}:ghSource(url,null),nr2;
       if(loc)url=loc.root;
       if(src){nr2=made();ghCopy(src,nr2)}
+      else if(ghKey(url)==='https://github.com/octocat/hello-world'){nr2=made();
+        /* GitHub's own tiny public sample repo (it really exists, so the same command works in Real GitHub mode too) */
+        var h1={id:rid(),msg:'first commit',p:[],files:{'README':'Hello World!\n'},br:'master',n:++S.n,who:'The Octocat'};nr2.cm[h1.id]=h1;nr2.list.push(h1);nr2.remote.br.master=h1.id}
       else if(ghKey(url)==='https://github.com/roli/website'){nr2=made();
         /* a public demo repo that always exists on the pretend GitHub */
         var f1={'README.md':'# website\nRoli\'s first website.\n'},f2={'README.md':'# website\nRoli\'s first website.\n','index.html':'<h1>Hello</h1>\n'};
         var c1={id:rid(),msg:'first commit',p:[],files:f1,br:'main',n:++S.n,who:'Roli'},c2={id:rid(),msg:'add index page',p:[c1.id],files:f2,br:'main',n:++S.n,who:'Roli'};
         [c1,c2].forEach(function(c){nr2.cm[c.id]=c;nr2.list.push(c)});nr2.remote.br.main=c2.id}
-      else{perr("remote: Repository not found.\nfatal: repository '"+url.replace(/\/+$/,'')+"/' not found");pl('On this Mini laptop, GitHub only has the repos you pushed to, plus a public demo: git clone https://github.com/roli/website','y');return}
+      else{perr("remote: Repository not found.\nfatal: repository '"+url.replace(/\/+$/,'')+"/' not found");pl('On this Mini laptop, GitHub only has the repos you pushed to, plus public samples: git clone https://github.com/octocat/Hello-World','y');return}
       var cnt=nr2.list.length;if(cnt)pl('remote: Enumerating objects: '+cnt+', done.\nremote: Counting objects: 100% ('+cnt+'/'+cnt+'), done.\nReceiving objects: 100% ('+cnt+'/'+cnt+'), done.');
       checkout(nr2,nr2.remote.br.main?'main':keys(nr2.remote.br)[0]);return}
     if(!needRepo())return;r=R();
@@ -1291,33 +1306,38 @@
   ['known','map'].forEach(function(k){Object.defineProperty(RL,k,{get:function(){var r=S&&S.repo;if(!r)return {};return r['rl'+k]||(r['rl'+k]={})},set:function(v){var r=S&&S.repo;if(r)r['rl'+k]=v}})});
   /* known[branch]: the GitHub commit our copy of that branch matches. map: GitHub commit id -> our commit, for commits we already have. */
   var EMPTY_TREE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'; // Git's id for "no files at all"; GitHub answers 404 for it
-  function realTree(sha){if(sha===EMPTY_TREE)return Promise.resolve({});return gh('GET','/repos/'+RL.repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read the files of one commit ('+t.s+')');
-    var fl=t.j.tree.filter(function(x){return x.type==='blob'}).slice(0,200),files={};
+  function ghRepo(r){return (r&&r.ghRepo)||RL.repo}
+  function ghDef(r){return (r&&r.ghDef)||RL.def}
+  function realTree(sha,repo){repo=repo||ghRepo(R());if(sha===EMPTY_TREE)return Promise.resolve({});return gh('GET','/repos/'+repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read the files of one commit ('+t.s+')');
+    var all=t.j.tree.filter(function(x){return x.type==='blob'});if(all.length>200)RL.trunc=true;var fl=all.slice(0,200),files={};
     return seq(fl,function(f){if(RL.blobs[f.sha]!==undefined){files[f.path]=RL.blobs[f.sha];return}
-      return gh('GET','/repos/'+RL.repo+'/git/blobs/'+f.sha).then(function(b){var txt;try{txt=decodeURIComponent(escape(atob(((b.j&&b.j.content)||'').replace(/\n/g,''))))}catch(e){txt='(binary file)\n'}RL.blobs[f.sha]=txt;files[f.path]=txt})}).then(function(){return files})})}
+      return gh('GET','/repos/'+repo+'/git/blobs/'+f.sha).then(function(b){var txt;try{txt=decodeURIComponent(escape(atob(((b.j&&b.j.content)||'').replace(/\n/g,''))))}catch(e){txt='(binary file)\n'}RL.blobs[f.sha]=txt;files[f.path]=txt})}).then(function(){return files})})}
   /* git fetch / git pull in Real GitHub mode: download the commits GitHub has that we don't, then carry on as normal */
   /* run fn over items, a few at a time (much faster than one by one, still gentle on GitHub) */
   function pool(items,n,fn){var i=0;function next(){if(i>=items.length)return Promise.resolve();var it=items[i++];return fn(it).then(next)}var w=[];for(var k=0;k<Math.min(n,items.length);k++)w.push(next());return Promise.all(w)}
   /* git fetch / git pull in Real GitHub mode, like real Git: download every commit GitHub has that we do not have yet
      (the whole history the first time), with its real parents, so merges stay merges */
-  function realFetch(br,done,quiet){var r=R();pend=true;busy=true;inp.disabled=true;
-    if(!quiet)pl('Fetching from github.com/'+RL.repo+' (this one is real)...','y');
+  function realFetch(br,done,quiet,max){var r=R(),repo=ghRepo(r),shallow=false;pend=true;busy=true;inp.disabled=true;
+    if(!quiet)pl('Fetching from github.com/'+repo+' (this one is real)...','y');
     function fin(res){if(!quiet){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}}try{done(res||{})}catch(e){perr('error: '+e.message)}setPrompt();render()}
-    gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
+    gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
       if(x.s!==200)return {};
       var head=x.j.object.sha;if(RL.map[head]){r.remote.br[br]=RL.map[head];RL.known[br]=head;return {}}
       var fresh=[],page=1;
-      function more(){return gh('GET','/repos/'+RL.repo+'/commits?sha='+encodeURIComponent(br)+'&per_page=100&page='+page).then(function(cl){
+      function more(){return gh('GET','/repos/'+repo+'/commits?sha='+encodeURIComponent(br)+'&per_page=100&page='+page).then(function(cl){
         if(cl.s!==200)throw new Error('GitHub said '+cl.s);
         var hit=false;cl.j.forEach(function(c){if(RL.map[c.sha])hit=true;else fresh.push(c)});
+        if(max&&fresh.length>=max){if(!hit&&(cl.j.length===100||fresh.length>max))shallow=true;return}
         if(hit||cl.j.length<100||page>=20)return;page++;return more()})}
       return more().then(function(){
+        /* a big repo: keep only the newest commits (like git clone --depth); the oldest one kept becomes the start of the history */
+        if(max&&fresh.length>max){fresh=fresh.slice(0,max);shallow=true}
         var bySha={};fresh.forEach(function(c){bySha[c.sha]=c});var trees={},got=0;
         /* only what the branch really contains: walk back from GitHub's newest commit, stopping at commits we already have */
         var need=[],seen={},stack=[head];while(stack.length){var q=stack.pop();if(seen[q]||RL.map[q]||!bySha[q])continue;seen[q]=1;need.push(bySha[q]);(bySha[q].parents||[]).forEach(function(pp){stack.push(pp.sha)})}
         fresh=need;
         if(!quiet)pl('Receiving '+fresh.length+' commit'+(fresh.length===1?'':'s')+'...');
-        return pool(fresh,6,function(c){return realTree(c.commit.tree.sha).then(function(f){trees[c.sha]=f;got++})}).then(function(){
+        return pool(fresh,6,function(c){return realTree(c.commit.tree.sha,repo).then(function(f){trees[c.sha]=f;got++})}).then(function(){
           var made={};
           function build(sha){if(RL.map[sha])return RL.map[sha];var c=bySha[sha];if(!c)return null;if(made[sha])return made[sha];
             var ps=(c.parents||[]).map(function(q){return build(q.sha)}).filter(Boolean);
@@ -1325,7 +1345,7 @@
             r.cm[sc.id]=sc;r.list.push(sc);made[sha]=sc.id;RL.map[sha]=sc.id;return sc.id}
           build(head);
           if(RL.map[head]){r.remote.br[br]=RL.map[head];RL.known[br]=head}
-          if(!quiet)pl('Receiving objects: 100% ('+got+'/'+fresh.length+'), done.');return {}})})
+          if(!quiet)pl('Receiving objects: 100% ('+got+'/'+fresh.length+'), done.');return {shallow:shallow}})})
     }).then(fin,function(e){fin({err:'fatal: could not read from GitHub ('+((e&&e.message)||'network error')+')'})})}
   var rb=$('realBox'),rbody=$('realB');
   function gh(method,path,body){
@@ -1387,42 +1407,45 @@
       window.gitPop&&window.gitPop('warn',path+' (on GitHub, branch '+v+')','<pre class="fpre">'+esc(t)+'</pre>')})});
   function treeDiff(c){var par=c.p.length?C(c.p[0]).files:{},o=[];keys(c.files).forEach(function(f){if(par[f]!==c.files[f])o.push(['put',f,c.files[f]])});keys(par).forEach(function(f){if(!(f in c.files))o.push(['del',f])});return o}
   function seq(items,fn){return items.reduce(function(p,i){return p.then(function(){return fn(i)})},Promise.resolve())}
-  function realTagPush(tl){var r=R(),sha={};keys(RL.map).forEach(function(k){sha[RL.map[k]]=k});
+  function realTagPush(tl){var r=R(),repo=ghRepo(r),sha={};keys(RL.map).forEach(function(k){sha[RL.map[k]]=k});
     var miss=tl.filter(function(t){return !sha[r.tags[t].id]});if(miss.length){perr('error: GitHub does not have the commit for '+miss.join(', ')+' yet.\nhint: push its branch first (git push), then push the tag.');return}
     pend=true;busy=true;inp.disabled=true;
-    seq(tl,function(t){return gh('POST','/repos/'+RL.repo+'/git/refs',{ref:'refs/tags/'+t,sha:sha[r.tags[t].id]}).then(function(x){if(x.s>=300)throw new Error(x.s+' '+((x.j&&x.j.message)||''));r.remote.tags=r.remote.tags||{};r.remote.tags[t]=r.tags[t].id})})
-    .then(function(){pl('To https://github.com/'+RL.repo+'.git');tl.forEach(function(t){pl(' * [new tag]         '+t+' -> '+t,'g')})},function(e){perr('error: GitHub refused the tag: '+e.message)})
+    seq(tl,function(t){return gh('POST','/repos/'+repo+'/git/refs',{ref:'refs/tags/'+t,sha:sha[r.tags[t].id]}).then(function(x){if(x.s>=300)throw new Error(x.s+' '+((x.j&&x.j.message)||''));r.remote.tags=r.remote.tags||{};r.remote.tags[t]=r.tags[t].id})})
+    .then(function(){pl('To https://github.com/'+repo+'.git');tl.forEach(function(t){pl(' * [new tag]         '+t+' -> '+t,'g')})},function(e){perr('error: GitHub refused the tag: '+e.message)})
     .then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()})}
   function realPush(br,rt,lt){
-    var r=R(),list=reach(lt).filter(function(c){return !rt||!anc(rt)[c.id]}).reverse();
+    var r=R(),repo=ghRepo(r),def=ghDef(r),list=reach(lt).filter(function(c){return !rt||!anc(rt)[c.id]}).reverse();
     pend=true;busy=true;inp.disabled=true;pl('Sending '+list.length+' commit'+(list.length===1?'':'s')+' to GitHub (this one is real)...','y');
-    var ensure=gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
+    var ensure=gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
       if(x.s===200&&x.j.object.sha!==RL.known[br]){var er=new Error('rejected');er.rejected=true;throw er}});
-    if(br!==RL.def)ensure=ensure.then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+br).then(function(x){if(x.s===200)return;
-      return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+RL.def).then(function(d){if(d.s!==200)return;return gh('POST','/repos/'+RL.repo+'/git/refs',{ref:'refs/heads/'+br,sha:d.j.object.sha})})})});
+    if(br!==def)ensure=ensure.then(function(){return gh('GET','/repos/'+repo+'/git/ref/heads/'+br).then(function(x){if(x.s===200)return;
+      return gh('GET','/repos/'+repo+'/git/ref/heads/'+def).then(function(d){if(d.s!==200)return;return gh('POST','/repos/'+repo+'/git/refs',{ref:'refs/heads/'+br,sha:d.j.object.sha})})})});
     /* each file's newest version id on GitHub, from GitHub's own answers during this push (asking again could get an out-of-date answer) */
     var now={},okId=null;S.pushFail=false;
     ensure.then(function(){return seq(list,function(c){return seq(treeDiff(c),function(ch){
-      var path='/repos/'+RL.repo+'/contents/'+ch[1].split('/').map(encodeURIComponent).join('/');
+      var path='/repos/'+repo+'/contents/'+ch[1].split('/').map(encodeURIComponent).join('/');
       var known=ch[1] in now?Promise.resolve(now[ch[1]]):gh('GET',path+'?ref='+encodeURIComponent(br)).then(function(ex){return ex.s===200?ex.j.sha:undefined});
       return known.then(function(sha){
         if(ch[0]==='del'){if(!sha)return;return gh('DELETE',path,{message:c.msg,sha:sha,branch:br}).then(chk).then(function(){now[ch[1]]=undefined})}
         return gh('PUT',path,{message:c.msg,content:b64(ch[2]),sha:sha,branch:br}).then(chk).then(function(x){var ns=x.j&&x.j.content&&x.j.content.sha;if(ns)now[ch[1]]=ns;else delete now[ch[1]]})});
       function chk(x){if(x.s>=300){var er=new Error(x.s+' '+(x.j.message||'')+' [on '+x.m+' '+x.u.split('?')[0]+(x.need?'; needs: '+x.need:'')+']');er.code=x.s;throw er}return x}}).then(function(){okId=c.id})})})
-    .then(function(){return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=lt}})})
+    .then(function(){return gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=lt}})})
     .then(function(){
-      pl('To https://github.com/'+RL.repo+'.git');pl(' * '+(rt?'updated':'[new branch]')+'      '+br+' -> '+br,'g');
+      pl('To https://github.com/'+repo+'.git');pl(' * '+(rt?'updated':'[new branch]')+'      '+br+' -> '+br,'g');
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
-      if(!r.remote.url||r.remote.url.indexOf(RL.repo)<0)r.remote.url='https://github.com/'+RL.repo+'.git';
-      window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(RL.repo)+'.');
+      if(!r.ghRepo&&(!r.remote.url||r.remote.url.indexOf(RL.repo)<0))r.remote.url='https://github.com/'+repo+'.git';
+      window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(repo)+'.');
       refreshLive();
     }).catch(function(e){
-      if(e&&e.rejected){pushRejected('https://github.com/'+RL.repo+'.git',br,false);return}
-      S.pushFail=true;perr('error: GitHub refused: '+e.message);
+      if(e&&e.rejected){pushRejected('https://github.com/'+repo+'.git',br,false);return}
+      S.pushFail=true;
+      if(r.ghRepo&&e&&(e.code===403||e.code===404)){perr('remote: Permission to '+repo+'.git denied.\nfatal: unable to access \'https://github.com/'+repo+'.git/\': The requested URL returned error: 403');pl('You cloned someone else\'s repo: you can change it on your laptop, but only its owners can push. On GitHub you would fork it first.','y');
+        if(okId)return gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=okId;r.remote.br[br]=okId;r.rbr[br]=okId}});return}
+      perr('error: GitHub refused: '+e.message);
       var auth=e&&(e.code===401||e.code===403||e.code===404);
       window.gitPop&&window.gitPop('err','ERROR: PUSH FAILED',esc(e.message)+'<br>'+(auth?'Check that it is a classic token with the repo box ticked.':'Type <code>git push</code> again to continue.'));
       /* the commits that did arrive stay on GitHub: remember them, so the next git push carries on from there */
-      if(okId)return gh('GET','/repos/'+RL.repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=okId;r.remote.br[br]=okId;r.rbr[br]=okId}});
+      if(okId)return gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=okId;r.remote.br[br]=okId;r.rbr[br]=okId}});
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
