@@ -5,9 +5,13 @@
   np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div><span class="npr" id="npR" title="Drag to resize" aria-hidden="true"></span>';
   document.body.appendChild(np);
   (function(){var h=$('nph'),ox,oy,drag=false;
-    h.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('button'))return;drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;h.setPointerCapture(e.pointerId)});
-    h.addEventListener('pointermove',function(e){if(!drag)return;np.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';np.style.top=Math.max(0,Math.min(innerHeight-60,e.clientY-oy))+'px';np.style.right='auto';np.style.bottom='auto'});
-    h.addEventListener('pointerup',function(){drag=false});
+    var vsh=null;
+    h.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('button'))return;
+      if(innerWidth<=700){vsh={y:e.clientY,h:np.getBoundingClientRect().height};try{h.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault();return} /* phones: drag the title bar up or down to resize */
+      drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{h.setPointerCapture(e.pointerId)}catch(z){}});
+    h.addEventListener('pointermove',function(e){if(vsh){var hh=Math.max(120,Math.min(innerHeight-48-8,vsh.h+(vsh.y-e.clientY)));np.style.maxHeight='none';np.style.height=Math.round(hh)+'px';np.style.top='auto';np.style.bottom='';return}
+      if(!drag)return;np.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';np.style.top=Math.max(0,Math.min(innerHeight-60,e.clientY-oy))+'px';np.style.right='auto';np.style.bottom='auto'});
+    ['pointerup','pointercancel'].forEach(function(n){h.addEventListener(n,function(){drag=false;vsh=null})});
     np.addEventListener('pointerdown',function(){var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.width=r.width+'px';np.style.right='auto';np.style.bottom='auto'});
     (function(){var g=$('npR'),sx,sy,sw,sh,on=false;
       g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.right='auto';np.style.bottom='auto';sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;np.classList.add('sizing');g.setPointerCapture(e.pointerId)});
@@ -27,7 +31,17 @@
   var out=$('pgOut'),inp=$('pgIn'),ps=$('pgPs'),HOME='/home/you',S,busy=false,queue=[],pend=false,scripting=false;
   function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repos:{},hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1;
     /* every folder can hold its own repo (like real Git); S.repo is the one for the folder you are in */
+    if(window.mlSeed)try{window.mlSeed(S)}catch(z){}
     Object.defineProperty(S,'repo',{configurable:true,get:function(){if(S.forceRepo)return S.forceRepo;return repoOf(S.cwd)},set:function(v){if(v)S.repos[v.root]=v}})}
+  /* pictures and other binary files: the file's contents are a marker ("\0BIN:key"), the real bytes are kept in BIN.
+     Two files with the same picture have the same marker, so Git sees them as equal, like real Git does with identical bytes. */
+  var BIN={};
+  function isBin(t){return typeof t==='string'&&t.indexOf('\u0000BIN:')===0}
+  function binInfo(t){return isBin(t)?BIN[t.slice(5)]:null}
+  function binReg(key,b64,mime,name){if(!BIN[key])BIN[key]={b64:b64.replace(/\s+/g,''),mime:mime||'application/octet-stream',name:name||key,url:null};return '\u0000BIN:'+key}
+  function binUrl(t){var b=binInfo(t);if(!b)return '';if(!b.url){try{var s2=atob(b.b64),a=new Uint8Array(s2.length);for(var i=0;i<s2.length;i++)a[i]=s2.charCodeAt(i);b.url=URL.createObjectURL(new Blob([a],{type:b.mime}))}catch(e){b.url=''}}return b.url}
+  function binSize(t){var b=binInfo(t);return b?Math.floor(b.b64.length*3/4)-(/==$/.test(b.b64)?2:/=$/.test(b.b64)?1:0):0}
+  function isPic(t){var b=binInfo(t);return !!b&&/^image\//.test(b.mime)}
   function repoOf(path){var best=null;keys(S.repos||{}).forEach(function(rt){if(under(path,rt)&&(!best||rt.length>best.length))best=rt});return best?S.repos[best]:null}
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
   function pr(h){var d=document.createElement('div');d.className='ln';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight}
@@ -77,7 +91,7 @@
   function newCommit(msg,parents,files,author){var r=R(),c={id:rid(),msg:msg,p:parents,files:files,br:r.head,n:++S.n,who:author||S.cfg.name||'you'};r.cm[c.id]=c;r.list.push(c);return c}
   function lines(s){return s?s.replace(/\n$/,'').split('\n').length:0}
   /* lines added and removed between two versions of a file, counted like real Git (longest common subsequence) */
-  function lineCount(o,n){var A=o==null||o===''?[]:o.replace(/\n$/,'').split('\n'),B=n==null||n===''?[]:n.replace(/\n$/,'').split('\n'),L=[];
+  function lineCount(o,n){if(isBin(o)||isBin(n))return {ins:0,del:0};var A=o==null||o===''?[]:o.replace(/\n$/,'').split('\n'),B=n==null||n===''?[]:n.replace(/\n$/,'').split('\n'),L=[];
     for(var i=A.length;i>=0;i--){L[i]=[];for(var j=B.length;j>=0;j--)L[i][j]=i===A.length||j===B.length?0:A[i]===B[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1])}
     return {ins:B.length-L[0][0],del:A.length-L[0][0]}}
   function diffStat(oldT,newT){var files=0,ins=0,del=0,created=[],deleted=[];
@@ -144,6 +158,7 @@
       if(a===t){if(a!==undefined)res[f]=a}
       else if(a===x){if(t!==undefined)res[f]=t}
       else if(t===x){if(a!==undefined)res[f]=a}
+      else if(isBin(a)||isBin(t)){conf.push(f);res[f]=a!==undefined?a:t;pl('warning: Cannot merge binary files: '+f+' (HEAD vs. '+label+')','y')}
       else{conf.push(f);res[f]='<<<<<<< HEAD\n'+(a||'')+'=======\n'+(t||'')+'>>>>>>> '+label+'\n'}});
     if(conf.length){
       keys(res).forEach(function(f){S.files[r.root+'/'+f]=res[f]});
@@ -233,7 +248,10 @@
     function badRev(x){perr("fatal: ambiguous argument '"+x+"': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'")}
     function bh(t){if(t==null)return '0000000';var h=2166136261;for(var i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('0000000'+h.toString(16)).slice(-7)}
     /* a real line-by-line diff (longest common subsequence), shown in hunks with 3 lines of context */
-    function diffOne(f,o,n){var A=o==null?[]:o.replace(/\n$/,'').split('\n'),B=n==null?[]:n.replace(/\n$/,'').split('\n');if(o==='')A=[];if(n==='')B=[];
+    function diffOne(f,o,n){
+      if(isBin(o)||isBin(n)){pr('<b>diff --git a/'+esc(f)+' b/'+esc(f)+'</b>');if(o==null)pr('<b>new file mode 100644</b>');if(n==null)pr('<b>deleted file mode 100644</b>');
+        pr('<b>index '+bh(o)+'..'+bh(n)+(o!=null&&n!=null?' 100644':'')+'</b>');pl('Binary files '+(o==null?'/dev/null':'a/'+f)+' and '+(n==null?'/dev/null':'b/'+f)+' differ');return}
+      var A=o==null?[]:o.replace(/\n$/,'').split('\n'),B=n==null?[]:n.replace(/\n$/,'').split('\n');if(o==='')A=[];if(n==='')B=[];
       var L=[];for(var i=A.length;i>=0;i--){L[i]=[];for(var j=B.length;j>=0;j--)L[i][j]=i===A.length||j===B.length?0:A[i]===B[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1])}
       var ops=[],x=0,y=0;while(x<A.length||y<B.length){if(x<A.length&&y<B.length&&A[x]===B[y]){ops.push([' ',A[x],x,y]);x++;y++}else if(x<A.length&&(y===B.length||L[x+1][y]>=L[x][y+1])){ops.push(['-',A[x],x,y]);x++}else{ops.push(['+',B[y],x,y]);y++}}
       pr('<b>diff --git a/'+esc(f)+' b/'+esc(f)+'</b>');
@@ -518,6 +536,7 @@
         if(dst in S.files)delete S.files[dst];var mr=fsRename(src,dst);if(mr.err)perr('mv: '+mr.err.replace(/<[^>]+>/g,''));return}
       case 'touch':{if(!t[1]){perr('touch: missing file operand');return}var f=norm(t[1]);if(!S.dirs[dirname(f)]){perr('touch: No such directory');return}if(!(f in S.files))S.files[f]='';return}
       case 'cat':{if(!t[1]){perr('cat: missing file');return}var f2=norm(t[1]);S.ran.cat=1;if(!(f2 in S.files)){perr('cat: '+t[1]+': No such file or directory');return}
+        if(isBin(S.files[f2])){pl(t[1]+': '+(isPic(S.files[f2])?'a picture':'a binary file')+' ('+binSize(S.files[f2])+' bytes). cat would print gibberish: open it in VS Code or the File Explorer to see it.','y');return}
         S.files[f2].replace(/\n$/,'').split('\n').forEach(function(l){pr('<span class="'+(/^(<<<<<<<|=======|>>>>>>>)/.test(l)?'p':'')+'">'+(esc(l)||'&nbsp;')+'</span>')});if(!S.files[f2])pr('&nbsp;');return}
       case 'wipe-github':{if(!RL.on){perr('wipe-github only works in Real GitHub mode. Press the green button first.');return}wipeReal();return}
       case 'rm':{var args=t.slice(1).filter(function(x){return x[0]!=='-'}),rec=t.some(function(x){return /^-.*r/i.test(x)});
@@ -652,7 +671,8 @@
     var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(base(x[0]))+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+vsCrumb(cur)+'</div>':'';
     var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?'<a class="vsbr" data-brpick="1" title="Switch branch">'+VI.br+esc(branch)+'</a>'+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
     return '<div class="vsmain'+(scm?' scm':'')+'">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
-  function vsEdit(t){t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
+  function vsEdit(t){if(isBin(t))return isPic(t)?'<div class="vsimg"><img src="'+binUrl(t)+'" alt="'+esc(base(S.fvf||'picture'))+'"><small>'+esc(base(S.fvf||''))+' &middot; '+binSize(t)+' bytes &middot; a picture, so there is nothing to type here</small></div>':'<div class="vsempty">This is a binary file ('+binSize(t)+' bytes). VS Code cannot show it as text.</div>';
+    t=t||'';var n=Math.max(1,t.replace(/\n$/,'').split('\n').length);var g='';for(var i=1;i<=n;i++)g+=i+'\n';
     return '<div class="vsedit"><pre class="vsgut" id="vsGut">'+g+'</pre><textarea id="vsTa" rows="'+(n+1)+'" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off" aria-label="File contents" placeholder="Start typing...">'+esc(t)+'</textarea></div>'}
   function vsPop(title,text,btns){
     var old=np.querySelector('.vsdlg');if(old)old.remove();np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);
@@ -807,7 +827,7 @@
     b.splice(i,1);return {abs:dst,note:note}}
   function binEmpty(id){if(id==null)S.bin=[];else S.bin=(S.bin||[]).filter(function(x){return x.id!==id})}
   function gitMark(a){var r=repoOf(a);if(!r||!under(a,r.root)||a===r.root||!(a in S.files))return '';var f=a.slice(r.root.length+1);
-    if(r.conf[f])return 'C';if(!(f in r.index))return 'U';var h=headTree();return S.files[a]!==r.index[f]?'M':r.index[f]!==h[f]?(f in h?'M':'A'):''}
+    if(r.conf[f])return 'C';if(!(f in r.index))return 'U';var hid=r.br[r.head],h=hid&&r.cm[hid]?r.cm[hid].files:{};return S.files[a]!==r.index[f]?'M':r.index[f]!==h[f]?(f in h?'M':'A'):''}
   /* VS Code shows the terminal's repo or folder, unless the desktop opened another folder in it */
   function vsMode(){var r=S.repo;
     if(S.vsPin&&S.dirs[S.vsPin]&&S.vsPinSig===sigNow()){if(r&&under(S.vsPin,r.root))return {root:r.root,repo:true};return {root:S.vsPin,repo:false}}
@@ -1311,7 +1331,11 @@
   function realTree(sha,repo){repo=repo||ghRepo(R());if(sha===EMPTY_TREE)return Promise.resolve({});return gh('GET','/repos/'+repo+'/git/trees/'+sha+'?recursive=1').then(function(t){if(t.s!==200)throw new Error('could not read the files of one commit ('+t.s+')');
     var all=t.j.tree.filter(function(x){return x.type==='blob'});if(all.length>200)RL.trunc=true;var fl=all.slice(0,200),files={};
     return seq(fl,function(f){if(RL.blobs[f.sha]!==undefined){files[f.path]=RL.blobs[f.sha];return}
-      return gh('GET','/repos/'+repo+'/git/blobs/'+f.sha).then(function(b){var txt;try{txt=decodeURIComponent(escape(atob(((b.j&&b.j.content)||'').replace(/\n/g,''))))}catch(e){txt='(binary file)\n'}RL.blobs[f.sha]=txt;files[f.path]=txt})}).then(function(){return files})})}
+      return gh('GET','/repos/'+repo+'/git/blobs/'+f.sha).then(function(b){var raw=((b.j&&b.j.content)||'').replace(/\s+/g,''),txt=null,ext=(f.path.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase();
+        var MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml',ico:'image/x-icon',pdf:'application/pdf',zip:'application/zip'};
+        if(!MIME[ext]||ext==='svg'){try{txt=decodeURIComponent(escape(atob(raw)));if(/\u0000/.test(txt))txt=null}catch(e){txt=null}}
+        if(txt===null)txt=binReg('gh:'+f.sha,raw,MIME[ext],base(f.path));
+        RL.blobs[f.sha]=txt;files[f.path]=txt})}).then(function(){return files})})}
   /* git fetch / git pull in Real GitHub mode: download the commits GitHub has that we don't, then carry on as normal */
   /* run fn over items, a few at a time (much faster than one by one, still gentle on GitHub) */
   function pool(items,n,fn){var i=0;function next(){if(i>=items.length)return Promise.resolve();var it=items[i++];return fn(it).then(next)}var w=[];for(var k=0;k<Math.min(n,items.length);k++)w.push(next());return Promise.all(w)}
@@ -1427,7 +1451,7 @@
       var known=ch[1] in now?Promise.resolve(now[ch[1]]):gh('GET',path+'?ref='+encodeURIComponent(br)).then(function(ex){return ex.s===200?ex.j.sha:undefined});
       return known.then(function(sha){
         if(ch[0]==='del'){if(!sha)return;return gh('DELETE',path,{message:c.msg,sha:sha,branch:br}).then(chk).then(function(){now[ch[1]]=undefined})}
-        return gh('PUT',path,{message:c.msg,content:b64(ch[2]),sha:sha,branch:br}).then(chk).then(function(x){var ns=x.j&&x.j.content&&x.j.content.sha;if(ns)now[ch[1]]=ns;else delete now[ch[1]]})});
+        return gh('PUT',path,{message:c.msg,content:isBin(ch[2])?binInfo(ch[2]).b64:b64(ch[2]),sha:sha,branch:br}).then(chk).then(function(x){var ns=x.j&&x.j.content&&x.j.content.sha;if(ns)now[ch[1]]=ns;else delete now[ch[1]]})});
       function chk(x){if(x.s>=300){var er=new Error(x.s+' '+(x.j.message||'')+' [on '+x.m+' '+x.u.split('?')[0]+(x.need?'; needs: '+x.need:'')+']');er.code=x.s;throw er}return x}}).then(function(){okId=c.id})})})
     .then(function(){return gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=lt}})})
     .then(function(){
@@ -1449,7 +1473,7 @@
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
-  window.ML={repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
+  window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
     fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,
     ctxMenu:ctxMenu,ctxClose:ctxClose,longPress:longPress,ficon:ficon,openInVS:vsOpenPath,showVS:vsShowWin};
   reset();

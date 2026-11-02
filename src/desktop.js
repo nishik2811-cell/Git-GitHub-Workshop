@@ -24,6 +24,7 @@
     pdf:px(['..KKKKKKKKK.....','..KWWWWWWWKK....','..KWWWWWWWKGK...','..KWWWWWWWKKKK..','..KWBBBBBBWWWK..','..KWWWWWWWWWWK..','..KWBBBBBBBWWK..','.KRRRRRRRRRRRK..','.KRWWRWWRRWWRK..','.KRWRRWRWRWRRK..','.KRWWRWRWRWWRK..','.KRWRRWWRRWRRK..','.KRRRRRRRRRRRK..','..KWWWWWWWWWWK..','..KKKKKKKKKKKK..','................'],{K:'#16327a',W:'#ffffff',G:'#cfd8ee',B:'#7fa3e0',R:'#d93a3a'}),
     lab:px(['................','KKKKKKKKKKKKKKKK','KBBBBBBBBBPPYYGK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDGDDDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDDDGDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDGDDDGGGGGDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','.....KKKKKK.....','...KKKKKKKKKK...'],{K:'#16327a',B:'#1d4ba6',D:'#1b2440',G:'#5cf08a',P:'#e8336d',Y:'#ffd34e'}),
     cheat:px(['..KKKKKKKKKKK...','..KYYYYYYYYYKK..','..KYKKYYYYYYKYK.','..KYYYYYYYYYKKKK','..KYGYBBBBBYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBBYYK','..KYYYYYYYYYYYYK','..KYGYBBBBYYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBYYYK','..KYYYYYYYYYYYYK','..KYGYBBBBBYYYYK','..KYYYYYYYYYYYYK','..KKKKKKKKKKKKKK','................'],{K:'#16327a',Y:'#fff6c9',G:'#2e9e4f',B:'#7fa3e0'}),
+    pic:px(['................','KKKKKKKKKKKKKKKK','KSSSSSSSSSSSSSSK','KSSSSSSSSSSYYSSK','KSSSSSSSSSYYYYSK','KSSSSSSSSSSYYSSK','KSSSSGSSSSSSSSSK','KSSSGGGSSSSSSSSK','KSSGGGGGSSSGSSSK','KSGGGGGGGSGGGSSK','KGGGGGGGGGGGGGGK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','................','................'],{K:'#16327a',S:'#9fd0ff',Y:'#ffd34e',G:'#4caf50',D:'#2e7d32'}),
     power:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 7.2a8 8 0 1 0 11.4 0"/></svg>',
     lock:'<svg class="lock" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" fill="#2e9e4f"/><path d="M3.5 5V3.6a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#2e9e4f" stroke-width="1.5"/></svg>'
   };
@@ -61,7 +62,7 @@
   var tkBR=tkBtn('tkBR','Browser',I.br);tkBR.hidden=true;tbar.insertBefore(tkBR,tray);
   var tkDraw=tkBtn('tkDraw','Notepad',I.pad);tkDraw.hidden=true;tbar.insertBefore(tkDraw,tray);
   var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
-  var tkMeme=tkBtn('tkMeme','hehehe',I.folder);tkMeme.hidden=true;tbar.insertBefore(tkMeme,tray);
+  var tkMeme=tkBtn('tkMeme','Photos',I.pic);tkMeme.hidden=true;tbar.insertBefore(tkMeme,tray);
   var tkCred=tkBtn('tkCred','suspects.txt',I.file);tkCred.hidden=true;tbar.insertBefore(tkCred,tray);
   var tkCheat=tkBtn('tkCheat','Cheat Sheet',I.cheat);tkCheat.hidden=true;tbar.insertBefore(tkCheat,tray);
   var tkFx=tkBtn('tkFx','File Explorer',I.folder);tkFx.hidden=true;tbar.insertBefore(tkFx,tray);
@@ -78,7 +79,7 @@
   function bootGo(hash,instant){if(boot.hidden)return;html.classList.remove('booting');try{sessionStorage.setItem('mlStarted','1')}catch(z){}
     if(instant)boot.hidden=true;else{boot.classList.add('out');setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360)}
     desk.hidden=false;draw(true);
-    if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700);if(hash==='#p5'||hash==='#t2-3b')setTimeout(openLab,60)}
+    if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)} /* a link to the lab (#p5) only scrolls to its card: the lab never opens by itself */
     setTimeout(function(){if(location.hash)history.replaceState(null,'',location.pathname+location.search)},50)}
   var wasOn=false;
   /* only START leaves the start screen; Yes, No and the folder just show a pop-up */
@@ -104,7 +105,7 @@
     window.gitPop('warn','recipes (folder)',body,[{t:hid?'Hide hidden files':'Show hidden files',fn:function(){setTimeout(function(){folderPop(!hid)},0)}},{t:'Close'}])}
 
   /* topics in the start menu bring the workshop back */
-  var smn=$('startMenu');if(smn)smn.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]');var W=wins.wsWin;if(a&&W&&(W.el.hidden||W.el.classList.contains('docked')))winOpen('wsWin')},true);
+  var smn=$('startMenu');if(smn)smn.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]');var W=wins.wsWin;if(a&&W){if(W.el.hidden||W.el.classList.contains('docked'))winOpen('wsWin');else zOrder(W.el)}},true);
   /* power button */
   var smf=document.querySelector('#startMenu .smfoot');
   if(smf){var pw=document.createElement('button');pw.type='button';pw.className='smpower';pw.title='Turn off the Mini laptop';pw.innerHTML=I.power+'<span>Power</span>';smf.appendChild(pw);
@@ -120,10 +121,14 @@
 
   /* ---------- floating windows (browser, Bin) ---------- */
   var wins={};
-  function zOrder(w){var all=[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).filter(Boolean);
-    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);all.push(w);
-    /* pinned windows (VS Code, Notepad) always stay above the others; the one you clicked last is on top among them */
-    var pinOn=function(x){return x.id==='notepad'?vsPinned:!!winPin[x.id]};all=all.filter(function(x){return !pinOn(x)}).concat(all.filter(pinOn));
+  /* stacking: whatever you click or open yourself comes to the very front, above pinned windows too.
+     A pin only stops windows that come up BY THEMSELVES (auto: VS Code popping up, the lab opened by Try it) from covering it. */
+  function zOrder(w,auto){var all=[$('notepad')].concat(Object.keys(wins).map(function(k){return wins[k].el})).filter(Boolean);
+    all.sort(function(a,b){return (+a.style.zIndex||55)-(+b.style.zIndex||55)});all.splice(all.indexOf(w),1);
+    var pinOn=function(x){return x.id==='notepad'?vsPinned:!!winPin[x.id]};
+    /* a window coming up by itself slides in just below the lowest pinned window (nothing else moves); otherwise it goes on top */
+    var at=all.length;if(auto&&!pinOn(w))for(var i=0;i<all.length;i++){if(pinOn(all[i])&&isVis(all[i])){at=i;break}}
+    all.splice(at,0,w);
     all.forEach(function(x,i){x.style.zIndex=51+i});active=w;tkSync()}
   var active=null,vsPinned=store('vspin')==='1',winPin={};
   /* which windows are on screen, which one is in front, and what a click on its taskbar button or desktop icon does */
@@ -132,9 +137,9 @@
   function tkSync(){var t=topWin();Object.keys(wins).forEach(function(k){wins[k].tk.classList.toggle('on',wins[k].el===t)});var tv=$('tkVS');if(tv)tv.classList.toggle('on',!!t&&t.id==='notepad')}
   /* a double-click on a taskbar button counts as one click: its second click (detail 2) must not minimise the window the first one just brought up */
   function tkClick(el){return function(e){if(e&&e.detail>=2&&isVis(el)&&topWin()===el)return;activate(el)}}
-  function activate(el,open){if(!el)return;var isNp=el.id==='notepad',id=el.id;
-    if(!isVis(el)){if(isNp){ML.showVS();zOrder(el)}else{winOpen(id);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit();if(id==='memeWin')memeInit()}return}
-    if(open||topWin()!==el){zOrder(el);return}
+  function activate(el,open,auto){if(!el)return;var isNp=el.id==='notepad',id=el.id;
+    if(!isVis(el)){if(isNp){ML.showVS();zOrder(el,auto)}else{winOpen(id,auto);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit();if(id==='memeWin')picDraw()}return}
+    if(open||topWin()!==el){zOrder(el,auto);return}
     if(isNp)window.vsDock(true);else winDock(id,true)}
   var np=$('notepad');if(np){np.addEventListener('pointerdown',function(){zOrder(np)},true);
     /* pin VS Code on top of the other windows */
@@ -143,15 +148,23 @@
     pinB.onclick=function(e){e.stopPropagation();vsPinned=!vsPinned;store('vspin',vsPinned?'1':'0');pinSync();zOrder(np)};
     var mn=$('npMin');if(mn)mn.parentNode.insertBefore(pinB,mn);pinSync();
     var tkv=$('tkVS');if(tkv)tkv.onclick=tkClick(np);
-    var npWas=false;new MutationObserver(function(){var vis=isVis(np);if(vis&&!npWas)zOrder(np);else tkSync();npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
+    var npWas=false;new MutationObserver(function(){var vis=isVis(np);if(vis&&!npWas)zOrder(np,true);else tkSync();npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
   function makeWin(id,title,icon,tk,w,h,o){o=o||{};var el=document.createElement('div');el.className='dwin';el.id=id;el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label',title);
     el.innerHTML='<div class="dwh"><i>'+icon+'</i><span>'+esc(title)+'</span><button type="button" class="dmin" title="Minimise" aria-label="Minimise">_</button>'+(o.max?'<button type="button" class="dmax" title="Full screen" aria-label="Full screen">&#9633;</button>':'')+(o.noClose?'':'<button type="button" class="dx" title="Close" aria-label="Close">x</button>')+'</div><div class="dwb"></div><span class="dwr" aria-hidden="true"></span>';
     document.body.appendChild(el);var W={el:el,body:el.querySelector('.dwb'),tk:tk,placed:false,w:w,h:h};wins[id]=W;
     el.addEventListener('pointerdown',function(){zOrder(el)},true);
-    var hd=el.querySelector('.dwh'),ox,oy,dr=false;
-    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button')||innerWidth<=700||el.classList.contains('max'))return;dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{hd.setPointerCapture(e.pointerId)}catch(z){}});
-    hd.addEventListener('pointermove',function(e){if(!dr)return;el.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(innerHeight-80,e.clientY-oy))+'px'});
-    hd.addEventListener('pointerup',function(){dr=false});
+    var hd=el.querySelector('.dwh'),ox,oy,dr=false,ph=null;
+    /* phones: windows are sheets along the bottom; dragging the title bar up or down makes the sheet taller or shorter */
+    var sheet=function(){return innerWidth<=700&&!el.classList.contains('max')},tall=id==='wsWin'||id==='labWin';
+    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button'))return;
+      /* the workshop and the Practice Lab fill the height: dragging their title bar down moves their top edge (shorter window, desktop above) */
+      if(sheet()){var rr=el.getBoundingClientRect();ph={y:e.clientY,h:rr.height,t:rr.top};try{hd.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault();return}
+      if(innerWidth<=700||el.classList.contains('max'))return;dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{hd.setPointerCapture(e.pointerId)}catch(z){}});
+    hd.addEventListener('pointermove',function(e){
+      if(ph){if(tall){var t2=Math.max(0,Math.min(innerHeight-38-200,ph.t+(e.clientY-ph.y)));el.style.setProperty('--wst',Math.round(t2)+'px')}
+        else{var h=Math.max(150,Math.min(innerHeight-46-8,ph.h+(ph.y-e.clientY)));el.style.setProperty('--ph',Math.round(h)+'px')}el.classList.add('sizing');return}
+      if(!dr)return;el.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(innerHeight-80,e.clientY-oy))+'px'});
+    ['pointerup','pointercancel'].forEach(function(n){hd.addEventListener(n,function(){dr=false;if(ph){ph=null;el.classList.remove('sizing')}})});
     var g=el.querySelector('.dwr'),sx,sy,sw,sh,on=false;
     g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=el.getBoundingClientRect();sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;el.classList.add('sizing');g.setPointerCapture(e.pointerId)});
     g.addEventListener('pointermove',function(e){if(!on)return;var r=el.getBoundingClientRect();el.style.width=Math.max(240,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';el.style.height=Math.max(150,Math.min(innerHeight-r.top-44,sh+e.clientY-sy))+'px'});
@@ -164,11 +177,11 @@
     return W}
   function vsFront(){if(np)zOrder(np)}
   function openVS(k){ML.openInVS(k);vsFront()}
-  function winOpen(id){var W=wins[id],el=W.el,was=isVis(el);el.hidden=false;el.classList.remove('docked');W.tk.hidden=false;
+  function winOpen(id,auto){var W=wins[id],el=W.el,was=isVis(el);el.hidden=false;el.classList.remove('docked');W.tk.hidden=false;
     if(!W.placed&&W.place){W.placed=true;W.place()}
     if(!W.placed){W.placed=true;var w=Math.min(W.w,innerWidth-24),h=Math.min(W.h,innerHeight-110);el.style.width=w+'px';el.style.height=h+'px';
       var n=Object.keys(wins).indexOf(id);el.style.left=Math.max(8,Math.round((innerWidth-w)/2)+n*28)+'px';el.style.top=Math.max(8,Math.round((innerHeight-38-h)/2)-20+n*24)+'px'}
-    zOrder(el);if(was)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');var f=el.querySelector('[data-focus]')||el.querySelector('.dx');if(f)f.focus({preventScroll:true})}
+    zOrder(el,auto);if(was)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');var f=el.querySelector('[data-focus]')||el.querySelector('.dx');if(f&&f.tagName==='INPUT'&&(innerWidth<=700||matchMedia('(hover: none)').matches))f=el.querySelector('.dx')||el.querySelector('.dmin');if(f)f.focus({preventScroll:true})}
   function winMax(id,on){var el=wins[id].el;if(on==null)on=!el.classList.contains('max');el.classList.toggle('max',on);var b=el.querySelector('.dmax');
     if(b){b.innerHTML=on?'&#10064;':'&#9633;';b.title=on?'Restore down':'Full screen';b.setAttribute('aria-label',b.title)}}
   function winDock(id,on){var W=wins[id];if(on){W.el.classList.add('docked');tkSync()}else winOpen(id)}
@@ -250,9 +263,9 @@
   var LABBASE=1000;
   function labZoom(){var w=labBody.clientWidth;if(!w)return;var nz=innerWidth>700&&w<LABBASE*0.97?String(Math.round(w/LABBASE*1000)/1000):'';if(nz!==labIn.style.zoom)labIn.style.zoom=nz}
   if(window.ResizeObserver)new ResizeObserver(labZoom).observe(labBody);else addEventListener('resize',labZoom);
-  function openLab(){var was=isVis(LAB.el);activate(LAB.el,true);labZoom();
+  function openLab(auto){var was=isVis(LAB.el);activate(LAB.el,true,auto);labZoom();
     /* VS Code is the lab's editor: bring it along, in front */
-    if(!was&&np&&np.classList.contains('show')&&!np.classList.contains('docked'))zOrder(np)}
+    if(!was&&np&&np.classList.contains('show')&&!np.classList.contains('docked'))zOrder(np,true)}
   ML.openLab=openLab;
   /* links to the practice lab (the Start menu, the lesson index) open the app */
   document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href="#t2-3b"],a[href="#p5"]');if(a)setTimeout(openLab,30)});
@@ -329,29 +342,50 @@
     ['git-out-alive.jpg','In case of fire: 1. git commit, 2. git push, 3. git out!'],
     ['star-forks.jpg','A fork held up in front of the GitHub logo: May the fork be with you.'],
     ['bathroom-tile-commit-streak.jpg','Your GitHub contribution graph with a few green squares, versus a whole wall of green tiles.']];
-  var MW=makeWin('memeWin','hehehe',I.folder,tkMeme,660,480,{max:true}),memeList=null,memeAt=-1;
-  MW.body.classList.add('mmb');
+  var HHTASK='TASK: upload this folder to GitHub, without uploading the secret key\n\n'
+    +'1. Open the Practice Lab and go into this folder:   cd ~/hehehe\n'
+    +'2. Look at everything, hidden files too:   ls -a\n   See .env? It holds a secret key (a fake one). It must never reach GitHub.\n'
+    +'3. Turn the folder into a Git repo:   git init\n'
+    +'4. Tell Git who you are (if you have not yet):\n   git config --global user.name "Your Name"\n   git config --global user.email "you@example.com"\n'
+    +'5. Ask Git what it sees:   git status\n   Uh oh: .env is in the list, so git add . would save it.\n'
+    +'6. Make Git ignore it: create a .gitignore file with .env in it\n   echo ".env" > .gitignore\n'
+    +'7. Ask again:   git status\n   .env is gone from the list, and .gitignore is new.\n'
+    +'8. Stage everything and save it:   git add .   then   git commit -m "Add memes"\n'
+    +'9. Connect a GitHub repo:   git remote add origin https://github.com/you/hehehe.git\n   (in Real GitHub mode, use your own repo link)\n'
+    +'10. Upload it:   git push -u origin main\n\n'
+    +'Done when GitHub has the 5 memes, README.md, task.txt and .gitignore, and NOT .env.\n';
+  var HHREADME='# hehehe\n\nA folder of Git memes from the Git & GitHub Workshop.\n\n'
+    +'- google-drive-crimes.jpg: where do you save your code?\n- final_final_FINAL_v3.jpg: file names before Git\n- git-out-alive.jpg: in case of fire\n'
+    +'- star-forks.jpg: may the fork be with you\n- bathroom-tile-commit-streak.jpg: that commit streak\n\n'
+    +'Made with git add, git commit and git push.\n';
+  var HHENV='# a secret: never upload this file\nMEME_API_KEY=sk-fake-4f9a2c7e1b3d-not-a-real-key\n';
+  /* hehehe is a real folder on the Mini laptop: the pictures are files you can open, move, copy, delete, git add and git push */
+  var HH=HOME+'/hehehe',memeKeys={};
+  window.mlSeed=function(st){var names=MEMES.map(function(m){return m[0]}).filter(function(n){return memeKeys[n]}).concat(Object.keys(memeKeys).filter(function(n){return !MEMES.some(function(m){return m[0]===n})}));
+    if(!names.length)return;st.dirs[HH]=1;names.forEach(function(n){st.files[HH+'/'+n]=memeKeys[n]});
+    /* a small task to practise on: upload this folder to GitHub, without leaking the (fake) key */
+    st.files[HH+'/task.txt']=HHTASK;st.files[HH+'/README.md']=HHREADME;st.files[HH+'/.env']=HHENV};
+  /* the pictures are packed into the page after this script, so read them once the page has loaded */
+  function memesLoad(){document.querySelectorAll('script.memePack').forEach(function(sc){var n=sc.getAttribute('data-name');if(!memeKeys[n])memeKeys[n]=ML.binReg('meme:'+n,sc.textContent,'image/jpeg',n)});
+    var st=S();if(!st.dirs[HH]){window.mlSeed(st);ML.render()}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',memesLoad);else memesLoad();
   function escA(t){return esc(t).replace(/"/g,'&quot;')}
-  function memeInit(){if(memeList)return;memeList=[];var packs={};document.querySelectorAll('script.memePack').forEach(function(sc){packs[sc.getAttribute('data-name')]=sc});
-    var names=MEMES.map(function(m){return m[0]}).filter(function(n){return packs[n]}).concat(Object.keys(packs).filter(function(n){return !MEMES.some(function(m){return m[0]===n})}));
-    names.forEach(function(n){try{var b=atob(packs[n].textContent.replace(/\s+/g,'')),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
-      var alt=(MEMES.filter(function(m){return m[0]===n})[0]||[n,n])[1];memeList.push({n:n,alt:alt,url:URL.createObjectURL(new Blob([a],{type:'image/jpeg'}))})}catch(e){}});
-    memeGrid()}
-  function memeGrid(){memeAt=-1;
-    if(!memeList.length){MW.body.innerHTML='<div class="mmempty">This folder is empty.</div>';return}
-    MW.body.innerHTML='<div class="mmpath">&#128193; ~/Desktop/hehehe <small>'+memeList.length+' items</small></div><div class="mmgrid">'+memeList.map(function(m,i){return '<button type="button" class="mmt" data-i="'+i+'" title="'+esc(m.n)+'"><span class="mmimg"><img src="'+m.url+'" alt="'+escA(m.alt)+'"></span><span class="mmn">'+esc(m.n)+'</span></button>'}).join('')+'</div>'}
-  function memeShow(i){memeAt=(i+memeList.length)%memeList.length;var m=memeList[memeAt];
-    MW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-mm="back">&#9664; Back to folder</button><span>'+esc(m.n)+' <small>('+(memeAt+1)+' of '+memeList.length+')</small></span><button type="button" class="mmbtn" data-mm="prev" aria-label="Previous meme">&larr;</button><button type="button" class="mmbtn" data-mm="next" aria-label="Next meme">&rarr;</button></div><div class="mmview"><img src="'+m.url+'" alt="'+escA(m.alt)+'"></div>';
-    var f=MW.body.querySelector('[data-mm="next"]');if(f)f.focus({preventScroll:true})}
-  /* like a real folder: one click selects a picture, a double-click (double-tap on a phone, or Enter) opens it */
-  var mmTap={i:-1,t:0},mmPtr='mouse';
-  MW.body.addEventListener('pointerdown',function(e){mmPtr=e.pointerType||'mouse'},true);
-  MW.body.addEventListener('click',function(e){var t=e.target.closest('.mmt');if(t){var i=+t.getAttribute('data-i'),now=Date.now();
-      var open=e.detail===0||e.detail>=2||(mmPtr!=='mouse'&&mmTap.i===i&&now-mmTap.t<600);
-      if(open){mmTap={i:-1,t:0};memeShow(i);return}
-      mmTap={i:i,t:now};MW.body.querySelectorAll('.mmt').forEach(function(x){x.classList.toggle('sel',x===t)});return}
-    var b=e.target.closest('[data-mm]');if(!b)return;var a=b.getAttribute('data-mm');if(a==='back')memeGrid();else memeShow(memeAt+(a==='next'?1:-1))});
-  MW.el.addEventListener('keydown',function(e){if(memeAt<0)return;if(e.key==='ArrowRight'){e.preventDefault();memeShow(memeAt+1)}else if(e.key==='ArrowLeft'){e.preventDefault();memeShow(memeAt-1)}else if(e.key==='Backspace'){e.preventDefault();memeGrid()}});
+  function altOf(abs){var m=MEMES.filter(function(x){return x[0]===base(abs)})[0];return m?m[1]:base(abs)}
+  function isPicFile(k){var st=S();return (k in st.files)&&ML.isPic(st.files[k])}
+  /* the picture viewer (Photos): opens a picture, the arrows go through the other pictures in the same folder */
+  var MW=makeWin('memeWin','Photos',I.pic,tkMeme,660,480,{max:true}),picAt=null;
+  MW.body.classList.add('mmb');
+  function picList(){if(!picAt)return [];var d=dirname(picAt),st=S();return Object.keys(st.files).filter(function(f){return dirname(f)===d&&ML.isPic(st.files[f])}).sort(function(a,b){return a.toLowerCase()<b.toLowerCase()?-1:1})}
+  function picDraw(){var st=S();if(!picAt||!(picAt in st.files)||!ML.isPic(st.files[picAt])){var l0=picList();picAt=l0[0]||null}
+    if(!picAt){MW.body.innerHTML='<div class="mmempty">This picture is not there any more.</div>';return}
+    var l=picList(),i=l.indexOf(picAt);MW.el.querySelector('.dwh span').textContent=base(picAt);tkMeme.querySelector('span').textContent=base(picAt);
+    MW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-mm="back">&#9664; Open folder</button><span>'+esc(tilde(picAt))+' <small>('+(i+1)+' of '+l.length+')</small></span><button type="button" class="mmbtn" data-mm="prev" aria-label="Previous picture"'+(l.length<2?' disabled':'')+'>&larr;</button><button type="button" class="mmbtn" data-mm="next" aria-label="Next picture"'+(l.length<2?' disabled':'')+'>&rarr;</button></div><div class="mmview"><img src="'+ML.binUrl(st.files[picAt])+'" alt="'+escA(altOf(picAt))+'"></div>'}
+  function picOpen(k){picAt=k;activate(MW.el,true);picDraw();var f=MW.body.querySelector('[data-mm="next"]');if(f)f.focus({preventScroll:true})}
+  function picStep(d){var l=picList();if(l.length<2)return;picAt=l[(l.indexOf(picAt)+d+l.length)%l.length];picDraw()}
+  /* open a file the way a desktop would: pictures in Photos, everything else in VS Code */
+  function openFile(k){if(S().dirs[k]){openFolder(k);return}if(isPicFile(k))picOpen(k);else openVS(k)}
+  MW.body.addEventListener('click',function(e){var b=e.target.closest('[data-mm]');if(!b)return;var a=b.getAttribute('data-mm');if(a==='back'){if(picAt)openFolder(dirname(picAt))}else picStep(a==='next'?1:-1)});
+  MW.el.addEventListener('keydown',function(e){if(!picAt)return;if(e.key==='ArrowRight'){e.preventDefault();picStep(1)}else if(e.key==='ArrowLeft'){e.preventDefault();picStep(-1)}else if(e.key==='Backspace'){e.preventDefault();openFolder(dirname(picAt))}});
 
 
   /* ---------- File Explorer: opening a folder shows what is inside (folders in folders too); "Open with VS Code" edits it ---------- */
@@ -369,7 +403,7 @@
       +'<button type="button" class="mmbtn" data-fx="newdir" title="New folder">+ Folder</button><button type="button" class="mmbtn" data-fx="newfile" title="New file">+ File</button>'
       +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button></div>'
       +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.</div>':'')
-      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:I.file)
+      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:isPicFile(it.k)?'<img class="fxthumb" src="'+ML.binUrl(S().files[it.k])+'" alt="">':I.file)
         +(it.repo?'<b class="dbadge bU" style="background:#e8336d">git</b>':it.mark?'<b class="dbadge b'+it.mark+'">'+(it.mark==='C'?'!':it.mark)+'</b>':'')+'</span><span class="mmn">'+esc(it.n)+'</span></button>'}).join('')+'</div>'
         :'<div class="mmempty">This folder is empty. Right-click (or long-press) for <b>New folder</b> or <b>New file</b>.</div>')
       +'<div class="fxfoot">'+list.length+' item'+(list.length===1?'':'s')+'</div>';fxSelBar()}
@@ -384,7 +418,7 @@
       +'<button type="button" data-sb="del"'+(l.length?'':' disabled')+'>Delete</button><button type="button" data-sb="all">Select all</button><button type="button" data-sb="done">Done</button>';
     if(!old){var bar2=FX.body.querySelector('.fxbar');bar2.parentNode.insertBefore(bar,bar2.nextSibling)}}
   function openFolder(d){fxDir=d;fxSel=null;fxSels={};fxSelMode=false;activate(FX.el,true);fxDraw()}
-  function fxOpen(k){var st=S();if(st.dirs[k]){fxDir=k;fxSel=null;fxSels={};fxSelMode=false;fxDraw();return}openVS(k)}
+  function fxOpen(k){var st=S();if(st.dirs[k]){fxDir=k;fxSel=null;fxSels={};fxSelMode=false;fxDraw();return}openFile(k)}
   function fxRename(k,isNew){var b=FX.body.querySelector('.fxt[data-k="'+cssq(k)+'"]');if(!b)return;fxRen=k;fxSel=k;
     var lab=b.querySelector('.mmn'),inp=document.createElement('input');inp.className='dren';inp.value=base(k);inp.setAttribute('aria-label','New name');inp.spellcheck=false;inp.autocapitalize='off';lab.replaceWith(inp);
     var dot=inp.value.lastIndexOf('.');inp.focus();inp.setSelectionRange(0,dot>0&&!S().dirs[k]?dot:inp.value.length);var done=false;
@@ -469,10 +503,10 @@
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:memes',n:'hehehe',ic:I.folder,app:'memes',dir:true},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
-    Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){mine.push({k:f,n:base(f),ic:I.file,mark:ML.gitMark(f)})});
+    Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){var pic=ML.isPic(s.files[f]);mine.push({k:f,n:base(f),ic:pic?'<img class="dthumb" src="'+ML.binUrl(s.files[f])+'" alt="">':I.file,mark:ML.gitMark(f)})});
     mine.forEach(function(x){if(!born[x.k])born[x.k]=++bornN});
     var nm=function(a,b){var x=a.n.toLowerCase(),y=b.n.toLowerCase();return x<y?-1:x>y?1:0},ext=function(x){var m=x.n.match(/\.([^.]+)$/);return m?m[1].toLowerCase():''};
     /* Arrange icons: by name sorts every icon A to Z; by type puts apps, then folders, then files grouped by type
@@ -509,14 +543,13 @@
     /* date modified: a file changes when its contents change; a folder when something is added, removed or renamed directly inside it (like a real computer) */
     Object.keys(born).forEach(function(k){var sig=k in s.files?'f'+s.files[k]:s.dirs[k]?'d'+Object.keys(s.dirs).concat(Object.keys(s.files)).filter(function(x){return dirname(x)===k}).sort().join('|'):null;
       if(sig===null){delete msig[k];return}if(msig[k]!==undefined&&msig[k]!==sig)mtime[k]=++bornN;else if(msig[k]===undefined)mtime[k]=born[k];msig[k]=sig})}
-  window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw();if(!FX.el.hidden)fxDraw()};
+  window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw();if(!FX.el.hidden)fxDraw();if(!MW.el.hidden&&picAt&&!(picAt in S().files))picDraw()};
   addEventListener('resize',function(){lastSig='';draw()});
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
     if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',cheat:'cheatWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
-    if(it.dir){openFolder(it.k);return}
-    openVS(it.k)}
+    openFile(it.k)}
 
   /* rename right on the icon */
   function startRename(k,isNew){var b=icons.querySelector('.dico[data-k="'+cssq(k)+'"]');if(!b)return;renaming=k;sel=k;sels={};sels[k]=1;markSel();
@@ -774,7 +807,7 @@
    {g:'Real GitHub mode',l:[
     ['wipe-github','Delete every file in the connected GitHub repo (the history stays). Only in Real GitHub mode','wipe delete clear github real reset','#t2-3b','wipe-github']]}];
   /* Try it: open the Practice Lab and type the command for you (press Enter to run it) */
-  function tryCmd(c){openLab();var i=$('pgIn');if(!i)return;setTimeout(function(){i.value=c;var at=c.indexOf('""');i.focus({preventScroll:true});var n=at>-1?at+1:c.length;try{i.setSelectionRange(n,n)}catch(z){}},80)}
+  function tryCmd(c){openLab(true);var i=$('pgIn');if(!i)return;setTimeout(function(){i.value=c;var at=c.indexOf('""');i.focus({preventScroll:true});var n=at>-1?at+1:c.length;try{i.setSelectionRange(n,n)}catch(z){}},80)}
 
   /* ---------- the Cheat Sheet app ---------- */
   var CS=makeWin('cheatWin','Cheat Sheet',I.cheat,tkCheat,560,600,{max:true});CS.body.classList.add('csb');addPin(CS,'cheatpin','the Cheat Sheet');
@@ -829,7 +862,7 @@
       var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
         .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
         .filter(function(x){return x[0].indexOf('/.git')<0&&hit(base(x[0]),words)}).slice(0,6)
-        .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){if(x[1])openFolder(x[0]);else openVS(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
+        .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){openFile(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
       var set=settings().filter(function(o){return hit(o.t+' '+o.k,words)}).slice(0,5)
         .map(function(o){return '<button type="button" class="smhit" data-i="'+act(o.fn)+'">'+esc(o.t)+(o.on?' <b class="smon">&#10003;</b>':'')+'<small>Setting</small></button>'});
       var h=grp('Apps',apps)+grp('Lessons',les)+grp('Git commands',cmds)+grp('Your files',fs)+grp('Settings',set);

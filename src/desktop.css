@@ -146,6 +146,13 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .startmenu{z-index:82}
 /* cards holding a step-by-step guide fade in without sliding (the guide's Back/Next bar sticks to the window bottom) */
 #wsIn .rv.rvfade{transform:none}
+/* pictures: thumbnails on the desktop and in the File Explorer, and in VS Code */
+.dico .dic img.dthumb{width:100%;height:100%;object-fit:cover;border:2px solid #fff;border-radius:3px;box-sizing:border-box;background:#fff;display:block}
+.fxt .fxic img.fxthumb{width:44px;height:44px;object-fit:cover;border:2px solid var(--line);border-radius:3px;box-sizing:border-box;display:block;background:#fff}
+.notepad .vsimg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px;height:100%;box-sizing:border-box;background:#1e1e1e}
+.notepad .vsimg img{max-width:100%;max-height:calc(100% - 30px);object-fit:contain;background:#fff}
+.notepad .vsimg small{color:#9da5b4;font-size:11.5px;text-align:center}
+.mmbtn[disabled]{opacity:.45;cursor:default}
 /* Cheat Sheet */
 .dwb.csb{display:flex;flex-direction:column;background:#fffdf3}
 .cshead{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#e9efff;border-bottom:2px solid var(--line);flex:none}
@@ -358,12 +365,16 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
   .dico .dic{width:40px;height:40px}
   .desk.small .dico{width:62px}
   .desk .dhint{left:10px;right:10px;max-width:none}
-  .dwin{left:8px!important;right:8px;width:auto!important;max-width:none;top:auto!important;bottom:46px;height:min(62vh,440px)!important}
+  .dwin{left:8px!important;right:8px;width:auto!important;max-width:none;top:auto!important;bottom:46px;height:var(--ph,min(62vh,440px))!important}
+  /* phones: a little grab bar on the title bar: drag it up or down to resize the window (VS Code too) */
+  .dwin:not(.max) .dwh,.notepad .nph{position:relative;touch-action:none;cursor:ns-resize}
+  .dwin:not(.max) .dwh::after,.notepad .nph::after{content:'';position:absolute;top:3px;left:50%;width:34px;height:4px;margin-left:-17px;border-radius:2px;background:rgba(255,255,255,.65);pointer-events:none}
+  .notepad .nph::after{background:rgba(255,255,255,.35)}
   /* phones: the workshop opens beside the icon column; the full-screen button makes it fill the screen */
-  #wsWin{left:var(--wsl,0px)!important;right:0;top:0!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
-  #wsWin.max{left:0!important;border-width:0}
-  #labWin{left:var(--wsl,0px)!important;right:0;top:0!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
-  #labWin.max{left:0!important;border-width:0}
+  #wsWin{left:var(--wsl,0px)!important;right:0;top:var(--wst,0px)!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
+  #wsWin.max{left:0!important;top:0!important;border-width:0}
+  #labWin{left:var(--wsl,0px)!important;right:0;top:var(--wst,0px)!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
+  #labWin.max{left:0!important;top:0!important;border-width:0}
   #labIn{padding:2px 10px 20px}
   /* start screen: the warning wraps to two lines on phones, so START sits closer under it */
   #boot .scene .start{top:51%}
