@@ -566,6 +566,15 @@
           +' <small>Git only checks GitHub when you type git fetch or git pull.</small>'}
     return {z1:z1,z2:z2,z3:z3,z4:z4,z5:z5};
   }
+  function commitChanges(c){var o=c.p.length?C(c.p[0]).files:{},n=c.files,r={add:[],mod:[],del:[]};
+    keys(n).forEach(function(f){if(!(f in o))r.add.push(f);else if(o[f]!==n[f])r.mod.push(f)});keys(o).forEach(function(f){if(!(f in n))r.del.push(f)});
+    r.add.sort();r.mod.sort();r.del.sort();return r}
+  function commitPop(id){var c=C(id);if(!c||!window.gitPop)return;var ch=commitChanges(c),row=function(cls,sym,f){return '<div class="cpf '+cls+'"><b>'+sym+'</b>'+esc(f)+'</div>'};
+    var body='<div class="cpmsg">'+esc(c.msg)+'</div><div class="cpmeta">'+c.id+' &middot; '+esc(c.who)+(c.p.length>1?' &middot; merge':'')+'</div>'
+      +(ch.add.length||ch.mod.length||ch.del.length?ch.add.map(function(f){return row('cpa','+',f)}).join('')+ch.mod.map(function(f){return row('cpm','~',f)}).join('')+ch.del.map(function(f){return row('cpd','\u2212',f)}).join(''):'<div class="cpf">No file changes.</div>')
+      +(ch.del.length?'<p class="cpnote">Deleted files are not gone forever: they are still in the commits before this one. <code>git revert '+c.id+'</code> brings them back.</p>':'')
+      +'<p class="cpnote">In real Git: <code>git show --stat '+c.id+'</code></p>';
+    window.gitPop('warn','COMMIT '+c.id,body,[{t:'Close'}])}
   function graph(){
     if(!S.repo)return '<i class="empty">Your commits will be drawn here.</i>';
     /* only commits something still points at (a branch, origin/..., a tag), like git log: after git reset --hard the dropped ones disappear */
@@ -578,7 +587,7 @@
     ln=Math.max(ln,1);if(!laneName[0])laneName[0]=r.head;
     /* commits keep a readable spacing; a long history makes the graph wider and it scrolls sideways (newest end first) */
     var n=cs.length,G=86,W0=470,step=n>1?84:0,W=Math.max(W0,G+44+(n-1)*step+50),mc=Math.max(7,Math.floor(step/7.6)),pad=64,LH=96;
-    var X=function(i){return G+44+i*step},Y=function(l){return pad+l*LH},H=Y(ln-1)+58,pos={};
+    var X=function(i){return G+44+i*step},Y=function(l){return pad+l*LH},H=Y(ln-1)+72,pos={};
     cs.forEach(function(c,i){var l=owner[c.id];if(l===undefined)l=0;pos[c.id]={x:X(i),y:Y(l),l:l}});
     var s=(W>W0?'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+(W/W0*100).toFixed(1)+'%;max-width:none" role="img" aria-label="Commit graph, scroll sideways to see older commits">':'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Commit graph">');
     var lanes='<svg class="glanes" viewBox="0 0 '+(G-4)+' '+H+'" style="width:'+((G-4)/W0*100).toFixed(2)+'%" aria-hidden="true"><rect x="0" y="0" width="'+(G-4)+'" height="'+H+'" fill="#fff"/>';
@@ -596,15 +605,19 @@
     var cloud='<path d="M0 6a3 3 0 0 1 4.6-2.5A3.8 3.8 0 0 1 11.8 5a2.5 2.5 0 0 1-.6 4.9H2.4A2.6 2.6 0 0 1 0 6z" fill="#fff" stroke="#16327a" stroke-width="1.2"/>';
     cs.forEach(function(c){var p=pos[c.id],mrg=c.p.length>1;
       var msg=c.msg.length>mc?c.msg.slice(0,mc-1)+'…':c.msg;
-      s+='<g class="gn"><circle cx="'+p.x+'" cy="'+p.y+'" r="13" fill="'+LC[p.l%5]+'" stroke="#16327a" stroke-width="3"/>'+(mrg?'<circle cx="'+p.x+'" cy="'+p.y+'" r="5" fill="#fff"/>':'')
+      /* what this commit did to the files: +added ~changed -deleted (click the commit for the list) */
+      var ch=commitChanges(c),bits=[];if(ch.add.length)bits.push('<tspan fill="#2e9e4f">+'+ch.add.length+'</tspan>');if(ch.mod.length)bits.push('<tspan fill="#c98a1b">~'+ch.mod.length+'</tspan>');if(ch.del.length)bits.push('<tspan fill="#d0342c">\u2212'+ch.del.length+'</tspan>');
+      var tip=(ch.add.length?'added: '+ch.add.join(', ')+'\n':'')+(ch.mod.length?'changed: '+ch.mod.join(', ')+'\n':'')+(ch.del.length?'deleted: '+ch.del.join(', ')+'\n':'');
+      s+='<g class="gn" data-c="'+c.id+'" role="button" tabindex="0" aria-label="Commit '+c.id+': '+esc(c.msg)+'. '+esc(tip.replace(/\n/g,'. '))+'"><title>'+esc(c.id+' '+c.msg+'\n'+(tip||'no file changes'))+'</title><circle cx="'+p.x+'" cy="'+p.y+'" r="13" fill="'+LC[p.l%5]+'" stroke="#16327a" stroke-width="3"/>'+(mrg?'<circle cx="'+p.x+'" cy="'+p.y+'" r="5" fill="#fff"/>':'')
        +'<text x="'+p.x+'" y="'+(p.y+31)+'" text-anchor="middle" font-size="11.5" font-weight="800" font-family="Nunito,sans-serif" fill="#16327a">'+esc(msg)+'</text>'
-       +'<text x="'+p.x+'" y="'+(p.y+44)+'" text-anchor="middle" font-size="10" font-family="Fira Code,monospace" fill="#7a86b0">'+c.id+'</text></g>';
+       +'<text x="'+p.x+'" y="'+(p.y+44)+'" text-anchor="middle" font-size="10" font-family="Fira Code,monospace" fill="#7a86b0">'+c.id+'</text>'
+       +(bits.length?'<text x="'+p.x+'" y="'+(p.y+57)+'" text-anchor="middle" font-size="11" font-weight="800" font-family="Fira Code,monospace">'+bits.join(' ')+'</text>':'')+'</g>';
       var k=0;(tips[c.id]||[]).forEach(function(b){
         var tg=b.indexOf('tag: ')===0,up=b.indexOf('origin/')===0,head=!up&&!tg&&b===r.head,label=(head?'HEAD > ':'')+b,w=label.length*6.9+16+(up?18:0),y=p.y-30-k*24;
         s+='<rect class="'+(up?'gorig':'gtag')+'" x="'+(p.x-w/2)+'" y="'+(y-14)+'" width="'+w+'" height="21" rx="5" fill="'+(tg?'#ffd34e':up?'#fff':head?'#e8336d':LC[p.l%5])+'" stroke="#16327a" stroke-width="2"'+(up?' stroke-dasharray="4 2"':'')+'/><text x="'+(p.x-w/2+8)+'" y="'+(y+1)+'" font-size="12" font-weight="800" fill="'+(up||tg?'#16327a':'#fff')+'" font-family="Nunito,sans-serif">'+esc(label)+'</text>'
          +(up?'<g transform="translate('+(p.x+w/2-20)+','+(y-9)+')">'+cloud+'</g>':'');k++});
     });
-    return s+'</svg></div>'+lanes+'</div><div class="glg">'+(W>W0?n+' commits: scroll sideways to see older ones. ':'')+'Pink tag = where you are now. White tag with a cloud = <b>origin/main</b>: where GitHub was the last time you fetched, pulled or pushed.</div>'}
+    return s+'</svg></div>'+lanes+'</div><div class="glg">'+(W>W0?n+' commits: scroll sideways to see older ones. ':'')+'<span class="gk"><b style="color:#2e9e4f">+</b> added <b style="color:#c98a1b">~</b> changed <b style="color:#d0342c">\u2212</b> deleted: click a commit to see its files.</span> Pink tag = where you are now. White tag with a cloud = <b>origin/main</b>: where GitHub was the last time you fetched, pulled or pushed.</div>'}
   /* missions */
   var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',merge:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 8c0 3 4 4 9.5 4"/></svg>',more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',nd:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
   function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
@@ -981,6 +994,8 @@
   $('fvB').addEventListener('keydown',function(e){if(e.target.closest&&e.target.closest('.vsside')&&(e.key==='F2'||e.key==='Delete')&&e.target.tagName!=='INPUT'){var row=e.target.closest('.vsfile[data-f],.vsdir');if(!row)return;var a=row.classList.contains('vsdir')?row.getAttribute('data-d'):vsAbs(row.getAttribute('data-f'));e.preventDefault();if(e.key==='F2')vsRename(a);else vsDelete(a)}});
   $('z1').addEventListener('click',showFile);
   /* over the commit graph, a normal mouse wheel moves along the history sideways */
+  $('z3').addEventListener('click',function(e){var g=e.target.closest&&e.target.closest('.gn[data-c]');if(g)commitPop(g.getAttribute('data-c'))});
+  $('z3').addEventListener('keydown',function(e){var g=e.target.closest&&e.target.closest('.gn[data-c]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();commitPop(g.getAttribute('data-c'))}});
   $('z3').addEventListener('wheel',function(e){var g=e.target.closest&&e.target.closest('.gscroll');if(!g||Math.abs(e.deltaX)>Math.abs(e.deltaY)||g.scrollWidth<=g.clientWidth)return;
     var max=g.scrollWidth-g.clientWidth;if((e.deltaY<0&&g.scrollLeft<=0)||(e.deltaY>0&&g.scrollLeft>=max-1))return;e.preventDefault();g.scrollLeft+=e.deltaY},{passive:false});$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */

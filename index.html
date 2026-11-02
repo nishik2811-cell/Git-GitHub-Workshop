@@ -934,6 +934,34 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .pgtrk.flash{animation:pzflash .9s}
 @keyframes pzflash{0%{background:#ffe36e}100%{background:#fffbe6}}
 .mmt.sel{background:#d6e4ff;outline:2px solid #2f6fe0;outline-offset:-2px}
+/* the commit graph: what each commit did to the files */
+#z3 .gn[data-c]{cursor:pointer}
+#z3 .gn[data-c]:hover circle:first-of-type,#z3 .gn[data-c]:focus circle:first-of-type{stroke:#e8336d}
+#z3 .gn[data-c]:focus{outline:none}
+.glg .gk{display:block}
+.cpmsg{font-weight:800;font-size:16px;margin-bottom:2px}
+.cpmeta{font:12px 'Fira Code',monospace;opacity:.7;margin-bottom:10px}
+.cpf{display:flex;gap:8px;align-items:center;font:13px 'Fira Code',monospace;padding:3px 8px;border-radius:4px;margin:3px 0;text-align:left}
+.cpf b{width:12px;text-align:center}
+.cpf.cpa{background:#e6f6ea;color:#1e6b34}.cpf.cpm{background:#fff4dc;color:#7a5410}.cpf.cpd{background:#fde7e6;color:#9b231c}
+.cpf.cpd{text-decoration:line-through}
+.cpnote{font-size:12.5px;margin:10px 0 0;opacity:.85}
+/* File Explorer: what is inside a folder */
+.dwb.fxb{background:#fff;display:flex;flex-direction:column}
+.fxbar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#e9efff;border-bottom:2px solid var(--line);flex:none;flex-wrap:wrap}
+.fxbar .mmbtn[disabled]{opacity:.45;cursor:default}
+.fxpath{flex:1;min-width:140px;font:700 13px 'Fira Code',monospace;color:var(--ink);overflow-wrap:anywhere}
+.fxcrumb{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(29,75,166,.35);text-underline-offset:3px}
+.fxcrumb:hover{color:#2f6fe0}
+.fxrepo{padding:4px 10px;font-size:12.5px;background:#ffe3ee;color:#8a1c48;border-bottom:2px solid var(--line);flex:none}
+.fxgrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));flex:1;align-content:start}
+.fxt .fxic{position:relative;width:44px;height:44px;display:block}
+.fxt .fxic svg{width:44px;height:44px;display:block}
+.fxt .dbadge{position:absolute;right:-6px;bottom:-4px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:3px;border:2px solid #fff;font:700 10px/12px 'Fira Code',monospace;color:#fff;text-align:center}
+.fxt.cut .fxic{opacity:.45}
+.fxt .dren{width:100%;font:600 12px 'Nunito',sans-serif;text-align:center}
+.fxb .mmempty{flex:1}
+.fxfoot{padding:4px 10px;font-size:12px;color:var(--ink3);border-top:2px solid var(--line);flex:none;background:#f7f9ff}
 /* story 5: the set-up form */
 .ownf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:end;margin:10px 0 2px}
 .ownf label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:800;color:#16327a}
@@ -2396,6 +2424,15 @@ git log --oneline           short history          git push / git pull   sync wi
           +' <small>Git only checks GitHub when you type git fetch or git pull.</small>'}
     return {z1:z1,z2:z2,z3:z3,z4:z4,z5:z5};
   }
+  function commitChanges(c){var o=c.p.length?C(c.p[0]).files:{},n=c.files,r={add:[],mod:[],del:[]};
+    keys(n).forEach(function(f){if(!(f in o))r.add.push(f);else if(o[f]!==n[f])r.mod.push(f)});keys(o).forEach(function(f){if(!(f in n))r.del.push(f)});
+    r.add.sort();r.mod.sort();r.del.sort();return r}
+  function commitPop(id){var c=C(id);if(!c||!window.gitPop)return;var ch=commitChanges(c),row=function(cls,sym,f){return '<div class="cpf '+cls+'"><b>'+sym+'</b>'+esc(f)+'</div>'};
+    var body='<div class="cpmsg">'+esc(c.msg)+'</div><div class="cpmeta">'+c.id+' &middot; '+esc(c.who)+(c.p.length>1?' &middot; merge':'')+'</div>'
+      +(ch.add.length||ch.mod.length||ch.del.length?ch.add.map(function(f){return row('cpa','+',f)}).join('')+ch.mod.map(function(f){return row('cpm','~',f)}).join('')+ch.del.map(function(f){return row('cpd','\u2212',f)}).join(''):'<div class="cpf">No file changes.</div>')
+      +(ch.del.length?'<p class="cpnote">Deleted files are not gone forever: they are still in the commits before this one. <code>git revert '+c.id+'</code> brings them back.</p>':'')
+      +'<p class="cpnote">In real Git: <code>git show --stat '+c.id+'</code></p>';
+    window.gitPop('warn','COMMIT '+c.id,body,[{t:'Close'}])}
   function graph(){
     if(!S.repo)return '<i class="empty">Your commits will be drawn here.</i>';
     /* only commits something still points at (a branch, origin/..., a tag), like git log: after git reset --hard the dropped ones disappear */
@@ -2408,7 +2445,7 @@ git log --oneline           short history          git push / git pull   sync wi
     ln=Math.max(ln,1);if(!laneName[0])laneName[0]=r.head;
     /* commits keep a readable spacing; a long history makes the graph wider and it scrolls sideways (newest end first) */
     var n=cs.length,G=86,W0=470,step=n>1?84:0,W=Math.max(W0,G+44+(n-1)*step+50),mc=Math.max(7,Math.floor(step/7.6)),pad=64,LH=96;
-    var X=function(i){return G+44+i*step},Y=function(l){return pad+l*LH},H=Y(ln-1)+58,pos={};
+    var X=function(i){return G+44+i*step},Y=function(l){return pad+l*LH},H=Y(ln-1)+72,pos={};
     cs.forEach(function(c,i){var l=owner[c.id];if(l===undefined)l=0;pos[c.id]={x:X(i),y:Y(l),l:l}});
     var s=(W>W0?'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" style="width:'+(W/W0*100).toFixed(1)+'%;max-width:none" role="img" aria-label="Commit graph, scroll sideways to see older commits">':'<div class="gwrap"><div class="gscroll"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Commit graph">');
     var lanes='<svg class="glanes" viewBox="0 0 '+(G-4)+' '+H+'" style="width:'+((G-4)/W0*100).toFixed(2)+'%" aria-hidden="true"><rect x="0" y="0" width="'+(G-4)+'" height="'+H+'" fill="#fff"/>';
@@ -2426,15 +2463,19 @@ git log --oneline           short history          git push / git pull   sync wi
     var cloud='<path d="M0 6a3 3 0 0 1 4.6-2.5A3.8 3.8 0 0 1 11.8 5a2.5 2.5 0 0 1-.6 4.9H2.4A2.6 2.6 0 0 1 0 6z" fill="#fff" stroke="#16327a" stroke-width="1.2"/>';
     cs.forEach(function(c){var p=pos[c.id],mrg=c.p.length>1;
       var msg=c.msg.length>mc?c.msg.slice(0,mc-1)+'…':c.msg;
-      s+='<g class="gn"><circle cx="'+p.x+'" cy="'+p.y+'" r="13" fill="'+LC[p.l%5]+'" stroke="#16327a" stroke-width="3"/>'+(mrg?'<circle cx="'+p.x+'" cy="'+p.y+'" r="5" fill="#fff"/>':'')
+      /* what this commit did to the files: +added ~changed -deleted (click the commit for the list) */
+      var ch=commitChanges(c),bits=[];if(ch.add.length)bits.push('<tspan fill="#2e9e4f">+'+ch.add.length+'</tspan>');if(ch.mod.length)bits.push('<tspan fill="#c98a1b">~'+ch.mod.length+'</tspan>');if(ch.del.length)bits.push('<tspan fill="#d0342c">\u2212'+ch.del.length+'</tspan>');
+      var tip=(ch.add.length?'added: '+ch.add.join(', ')+'\n':'')+(ch.mod.length?'changed: '+ch.mod.join(', ')+'\n':'')+(ch.del.length?'deleted: '+ch.del.join(', ')+'\n':'');
+      s+='<g class="gn" data-c="'+c.id+'" role="button" tabindex="0" aria-label="Commit '+c.id+': '+esc(c.msg)+'. '+esc(tip.replace(/\n/g,'. '))+'"><title>'+esc(c.id+' '+c.msg+'\n'+(tip||'no file changes'))+'</title><circle cx="'+p.x+'" cy="'+p.y+'" r="13" fill="'+LC[p.l%5]+'" stroke="#16327a" stroke-width="3"/>'+(mrg?'<circle cx="'+p.x+'" cy="'+p.y+'" r="5" fill="#fff"/>':'')
        +'<text x="'+p.x+'" y="'+(p.y+31)+'" text-anchor="middle" font-size="11.5" font-weight="800" font-family="Nunito,sans-serif" fill="#16327a">'+esc(msg)+'</text>'
-       +'<text x="'+p.x+'" y="'+(p.y+44)+'" text-anchor="middle" font-size="10" font-family="Fira Code,monospace" fill="#7a86b0">'+c.id+'</text></g>';
+       +'<text x="'+p.x+'" y="'+(p.y+44)+'" text-anchor="middle" font-size="10" font-family="Fira Code,monospace" fill="#7a86b0">'+c.id+'</text>'
+       +(bits.length?'<text x="'+p.x+'" y="'+(p.y+57)+'" text-anchor="middle" font-size="11" font-weight="800" font-family="Fira Code,monospace">'+bits.join(' ')+'</text>':'')+'</g>';
       var k=0;(tips[c.id]||[]).forEach(function(b){
         var tg=b.indexOf('tag: ')===0,up=b.indexOf('origin/')===0,head=!up&&!tg&&b===r.head,label=(head?'HEAD > ':'')+b,w=label.length*6.9+16+(up?18:0),y=p.y-30-k*24;
         s+='<rect class="'+(up?'gorig':'gtag')+'" x="'+(p.x-w/2)+'" y="'+(y-14)+'" width="'+w+'" height="21" rx="5" fill="'+(tg?'#ffd34e':up?'#fff':head?'#e8336d':LC[p.l%5])+'" stroke="#16327a" stroke-width="2"'+(up?' stroke-dasharray="4 2"':'')+'/><text x="'+(p.x-w/2+8)+'" y="'+(y+1)+'" font-size="12" font-weight="800" fill="'+(up||tg?'#16327a':'#fff')+'" font-family="Nunito,sans-serif">'+esc(label)+'</text>'
          +(up?'<g transform="translate('+(p.x+w/2-20)+','+(y-9)+')">'+cloud+'</g>':'');k++});
     });
-    return s+'</svg></div>'+lanes+'</div><div class="glg">'+(W>W0?n+' commits: scroll sideways to see older ones. ':'')+'Pink tag = where you are now. White tag with a cloud = <b>origin/main</b>: where GitHub was the last time you fetched, pulled or pushed.</div>'}
+    return s+'</svg></div>'+lanes+'</div><div class="glg">'+(W>W0?n+' commits: scroll sideways to see older ones. ':'')+'<span class="gk"><b style="color:#2e9e4f">+</b> added <b style="color:#c98a1b">~</b> changed <b style="color:#d0342c">\u2212</b> deleted: click a commit to see its files.</span> Pink tag = where you are now. White tag with a cloud = <b>origin/main</b>: where GitHub was the last time you fetched, pulled or pushed.</div>'}
   /* missions */
   var VI={files:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>',scm:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-11 6.5"/></svg>',ext:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="14" y="3" width="7" height="7" transform="rotate(15 17.5 6.5)"/></svg>',merge:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 7.5v9M6 8c0 3 4 4 9.5 4"/></svg>',more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',nf:'<svg viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"/><path d="M18 3v6M15 6h6"/></svg>',nd:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/></svg>',br:'<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M6 7.5v9M18 9.5c0 4-6 3-12 7"/></svg>'};
   function ficon(f){var e=(f.match(/\.([a-z0-9]+)$/i)||[,''])[1].toLowerCase(),m={md:['M&darr;','#519aba'],html:['&lt;&gt;','#e44d26'],css:['#','#42a5f5'],js:['JS','#cbcb41'],json:['{}','#cbcb41'],py:['py','#3572a5'],gitignore:['&#9670;','#f14e32']}[e]||['&#8801;','#9da5b4'];return '<i class="vsi" style="color:'+m[1]+'">'+m[0]+'</i>'}
@@ -2811,6 +2852,8 @@ git log --oneline           short history          git push / git pull   sync wi
   $('fvB').addEventListener('keydown',function(e){if(e.target.closest&&e.target.closest('.vsside')&&(e.key==='F2'||e.key==='Delete')&&e.target.tagName!=='INPUT'){var row=e.target.closest('.vsfile[data-f],.vsdir');if(!row)return;var a=row.classList.contains('vsdir')?row.getAttribute('data-d'):vsAbs(row.getAttribute('data-f'));e.preventDefault();if(e.key==='F2')vsRename(a);else vsDelete(a)}});
   $('z1').addEventListener('click',showFile);
   /* over the commit graph, a normal mouse wheel moves along the history sideways */
+  $('z3').addEventListener('click',function(e){var g=e.target.closest&&e.target.closest('.gn[data-c]');if(g)commitPop(g.getAttribute('data-c'))});
+  $('z3').addEventListener('keydown',function(e){var g=e.target.closest&&e.target.closest('.gn[data-c]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();commitPop(g.getAttribute('data-c'))}});
   $('z3').addEventListener('wheel',function(e){var g=e.target.closest&&e.target.closest('.gscroll');if(!g||Math.abs(e.deltaX)>Math.abs(e.deltaY)||g.scrollWidth<=g.clientWidth)return;
     var max=g.scrollWidth-g.clientWidth;if((e.deltaY<0&&g.scrollLeft<=0)||(e.deltaY>0&&g.scrollLeft>=max-1))return;e.preventDefault();g.scrollLeft+=e.deltaY},{passive:false});$('z2').addEventListener('click',showFile);
   /* ---------- typing animation ---------- */
@@ -3306,6 +3349,7 @@ git log --oneline           short history          git push / git pull   sync wi
   var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
   var tkMeme=tkBtn('tkMeme','hehehe',I.folder);tkMeme.hidden=true;tbar.insertBefore(tkMeme,tray);
   var tkCred=tkBtn('tkCred','suspects.txt',I.file);tkCred.hidden=true;tbar.insertBefore(tkCred,tray);
+  var tkFx=tkBtn('tkFx','File Explorer',I.folder);tkFx.hidden=true;tbar.insertBefore(tkFx,tray);
   var tkBin=tkBtn('tkBin','Bin',I.bin);tkBin.hidden=true;tbar.insertBefore(tkBin,tray);
 
   html.classList.add('deskon');
@@ -3591,6 +3635,67 @@ git log --oneline           short history          git push / git pull   sync wi
   MW.el.addEventListener('keydown',function(e){if(memeAt<0)return;if(e.key==='ArrowRight'){e.preventDefault();memeShow(memeAt+1)}else if(e.key==='ArrowLeft'){e.preventDefault();memeShow(memeAt-1)}else if(e.key==='Backspace'){e.preventDefault();memeGrid()}});
 
 
+  /* ---------- File Explorer: opening a folder shows what is inside (folders in folders too); "Open with VS Code" edits it ---------- */
+  var FX=makeWin('fxWin','File Explorer',I.folder,tkFx,620,440,{max:true}),fxDir=HOME,fxSel=null,fxRen=null,fxTap={k:null,t:0},fxPtr='mouse';
+  FX.body.classList.add('fxb');
+  function fxItems(){var st=S(),o=[];
+    Object.keys(st.dirs).filter(function(d){return d!==fxDir&&dirname(d)===fxDir}).forEach(function(d){o.push({k:d,n:base(d),dir:true,repo:!!(st.repos&&st.repos[d])})});
+    Object.keys(st.files).filter(function(f){return dirname(f)===fxDir}).forEach(function(f){o.push({k:f,n:base(f),mark:ML.gitMark(f)})});
+    return o.sort(function(a,b){return a.dir!==b.dir?(a.dir?-1:1):a.n.toLowerCase()<b.n.toLowerCase()?-1:1})}
+  function fxDraw(){if(FX.el.hidden||fxRen)return;var st=S();while(fxDir!==HOME&&!st.dirs[fxDir])fxDir=dirname(fxDir);
+    var list=fxItems(),title=fxDir===HOME?'Home (desktop)':base(fxDir);FX.el.querySelector('.dwh span').textContent=title;FX.el.setAttribute('aria-label',title);tkFx.querySelector('span').textContent=title;
+    var path='<span class="fxcrumb" data-go="'+esc(HOME)+'">~</span>';var parts=fxDir===HOME?[]:fxDir.slice(HOME.length+1).split('/'),acc=HOME;
+    parts.forEach(function(x){acc+='/'+x;path+=' / <span class="fxcrumb" data-go="'+esc(acc)+'">'+esc(x)+'</span>'});
+    FX.body.innerHTML='<div class="fxbar"><button type="button" class="mmbtn" data-fx="up"'+(fxDir===HOME?' disabled':'')+' aria-label="Up one folder" title="Up one folder">&#8593; Up</button><div class="fxpath">'+path+'</div>'
+      +'<button type="button" class="mmbtn" data-fx="newdir" title="New folder">+ Folder</button><button type="button" class="mmbtn" data-fx="newfile" title="New file">+ File</button>'
+      +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button></div>'
+      +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.</div>':'')
+      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSel===it.k?' sel':'')+(clip&&clip.mode==='cut'&&clip.abs===it.k?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:I.file)
+        +(it.repo?'<b class="dbadge bU" style="background:#e8336d">git</b>':it.mark?'<b class="dbadge b'+it.mark+'">'+(it.mark==='C'?'!':it.mark)+'</b>':'')+'</span><span class="mmn">'+esc(it.n)+'</span></button>'}).join('')+'</div>'
+        :'<div class="mmempty">This folder is empty. Right-click (or long-press) for <b>New folder</b> or <b>New file</b>.</div>')
+      +'<div class="fxfoot">'+list.length+' item'+(list.length===1?'':'s')+'</div>'}
+  function openFolder(d){fxDir=d;fxSel=null;activate(FX.el,true);fxDraw()}
+  function fxOpen(k){var st=S();if(st.dirs[k]){fxDir=k;fxSel=null;fxDraw();return}openVS(k)}
+  function fxRename(k,isNew){var b=FX.body.querySelector('.fxt[data-k="'+cssq(k)+'"]');if(!b)return;fxRen=k;fxSel=k;
+    var lab=b.querySelector('.mmn'),inp=document.createElement('input');inp.className='dren';inp.value=base(k);inp.setAttribute('aria-label','New name');inp.spellcheck=false;inp.autocapitalize='off';lab.replaceWith(inp);
+    var dot=inp.value.lastIndexOf('.');inp.focus();inp.setSelectionRange(0,dot>0&&!S().dirs[k]?dot:inp.value.length);var done=false;
+    function finish(ok){if(done)return;var v=inp.value.trim();
+      if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
+        var r=ML.fsRename(k,dirname(k)+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
+        done=true;fxRen=null;keyMoved(k,r.abs);fxSel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');ML.render();fxDraw();return}
+      done=true;fxRen=null;fxDraw()}
+    inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
+    inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&fxRen===k)finish(true)},0)});
+    ['pointerdown','click','dblclick','contextmenu'].forEach(function(n){inp.addEventListener(n,function(e){e.stopPropagation()})})}
+  function fxNew(dir){var name=ML.uniq(fxDir,dir?'new-folder':'new-file.txt'),r=ML.fsNew(fxDir+'/'+name,dir);if(r.err)return popWarn('Cannot create',r.err);
+    say('Created '+(dir?'folder ':'')+esc(tilde(r.abs))+'.');fxSel=r.abs;ML.render();fxDraw();fxRename(r.abs,true)}
+  function fxDelete(k){var st=S(),rp=Object.keys(st.repos||{}).some(function(rt){return under(rt,k)}),own=ML.repoOf(k),inr=!!own&&k!==own.root;
+    function go(){var r=ML.binPut(k);if(r.err)return popWarn('Cannot delete',r.err);if(clip&&under(clip.abs,k))clip=null;fxSel=null;
+      say('Moved '+esc(base(k))+' to the Bin.'+(inr?' Next: git add, then git commit.':''));ML.render();fxDraw()}
+    if(rp)confirmPop('Delete this Git repo?','<b>'+esc(base(k))+'</b> holds a Git repo. Its history (the hidden .git folder) goes to the Bin with it. You can restore it from the Bin.',go);else go()}
+  function fxMenu(k,x,y){var st=S();
+    if(!k){var canPaste=!!(clip&&ML.exists(clip.abs));
+      ML.ctxMenu(x,y,[{t:'New folder',fn:function(){fxNew(true)}},{t:'New file',fn:function(){fxNew(false)}},'-',{t:'Paste',k:'Ctrl+V',dis:!canPaste,fn:function(){paste(fxDir);fxDraw()}},
+        {t:'Open with VS Code',fn:function(){openVS(fxDir)}},{t:'Refresh',k:'F5',fn:fxDraw}]);return}
+    fxSel=k;FX.body.querySelectorAll('.fxt').forEach(function(b){b.classList.toggle('sel',b.getAttribute('data-k')===k)});var isDir=!!st.dirs[k];
+    ML.ctxMenu(x,y,[{t:'Open',fn:function(){fxOpen(k)}},{t:'Open with VS Code',fn:function(){openVS(k)}},'-',
+      {t:'Cut',k:'Ctrl+X',fn:function(){clip={mode:'cut',abs:k};fxDraw();lastSig='';draw(true)}},{t:'Copy',k:'Ctrl+C',fn:function(){clip={mode:'copy',abs:k};fxDraw()}},
+      {t:'Paste into folder',dis:!(isDir&&clip&&ML.exists(clip.abs)),fn:function(){paste(k);fxDraw()}},'-',
+      {t:'Rename',k:'F2',fn:function(){fxRename(k)}},{t:'Delete',k:'Del',fn:function(){fxDelete(k)}}])}
+  FX.body.addEventListener('pointerdown',function(e){fxPtr=e.pointerType||'mouse'},true);
+  FX.body.addEventListener('click',function(e){if(fxRen)return;var c=e.target.closest('[data-go]');if(c){fxDir=c.getAttribute('data-go');fxSel=null;fxDraw();return}
+    var a=e.target.closest('[data-fx]');if(a){var w=a.getAttribute('data-fx');if(w==='up'&&fxDir!==HOME){fxSel=fxDir;fxDir=dirname(fxDir);fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
+    var t=e.target.closest('.fxt');if(!t){fxSel=null;FX.body.querySelectorAll('.fxt.sel').forEach(function(b){b.classList.remove('sel')});return}
+    /* one click selects; double-click (double-tap, or Enter) opens */
+    var k=t.getAttribute('data-k'),now=Date.now(),open=e.detail===0||e.detail>=2||(fxPtr!=='mouse'&&fxTap.k===k&&now-fxTap.t<600);
+    if(open){fxTap={k:null,t:0};fxOpen(k);return}fxTap={k:k,t:now};fxSel=k;FX.body.querySelectorAll('.fxt').forEach(function(b){b.classList.toggle('sel',b===t)})});
+  ML.longPress(FX.body,function(t){return !(t.closest&&(t.closest('input')||t.closest('.fxbar')))},function(e){var t=e.target.closest&&e.target.closest('.fxt');fxMenu(t?t.getAttribute('data-k'):null,e.clientX,e.clientY)});
+  FX.el.addEventListener('keydown',function(e){if(fxRen||(e.target.closest&&e.target.closest('input')))return;var k=fxSel;
+    if(e.key==='Backspace'&&fxDir!==HOME){e.preventDefault();fxSel=fxDir;fxDir=dirname(fxDir);fxDraw()}
+    else if(e.key==='F2'&&k){e.preventDefault();fxRename(k)}else if(e.key==='Delete'&&k){e.preventDefault();fxDelete(k)}else if(e.key==='F5'){e.preventDefault();fxDraw()}
+    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&k&&(e.key==='c'||e.key==='x')){e.preventDefault();clip={mode:e.key==='x'?'cut':'copy',abs:k};fxDraw()}
+    else if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();paste(k&&S().dirs[k]?k:fxDir);fxDraw()}});
+
   /* suspects.txt: the team, with GitHub profile links (add a username here when you have it) */
   var TEAM=[['Nishita','nishik2811-cell'],['Yashieta','yashibleh'],['Abhinav','Abhinav9897S'],['Aryan','Aryan5x'],['Vasu','VasuMittal2606']];
   var CW=makeWin('credWin','suspects.txt',I.file,tkCred,440,380);
@@ -3653,18 +3758,20 @@ git log --oneline           short history          git push / git pull   sync wi
     icons.innerHTML=h;
     if(fk){var nf=icons.querySelector('[data-k="'+cssq(fk)+'"]');if(nf)nf.focus({preventScroll:true})}
     if(!BW.el.hidden)binDraw();else tkBin.querySelector('i').innerHTML=(s.bin||[]).length?I.binf:I.bin}
+  function keyMoved(o,n){if(pos[o]){pos[n]=pos[o];delete pos[o]}if(born[o]){born[n]=born[o];delete born[o]}if(mtime[o]){mtime[n]=mtime[o];delete mtime[o]}if(msig[o]!==undefined){msig[n]=msig[o];delete msig[o]}}
   function cssq(v){return v.replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
   /* remember the order things appear in ~ (for "Arrange icons by date created"); runs after every change */
   function noteNew(){var s=S();Object.keys(s.dirs).concat(Object.keys(s.files)).forEach(function(k){if(k!==HOME&&dirname(k)===HOME&&!born[k])born[k]=++bornN});
     /* date modified: a file changes when its contents change; a folder when something is added, removed or renamed directly inside it (like a real computer) */
     Object.keys(born).forEach(function(k){var sig=k in s.files?'f'+s.files[k]:s.dirs[k]?'d'+Object.keys(s.dirs).concat(Object.keys(s.files)).filter(function(x){return dirname(x)===k}).sort().join('|'):null;
       if(sig===null){delete msig[k];return}if(msig[k]!==undefined&&msig[k]!==sig)mtime[k]=++bornN;else if(msig[k]===undefined)mtime[k]=born[k];msig[k]=sig})}
-  window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw()};
+  window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw();if(!FX.el.hidden)fxDraw()};
   addEventListener('resize',function(){lastSig='';draw()});
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
     if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
+    if(it.dir){openFolder(it.k);return}
     openVS(it.k)}
 
   /* rename right on the icon */
@@ -3675,7 +3782,7 @@ git log --oneline           short history          git push / git pull   sync wi
     function finish(ok){if(done)return;var v=inp.value.trim();
       if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
         var r=ML.fsRename(k,HOME+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
-        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}if(born[k]){born[r.abs]=born[k];delete born[k]}if(mtime[k]){mtime[r.abs]=mtime[k];delete mtime[k]}if(msig[k]!==undefined){msig[r.abs]=msig[k];delete msig[k]}sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
+        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}keyMoved(k,r.abs);sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
       done=true;renaming=null;lastSig='';draw(true)}
     inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
     inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&renaming===k)finish(true)},0)});
@@ -3848,7 +3955,7 @@ git log --oneline           short history          git push / git pull   sync wi
       var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
         .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
         .filter(function(x){return x[0].indexOf('/.git')<0&&hit(base(x[0]),words)}).slice(0,6)
-        .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){openVS(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
+        .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){if(x[1])openFolder(x[0]);else openVS(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
       var set=settings().filter(function(o){return hit(o.t+' '+o.k,words)}).slice(0,5)
         .map(function(o){return '<button type="button" class="smhit" data-i="'+act(o.fn)+'">'+esc(o.t)+(o.on?' <b class="smon">&#10003;</b>':'')+'<small>Setting</small></button>'});
       var h=grp('Apps',apps)+grp('Lessons',les)+grp('Git commands',cmds)+grp('Your files',fs)+grp('Settings',set);

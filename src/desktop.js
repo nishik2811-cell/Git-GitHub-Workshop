@@ -62,6 +62,7 @@
   var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
   var tkMeme=tkBtn('tkMeme','hehehe',I.folder);tkMeme.hidden=true;tbar.insertBefore(tkMeme,tray);
   var tkCred=tkBtn('tkCred','suspects.txt',I.file);tkCred.hidden=true;tbar.insertBefore(tkCred,tray);
+  var tkFx=tkBtn('tkFx','File Explorer',I.folder);tkFx.hidden=true;tbar.insertBefore(tkFx,tray);
   var tkBin=tkBtn('tkBin','Bin',I.bin);tkBin.hidden=true;tbar.insertBefore(tkBin,tray);
 
   html.classList.add('deskon');
@@ -347,6 +348,67 @@
   MW.el.addEventListener('keydown',function(e){if(memeAt<0)return;if(e.key==='ArrowRight'){e.preventDefault();memeShow(memeAt+1)}else if(e.key==='ArrowLeft'){e.preventDefault();memeShow(memeAt-1)}else if(e.key==='Backspace'){e.preventDefault();memeGrid()}});
 
 
+  /* ---------- File Explorer: opening a folder shows what is inside (folders in folders too); "Open with VS Code" edits it ---------- */
+  var FX=makeWin('fxWin','File Explorer',I.folder,tkFx,620,440,{max:true}),fxDir=HOME,fxSel=null,fxRen=null,fxTap={k:null,t:0},fxPtr='mouse';
+  FX.body.classList.add('fxb');
+  function fxItems(){var st=S(),o=[];
+    Object.keys(st.dirs).filter(function(d){return d!==fxDir&&dirname(d)===fxDir}).forEach(function(d){o.push({k:d,n:base(d),dir:true,repo:!!(st.repos&&st.repos[d])})});
+    Object.keys(st.files).filter(function(f){return dirname(f)===fxDir}).forEach(function(f){o.push({k:f,n:base(f),mark:ML.gitMark(f)})});
+    return o.sort(function(a,b){return a.dir!==b.dir?(a.dir?-1:1):a.n.toLowerCase()<b.n.toLowerCase()?-1:1})}
+  function fxDraw(){if(FX.el.hidden||fxRen)return;var st=S();while(fxDir!==HOME&&!st.dirs[fxDir])fxDir=dirname(fxDir);
+    var list=fxItems(),title=fxDir===HOME?'Home (desktop)':base(fxDir);FX.el.querySelector('.dwh span').textContent=title;FX.el.setAttribute('aria-label',title);tkFx.querySelector('span').textContent=title;
+    var path='<span class="fxcrumb" data-go="'+esc(HOME)+'">~</span>';var parts=fxDir===HOME?[]:fxDir.slice(HOME.length+1).split('/'),acc=HOME;
+    parts.forEach(function(x){acc+='/'+x;path+=' / <span class="fxcrumb" data-go="'+esc(acc)+'">'+esc(x)+'</span>'});
+    FX.body.innerHTML='<div class="fxbar"><button type="button" class="mmbtn" data-fx="up"'+(fxDir===HOME?' disabled':'')+' aria-label="Up one folder" title="Up one folder">&#8593; Up</button><div class="fxpath">'+path+'</div>'
+      +'<button type="button" class="mmbtn" data-fx="newdir" title="New folder">+ Folder</button><button type="button" class="mmbtn" data-fx="newfile" title="New file">+ File</button>'
+      +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button></div>'
+      +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.</div>':'')
+      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSel===it.k?' sel':'')+(clip&&clip.mode==='cut'&&clip.abs===it.k?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:I.file)
+        +(it.repo?'<b class="dbadge bU" style="background:#e8336d">git</b>':it.mark?'<b class="dbadge b'+it.mark+'">'+(it.mark==='C'?'!':it.mark)+'</b>':'')+'</span><span class="mmn">'+esc(it.n)+'</span></button>'}).join('')+'</div>'
+        :'<div class="mmempty">This folder is empty. Right-click (or long-press) for <b>New folder</b> or <b>New file</b>.</div>')
+      +'<div class="fxfoot">'+list.length+' item'+(list.length===1?'':'s')+'</div>'}
+  function openFolder(d){fxDir=d;fxSel=null;activate(FX.el,true);fxDraw()}
+  function fxOpen(k){var st=S();if(st.dirs[k]){fxDir=k;fxSel=null;fxDraw();return}openVS(k)}
+  function fxRename(k,isNew){var b=FX.body.querySelector('.fxt[data-k="'+cssq(k)+'"]');if(!b)return;fxRen=k;fxSel=k;
+    var lab=b.querySelector('.mmn'),inp=document.createElement('input');inp.className='dren';inp.value=base(k);inp.setAttribute('aria-label','New name');inp.spellcheck=false;inp.autocapitalize='off';lab.replaceWith(inp);
+    var dot=inp.value.lastIndexOf('.');inp.focus();inp.setSelectionRange(0,dot>0&&!S().dirs[k]?dot:inp.value.length);var done=false;
+    function finish(ok){if(done)return;var v=inp.value.trim();
+      if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
+        var r=ML.fsRename(k,dirname(k)+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
+        done=true;fxRen=null;keyMoved(k,r.abs);fxSel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');ML.render();fxDraw();return}
+      done=true;fxRen=null;fxDraw()}
+    inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
+    inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&fxRen===k)finish(true)},0)});
+    ['pointerdown','click','dblclick','contextmenu'].forEach(function(n){inp.addEventListener(n,function(e){e.stopPropagation()})})}
+  function fxNew(dir){var name=ML.uniq(fxDir,dir?'new-folder':'new-file.txt'),r=ML.fsNew(fxDir+'/'+name,dir);if(r.err)return popWarn('Cannot create',r.err);
+    say('Created '+(dir?'folder ':'')+esc(tilde(r.abs))+'.');fxSel=r.abs;ML.render();fxDraw();fxRename(r.abs,true)}
+  function fxDelete(k){var st=S(),rp=Object.keys(st.repos||{}).some(function(rt){return under(rt,k)}),own=ML.repoOf(k),inr=!!own&&k!==own.root;
+    function go(){var r=ML.binPut(k);if(r.err)return popWarn('Cannot delete',r.err);if(clip&&under(clip.abs,k))clip=null;fxSel=null;
+      say('Moved '+esc(base(k))+' to the Bin.'+(inr?' Next: git add, then git commit.':''));ML.render();fxDraw()}
+    if(rp)confirmPop('Delete this Git repo?','<b>'+esc(base(k))+'</b> holds a Git repo. Its history (the hidden .git folder) goes to the Bin with it. You can restore it from the Bin.',go);else go()}
+  function fxMenu(k,x,y){var st=S();
+    if(!k){var canPaste=!!(clip&&ML.exists(clip.abs));
+      ML.ctxMenu(x,y,[{t:'New folder',fn:function(){fxNew(true)}},{t:'New file',fn:function(){fxNew(false)}},'-',{t:'Paste',k:'Ctrl+V',dis:!canPaste,fn:function(){paste(fxDir);fxDraw()}},
+        {t:'Open with VS Code',fn:function(){openVS(fxDir)}},{t:'Refresh',k:'F5',fn:fxDraw}]);return}
+    fxSel=k;FX.body.querySelectorAll('.fxt').forEach(function(b){b.classList.toggle('sel',b.getAttribute('data-k')===k)});var isDir=!!st.dirs[k];
+    ML.ctxMenu(x,y,[{t:'Open',fn:function(){fxOpen(k)}},{t:'Open with VS Code',fn:function(){openVS(k)}},'-',
+      {t:'Cut',k:'Ctrl+X',fn:function(){clip={mode:'cut',abs:k};fxDraw();lastSig='';draw(true)}},{t:'Copy',k:'Ctrl+C',fn:function(){clip={mode:'copy',abs:k};fxDraw()}},
+      {t:'Paste into folder',dis:!(isDir&&clip&&ML.exists(clip.abs)),fn:function(){paste(k);fxDraw()}},'-',
+      {t:'Rename',k:'F2',fn:function(){fxRename(k)}},{t:'Delete',k:'Del',fn:function(){fxDelete(k)}}])}
+  FX.body.addEventListener('pointerdown',function(e){fxPtr=e.pointerType||'mouse'},true);
+  FX.body.addEventListener('click',function(e){if(fxRen)return;var c=e.target.closest('[data-go]');if(c){fxDir=c.getAttribute('data-go');fxSel=null;fxDraw();return}
+    var a=e.target.closest('[data-fx]');if(a){var w=a.getAttribute('data-fx');if(w==='up'&&fxDir!==HOME){fxSel=fxDir;fxDir=dirname(fxDir);fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
+    var t=e.target.closest('.fxt');if(!t){fxSel=null;FX.body.querySelectorAll('.fxt.sel').forEach(function(b){b.classList.remove('sel')});return}
+    /* one click selects; double-click (double-tap, or Enter) opens */
+    var k=t.getAttribute('data-k'),now=Date.now(),open=e.detail===0||e.detail>=2||(fxPtr!=='mouse'&&fxTap.k===k&&now-fxTap.t<600);
+    if(open){fxTap={k:null,t:0};fxOpen(k);return}fxTap={k:k,t:now};fxSel=k;FX.body.querySelectorAll('.fxt').forEach(function(b){b.classList.toggle('sel',b===t)})});
+  ML.longPress(FX.body,function(t){return !(t.closest&&(t.closest('input')||t.closest('.fxbar')))},function(e){var t=e.target.closest&&e.target.closest('.fxt');fxMenu(t?t.getAttribute('data-k'):null,e.clientX,e.clientY)});
+  FX.el.addEventListener('keydown',function(e){if(fxRen||(e.target.closest&&e.target.closest('input')))return;var k=fxSel;
+    if(e.key==='Backspace'&&fxDir!==HOME){e.preventDefault();fxSel=fxDir;fxDir=dirname(fxDir);fxDraw()}
+    else if(e.key==='F2'&&k){e.preventDefault();fxRename(k)}else if(e.key==='Delete'&&k){e.preventDefault();fxDelete(k)}else if(e.key==='F5'){e.preventDefault();fxDraw()}
+    else if((e.ctrlKey||e.metaKey)&&!e.altKey&&k&&(e.key==='c'||e.key==='x')){e.preventDefault();clip={mode:e.key==='x'?'cut':'copy',abs:k};fxDraw()}
+    else if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();paste(k&&S().dirs[k]?k:fxDir);fxDraw()}});
+
   /* suspects.txt: the team, with GitHub profile links (add a username here when you have it) */
   var TEAM=[['Nishita','nishik2811-cell'],['Yashieta','yashibleh'],['Abhinav','Abhinav9897S'],['Aryan','Aryan5x'],['Vasu','VasuMittal2606']];
   var CW=makeWin('credWin','suspects.txt',I.file,tkCred,440,380);
@@ -409,18 +471,20 @@
     icons.innerHTML=h;
     if(fk){var nf=icons.querySelector('[data-k="'+cssq(fk)+'"]');if(nf)nf.focus({preventScroll:true})}
     if(!BW.el.hidden)binDraw();else tkBin.querySelector('i').innerHTML=(s.bin||[]).length?I.binf:I.bin}
+  function keyMoved(o,n){if(pos[o]){pos[n]=pos[o];delete pos[o]}if(born[o]){born[n]=born[o];delete born[o]}if(mtime[o]){mtime[n]=mtime[o];delete mtime[o]}if(msig[o]!==undefined){msig[n]=msig[o];delete msig[o]}}
   function cssq(v){return v.replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
   /* remember the order things appear in ~ (for "Arrange icons by date created"); runs after every change */
   function noteNew(){var s=S();Object.keys(s.dirs).concat(Object.keys(s.files)).forEach(function(k){if(k!==HOME&&dirname(k)===HOME&&!born[k])born[k]=++bornN});
     /* date modified: a file changes when its contents change; a folder when something is added, removed or renamed directly inside it (like a real computer) */
     Object.keys(born).forEach(function(k){var sig=k in s.files?'f'+s.files[k]:s.dirs[k]?'d'+Object.keys(s.dirs).concat(Object.keys(s.files)).filter(function(x){return dirname(x)===k}).sort().join('|'):null;
       if(sig===null){delete msig[k];return}if(msig[k]!==undefined&&msig[k]!==sig)mtime[k]=++bornN;else if(msig[k]===undefined)mtime[k]=born[k];msig[k]=sig})}
-  window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw()};
+  window.deskDraw=function(){noteNew();if(!BW.el.hidden)binDraw();draw();if(!FX.el.hidden)fxDraw()};
   addEventListener('resize',function(){lastSig='';draw()});
 
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
     if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',br:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
+    if(it.dir){openFolder(it.k);return}
     openVS(it.k)}
 
   /* rename right on the icon */
@@ -431,7 +495,7 @@
     function finish(ok){if(done)return;var v=inp.value.trim();
       if(ok&&v!==base(k)){if(!ML.okName(v)){inp.classList.add('bad');inp.title='Use letters, numbers, dots, dashes or underscores. No spaces.';inp.focus();return}
         var r=ML.fsRename(k,HOME+'/'+v);if(r.err){inp.classList.add('bad');popWarn('Cannot rename',r.err);return}
-        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}if(born[k]){born[r.abs]=born[k];delete born[k]}if(mtime[k]){mtime[r.abs]=mtime[k];delete mtime[k]}if(msig[k]!==undefined){msig[r.abs]=msig[k];delete msig[k]}sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
+        done=true;renaming=null;if(pos[k]){pos[r.abs]=pos[k];delete pos[k]}keyMoved(k,r.abs);sel=r.abs;say((isNew?'Named it ':'Renamed '+esc(base(k))+' to ')+esc(v)+'.');lastSig='';ML.render();return}
       done=true;renaming=null;lastSig='';draw(true)}
     inp.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();finish(false)}});
     inp.addEventListener('blur',function(){setTimeout(function(){if(!done&&renaming===k)finish(true)},0)});
@@ -604,7 +668,7 @@
       var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
         .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
         .filter(function(x){return x[0].indexOf('/.git')<0&&hit(base(x[0]),words)}).slice(0,6)
-        .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){openVS(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
+        .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){if(x[1])openFolder(x[0]);else openVS(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
       var set=settings().filter(function(o){return hit(o.t+' '+o.k,words)}).slice(0,5)
         .map(function(o){return '<button type="button" class="smhit" data-i="'+act(o.fn)+'">'+esc(o.t)+(o.on?' <b class="smon">&#10003;</b>':'')+'<small>Setting</small></button>'});
       var h=grp('Apps',apps)+grp('Lessons',les)+grp('Git commands',cmds)+grp('Your files',fs)+grp('Settings',set);
