@@ -2254,7 +2254,7 @@ git log --oneline           short history          git push / git pull   sync wi
   /* ---------- 1.4 centralized vs distributed (interactive) ---------- */
   (function(){
     var host=$('vcs');if(!host)return;
-    var down=false,names=['Nishita','Abhinav','Aryan'],srv=0,own=[0,0,0],xs=[13,118,223];
+    var down=false,names=['Yashieta','Vasu','Nishi'],srv=0,own=[0,0,0],xs=[13,118,223];
     function lap(k,idx,sub,dim,saves){var x=xs[idx];
       return '<g class="vlap'+(dim?' dim':'')+'" data-k="'+k+'" data-i="'+idx+'" tabindex="0" role="button" aria-label="'+names[idx]+' saves a change"><rect x="'+x+'" y="150" width="86" height="62" rx="8" fill="'+(dim?'#d9dce6':'#fff')+'" stroke="#16327a" stroke-width="3"/><rect x="'+(x+8)+'" y="158" width="70" height="26" rx="3" fill="'+(dim?'#eceef4':'#e8f0ff')+'" stroke="#16327a" stroke-width="2"/><text x="'+(x+43)+'" y="176" text-anchor="middle" font-size="12" font-weight="800" fill="#16327a">'+names[idx]+'</text><text x="'+(x+43)+'" y="198" text-anchor="middle" font-size="10.5" fill="#4a5a90">'+sub+'</text>'+(saves?'<text x="'+(x+43)+'" y="208" text-anchor="middle" font-size="9.5" fill="#2f9a5a" font-weight="800">'+saves+'</text>':'')+'</g>'}
     function draw(){
