@@ -1081,7 +1081,40 @@
     if(window.sDraw)sDraw();
     if(window.deskDraw)deskDraw();
   }
-  function showFile(e){if(S.vsEmpty&&e.target.closest&&e.target.closest('[data-vsopen],[data-new],[data-newdir],.fchip')){S.vsEmpty=false;if(e.target.closest('[data-vsopen]')){S.vsView='files';fvDraw();return}}
+  /* Open Folder: a folder picker like the one on a real computer, showing the Mini laptop's folders */
+  function folderPick(){if(document.querySelector('.fpk'))return;var cur=HOME,sel=null,back=[],lastTap={d:null,t:0};
+    var FI='<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M2 7a3 3 0 0 1 3-3h13l5 5h20a3 3 0 0 1 3 3v23a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#d9a83a"/><path d="M2 14h44v21a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#ffd36e"/></svg>';
+    var ov=document.createElement('div');ov.className='fpk';
+    ov.innerHTML='<div class="fpkw" role="dialog" aria-modal="true" aria-label="Open Folder"><div class="fpkt"><span>Open Folder</span><button type="button" data-k="cancel" class="fpktx" aria-label="Close" title="Close">x</button></div><div class="fpks"><div class="fpkh">Places</div><div class="fpkside"></div></div>'
+      +'<div class="fpkm"><div class="fpkbar"><button type="button" data-k="back" aria-label="Back" title="Back">&#8249;</button><button type="button" data-k="up" aria-label="Up one folder" title="Up one folder">&#8593;</button><div class="fpkpath"></div>'
+      +'<button type="button" data-k="new" title="New folder">+ Folder</button></div>'
+      +'<div class="fpkgrid" role="listbox" aria-label="Folders"></div><div class="fpkfoot"><span class="fpkinfo"></span><button type="button" data-k="cancel">Cancel</button><button type="button" data-k="ok" class="fpkok">Select</button></div></div></div>';
+    document.body.appendChild(ov);
+    function tl(d){return d===HOME?'~':'~'+d.slice(HOME.length)}
+    function kids(d){return keys(S.dirs).filter(function(x){return x!==d&&dirname(x)===d&&base(x).charAt(0)!=='.'}).sort(function(a,b){return base(a).toLowerCase()<base(b).toLowerCase()?-1:1})}
+    function go(d){if(d===cur)return;back.push(cur);cur=d;sel=null;draw()}
+    function draw(){var top=[[HOME,'Home']].concat(kids(HOME).map(function(d){return [d,base(d)]}));
+      ov.querySelector('.fpkside').innerHTML=top.map(function(x){return '<button type="button" class="fpksi'+(cur===x[0]||(x[0]!==HOME&&under(cur,x[0]))?' on':'')+'" data-go="'+esc(x[0])+'">'+(x[0]===HOME?'&#8962; ':'')+esc(x[1])+'</button>'}).join('');
+      var parts=cur===HOME?[]:cur.slice(HOME.length+1).split('/'),acc=HOME,ph='<button type="button" class="fpkc" data-go="'+esc(HOME)+'">&#8962; Home</button>';
+      parts.forEach(function(x){acc+='/'+x;ph+='<span class="fpksep">/</span><button type="button" class="fpkc" data-go="'+esc(acc)+'">'+esc(x)+'</button>'});ov.querySelector('.fpkpath').innerHTML=ph;
+      var ks=kids(cur);ov.querySelector('.fpkgrid').innerHTML=ks.length?ks.map(function(d){return '<button type="button" class="fpki'+(sel===d?' on':'')+'" role="option" aria-selected="'+(sel===d)+'" data-d="'+esc(d)+'">'+FI+(S.repos&&S.repos[d]?'<em class="fpkgit">git</em>':'')+'<span>'+esc(base(d))+'</span></button>'}).join(''):'<p class="fpkempty">No folders in here. Press <b>Select</b> to open this one, or make a new folder.</p>';
+      ov.querySelector('[data-k="back"]').disabled=!back.length;ov.querySelector('[data-k="up"]').disabled=cur===HOME;
+      ov.querySelector('.fpkinfo').textContent='Select opens: '+tl(sel||cur)}
+    function close(){ov.remove();document.removeEventListener('keydown',key,true)}
+    function pick(){var t=sel||cur;close();S.vsEmpty=false;vsOpenPath(t)}
+    function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close()}else if(e.key==='Enter'&&!(e.target.closest&&e.target.closest('input'))){e.preventDefault();pick()}}
+    document.addEventListener('keydown',key,true);
+    ov.addEventListener('click',function(e){if(e.target===ov){close();return}var b=e.target.closest('button');if(!b)return;var k=b.getAttribute('data-k');
+      if(k==='cancel'){close();return}if(k==='ok'){pick();return}
+      if(k==='back'){if(back.length){cur=back.pop();sel=null;draw()}return}
+      if(k==='up'){if(cur!==HOME)go(dirname(cur));return}
+      if(k==='new'){var n='new-folder',i=2;while(exists(cur+'/'+n))n='new-folder-'+(i++);S.dirs[cur+'/'+n]=1;sel=cur+'/'+n;render();draw();return}
+      var g=b.getAttribute('data-go');if(g){go(g);return}
+      var d=b.getAttribute('data-d');if(d){var now=Date.now();if(lastTap.d===d&&now-lastTap.t<500){lastTap={d:null,t:0};go(d);return}lastTap={d:d,t:now};sel=d;draw();var nb=ov.querySelector('.fpki[data-d="'+d.replace(/"/g,'\\"')+'"]');if(nb)nb.focus()}});
+    ov.addEventListener('dblclick',function(e){var b=e.target.closest('.fpki');if(b){lastTap={d:null,t:0};go(b.getAttribute('data-d'))}});
+    draw();var ok=ov.querySelector('.fpkok');if(ok)ok.focus()}
+  function showFile(e){if(e.target.closest&&e.target.closest('[data-vsopen]')){folderPick();return}
+    if(S.vsEmpty&&e.target.closest&&e.target.closest('[data-new],[data-newdir],.fchip'))S.vsEmpty=false;
     if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming='file';fvDraw();return}
     if(e.target.closest&&e.target.closest('[data-newdir]')){S.vsNaming='dir';fvDraw();return}
     var vv=e.target.closest&&e.target.closest('[data-view]');if(vv){S.vsView=vv.getAttribute('data-view');fvDraw();return}

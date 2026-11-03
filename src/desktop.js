@@ -80,7 +80,7 @@
   function bootGo(hash,instant){if(boot.hidden)return;html.classList.remove('booting');try{sessionStorage.setItem('mlStarted','1')}catch(z){}
     if(instant)boot.hidden=true;else{boot.classList.add('out');setTimeout(function(){boot.hidden=true;boot.classList.remove('out')},360)}
     desk.hidden=false;draw(true);
-    if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}if(t)t.scrollIntoView({behavior:'instant',block:'start'});wasOn=true;setTimeout(showTip,700)} /* a link to the lab (#p5) only scrolls to its card: the lab never opens by itself */
+    if(!wasOn){winOpen('wsWin');setTimeout(function(){wsBody.dispatchEvent(new Event('scroll'))},50);var t=null;try{t=hash&&document.querySelector(hash)}catch(z){}/* scroll only inside the workshop (never the page behind it), and a link to the lab opens at the top: the lab has its own window */wsBody.scrollTop=0;if(t&&wsBody.contains(t)&&!t.closest('#p5')){var jump=function(){var sb=wsBody.style.scrollBehavior;wsBody.style.scrollBehavior='auto';wsBody.scrollTop+=t.getBoundingClientRect().top-wsBody.getBoundingClientRect().top;wsBody.style.scrollBehavior=sb};jump();setTimeout(jump,150);setTimeout(jump,450)}wasOn=true;setTimeout(showTip,700)} /* a link to the lab (#p5) only scrolls to its card: the lab never opens by itself */
     setTimeout(function(){if(location.hash)history.replaceState(null,'',location.pathname+location.search)},50)}
   var wasOn=false;
   /* only START leaves the start screen; Yes, No and the folder just show a pop-up */
