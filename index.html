@@ -1225,6 +1225,15 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 /* the resize corners are buttons, so on phones a finger on the corner is not snapped to a nearby button instead */
 .dwr,.npr{border:0;padding:0;margin:0;border-radius:0;box-shadow:none;transform:none;min-width:0;min-height:0;background-color:transparent;font:inherit}
 .dwr:hover,.dwr:active,.npr:hover,.npr:active{transform:none;box-shadow:none}
+
+/* VS Code with no folder open (when the Mini laptop starts) */
+.vswelcome{padding:28px 22px;color:#bbb;font-size:13.5px;line-height:1.55;text-align:left}
+.vswelcome .vswt{font-size:20px;color:#ddd;margin-bottom:4px}
+.vswelcome p{margin:6px 0 12px}
+.vsopenbtn{padding:6px 14px;border:0;border-radius:2px;background:#0e639c;color:#fff;font:600 13px 'Nunito',sans-serif;cursor:pointer;box-shadow:none;transform:none}
+.vsopenbtn:hover{background:#1177bb}
+.vswelcome .vshint{color:#8a8a8a;font-size:12.5px;max-width:360px}
+.vswelcome code{color:#ce9178}
 /* ---------- end Mini laptop desktop css ---------- */
 </style>
 <style id="lesson9css">
@@ -2641,7 +2650,7 @@ git log --oneline           short history          git push / git pull   sync wi
   })();
   (function(){var rb0=$('realBox');if(rb0&&!$('pgTrk')){var d=document.createElement('div');d.id='pgTrk';d.className='pgtrk';d.hidden=true;d.setAttribute('role','status');rb0.parentNode.insertBefore(d,rb0.nextSibling)}})();
   var out=$('pgOut'),inp=$('pgIn'),ps=$('pgPs'),HOME='/home/you',S,busy=false,queue=[],pend=false,scripting=false;
-  function fresh(){S={cwd:HOME,dirs:{},files:{},cfg:{},repos:{},hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1;
+  function fresh(){S={vsEmpty:true,cwd:HOME,dirs:{},files:{},cfg:{},repos:{},hist:[],hi:0,ran:{},uid:3,merged:false,pushed:false,sig:{},n:0,done:{},finished:S&&S.finished};S.dirs[HOME]=1;
     /* every folder can hold its own repo (like real Git); S.repo is the one for the folder you are in */
     if(window.mlSeed)try{window.mlSeed(S)}catch(z){}
     Object.defineProperty(S,'repo',{configurable:true,get:function(){if(S.forceRepo)return S.forceRepo;return repoOf(S.cwd)},set:function(v){if(v)S.repos[v.root]=v}})}
@@ -3586,7 +3595,7 @@ git log --oneline           short history          git push / git pull   sync wi
       return o}
     return walk(root,0)||'<div class="vsnone">empty folder</div>'}
   function vsShowWin(){np.classList.add('show');var t=$('tkVS');if(t)t.hidden=false;window.vsDock(false)}
-  function vsOpenPath(a){S.vsClosed=S.vsClosed||{};
+  function vsOpenPath(a){S.vsEmpty=false;S.vsClosed=S.vsClosed||{};
     if(S.dirs[a]){S.vsPin=a;S.vsPinSig=sigNow();S.vsSelDir=null;delete S.vsClosed[a];var m=vsMode();if(m.repo&&a!==m.root){S.vsSelDir=a;vsOpenUp(a,m.root)}}
     else if(a in S.files){var d=dirname(a);S.vsPin=d;S.vsPinSig=sigNow();vsOpenUp(d,vsMode().root);S.fvfWant=a}
     else return;
@@ -3610,6 +3619,12 @@ git log --oneline           short history          git push / git pull   sync wi
     else items=[{t:'New File...',fn:function(){nw(m.root,'file')}},{t:'New Folder...',fn:function(){nw(m.root,'dir')}}];
     ctxMenu(e.clientX,e.clientY,items)}
   function fvDraw(){
+    /* VS Code starts with no folder open, like the real one on first launch. It opens a folder once you use it:
+       Open Folder, Open with VS Code, cd into a folder in the terminal, or tapping a file in the lab */
+    if(S.vsEmpty&&(S.cwd!==HOME||S.vsPin))S.vsEmpty=false;
+    if(S.vsEmpty){S.vsView='files';np.classList.remove('bad','merging');S.vsMerge=null;vsTreeHtml='';$('fvT').textContent='Visual Studio Code';
+      $('fvB').innerHTML=vsShell('NO FOLDER OPENED',[],null,'<div class="vswelcome"><div class="vswt">Visual Studio Code</div><p>No folder is open yet.</p><button type="button" class="vsopenbtn" data-vsopen="1">Open Folder</button>'
+        +'<p class="vshint">Opens the folder the terminal is in. You can also right-click a folder on the desktop and choose <b>Open with VS Code</b>, or <code>cd</code> into a folder in the Practice Lab.</p></div>',null);vsKeep();return}
     var m=vsMode(),T=$('fvT'),B=$('fvB'),w,ks,conf=false,folder=base(m.root)||'/',empty='<div class="vsempty">No files yet. Click the <b>New File</b> icon next to EXPLORER, or type in the terminal:<br><code>echo "Pasta" &gt; pasta.txt</code></div>';
     S.vsClosed=S.vsClosed||{};
     if(S.fvfWant){var wk=vsKeyOf(S.fvfWant,m);if(wk!==null&&(vsAbs(wk) in S.files))S.fvf=wk;S.fvfWant=null}
@@ -3688,7 +3703,8 @@ git log --oneline           short history          git push / git pull   sync wi
     if(window.sDraw)sDraw();
     if(window.deskDraw)deskDraw();
   }
-  function showFile(e){if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming='file';fvDraw();return}
+  function showFile(e){if(S.vsEmpty&&e.target.closest&&e.target.closest('[data-vsopen],[data-new],[data-newdir],.fchip')){S.vsEmpty=false;if(e.target.closest('[data-vsopen]')){S.vsView='files';fvDraw();return}}
+    if(e.target.closest&&e.target.closest('[data-new]')){S.vsNaming='file';fvDraw();return}
     if(e.target.closest&&e.target.closest('[data-newdir]')){S.vsNaming='dir';fvDraw();return}
     var vv=e.target.closest&&e.target.closest('[data-view]');if(vv){S.vsView=vv.getAttribute('data-view');fvDraw();return}
     if(e.target.closest&&e.target.closest('[data-brpick]')){brPick();return}
