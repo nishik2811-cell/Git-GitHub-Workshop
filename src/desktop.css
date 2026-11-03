@@ -500,8 +500,9 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .vsgrip::before{content:'';position:absolute;top:0;bottom:0;left:6px;width:2px;background:transparent;transition:background .15s}
 .vsgrip:hover::before,.notepad.sizing .vsgrip::before{background:#0078d4}
 .vsgrip i{position:relative;display:flex;align-items:center;justify-content:center;width:22px;height:20px;border-radius:10px;background:#3c3c3c;border:1px solid #5a5a5a;color:#ccc;font-style:normal;font-size:14px;line-height:1;opacity:0;transition:opacity .15s}
-.vsgrip:hover i,.notepad.sizing .vsgrip i{opacity:1}
-@media(hover:none){.vsgrip{width:26px;margin-right:-13px}.vsgrip::before{left:12px}.vsgrip i{opacity:1;width:26px;height:22px;font-size:16px}}
+/* laptops: only the line and the left-right resize cursor, no dots */
+/* phones: three dots in the middle of the line to drag */
+@media(hover:none){.vsgrip{width:24px;margin-right:-12px}.vsgrip::before{left:11px}.vsgrip i{opacity:1;width:16px;height:34px;font-size:16px;border-radius:8px}}
 
 /* the Open Folder picker sits inside the VS Code window, like every other pop-up */
 .fpk.inwin{position:absolute;inset:0;z-index:30;padding:8px;border-radius:inherit}

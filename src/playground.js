@@ -937,7 +937,7 @@
   /* the line between the file list and the editor can be dragged to make the list wider or narrower (a little ⋮ grip on phones) */
   var vsGripD=null;
   function vsGrip(){var mn=np.querySelector('.vsmain'),sd=mn&&mn.querySelector('.vsside');if(!mn||!sd||np.classList.contains('merging')){var og=np.querySelector('.vsgrip');if(og)og.remove();return}
-    var g=mn.querySelector('.vsgrip');if(!g){g=document.createElement('span');g.className='vsgrip';g.setAttribute('role','separator');g.setAttribute('aria-orientation','vertical');g.setAttribute('aria-label','Drag to resize the file list');g.title='Drag to resize';g.innerHTML='<i>&#8596;</i>';mn.appendChild(g)}
+    var g=mn.querySelector('.vsgrip');if(!g){g=document.createElement('span');g.className='vsgrip';g.setAttribute('role','separator');g.setAttribute('aria-orientation','vertical');g.setAttribute('aria-label','Drag to resize the file list');g.title='Drag to resize';g.innerHTML='<i>&#8942;</i>';mn.appendChild(g)}
     }
   np.addEventListener('pointerdown',function(e){var g=e.target.closest&&e.target.closest('.vsgrip');if(!g)return;e.preventDefault();e.stopPropagation();var sd=np.querySelector('.vsside'),ac=np.querySelector('.vsact');
     vsGripD={x:e.clientX,w:sd.offsetWidth,a:ac?ac.offsetWidth:30};np.style.setProperty('--vsa',vsGripD.a+'px');np.classList.add('sizing');try{g.setPointerCapture(e.pointerId)}catch(z){}},true);
