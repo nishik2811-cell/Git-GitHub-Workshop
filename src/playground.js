@@ -934,7 +934,18 @@
     el.addEventListener('click',function(e){if(el._lp&&Date.now()-el._lp<900){e.preventDefault();e.stopPropagation();el._lp=0}},true)}
   function vsPath(){return vsAbs(S.fvf)}
   var vsSel=null;
-  function vsKeep(){var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l}}vsSel=null}
+  /* the line between the file list and the editor can be dragged to make the list wider or narrower (a little ⋮ grip on phones) */
+  var vsGripD=null;
+  function vsGrip(){var mn=np.querySelector('.vsmain'),sd=mn&&mn.querySelector('.vsside');if(!mn||!sd||np.classList.contains('merging')){var og=np.querySelector('.vsgrip');if(og)og.remove();return}
+    var g=mn.querySelector('.vsgrip');if(!g){g=document.createElement('span');g.className='vsgrip';g.setAttribute('role','separator');g.setAttribute('aria-orientation','vertical');g.setAttribute('aria-label','Drag to resize the file list');g.title='Drag to resize';g.innerHTML='<i>&#8596;</i>';mn.appendChild(g)}
+    g.style.left=Math.round(sd.offsetLeft+sd.offsetWidth-(g.offsetWidth||14)/2)+'px'}
+  np.addEventListener('pointerdown',function(e){var g=e.target.closest&&e.target.closest('.vsgrip');if(!g)return;e.preventDefault();e.stopPropagation();var sd=np.querySelector('.vsside'),ac=np.querySelector('.vsact');
+    vsGripD={x:e.clientX,w:sd.offsetWidth,a:ac?ac.offsetWidth:30};np.style.setProperty('--vsa',vsGripD.a+'px');np.classList.add('sizing');try{g.setPointerCapture(e.pointerId)}catch(z){}},true);
+  np.addEventListener('pointermove',function(e){if(!vsGripD)return;var max=np.clientWidth-vsGripD.a-90,w=Math.round(Math.max(70,Math.min(max,vsGripD.w+e.clientX-vsGripD.x)));
+    np.style.setProperty('--vsw',w+'px');np.classList.add('vswset');vsGrip()});
+  ['pointerup','pointercancel'].forEach(function(n){np.addEventListener(n,function(){if(vsGripD){vsGripD=null;np.classList.remove('sizing')}})});
+  addEventListener('resize',function(){if(np.classList.contains('show'))vsGrip()});
+  function vsKeep(){vsGrip();var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l}}vsSel=null}
   $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
     S.files[vsPath()]=v===''||/\n$/.test(v)?v:v+'\n';
     var sc=ta.closest('.vscode');vsSel={f:S.fvf,s:ta.selectionStart,e:ta.selectionEnd,t:sc?sc.scrollTop:0,l:sc?sc.scrollLeft:0};render()});

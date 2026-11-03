@@ -473,3 +473,32 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .fpkfoot button:hover{background:var(--sky)}
 .fpkfoot .fpkok{background:#2e9e4f;color:#fff;font-family:var(--pix);letter-spacing:.04em}.fpkfoot .fpkok:hover{background:#38b25b}
 @media(max-width:600px){.fpkw{grid-template-columns:1fr}.fpks{display:none}.fpkgrid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr));padding:10px}.fpki svg{width:50px;height:42px}}
+
+/* pop-ups cover only the app window they belong to */
+.ov.inwin{position:absolute;inset:0;z-index:40;padding:10px;border-radius:inherit}
+.ov.inwin .dlg{width:auto;max-width:min(460px,100%);max-height:100%;overflow:auto}
+
+/* VS Code: the U / M / A letter beside a changed file shows on phones too, like the real VS Code */
+.notepad .vsfile b{display:inline-block!important;flex:none;min-width:9px;text-align:center}
+
+/* drawn screenshots in the lessons shrink to fit narrow windows instead of sticking out past the card */
+#wsIn .irow,#wsIn .pair,#wsIn .trio{min-width:0}
+#wsIn .irow>*,#wsIn .pair>*,#wsIn .fig,#wsIn .shotwrap,#wsIn .shot{min-width:0;max-width:100%}
+#wsIn .shot .chrome{min-width:0}
+#wsIn .shot .chrome .url{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#wsIn .shot .ghbar,#wsIn .shot .ghbody{flex-wrap:wrap;min-width:0}
+#wsIn .shot *{overflow-wrap:break-word}
+#wsIn .shot div[style*="display:flex"]{flex-wrap:wrap;row-gap:4px}
+#wsIn .shot div[style*="display:flex"]>*{min-width:0}
+@media(max-width:700px){#wsIn .irow{grid-template-columns:minmax(0,1fr)}}
+#wsIn .shot [style*="min-width:260px"]{min-width:0!important}
+
+/* VS Code: drag the line between the file list and the editor */
+.notepad .vsmain{position:relative}
+.notepad.vswset:not(.merging) .vsmain,.notepad.vswset:not(.merging) .vsmain.scm{grid-template-columns:var(--vsa,30px) var(--vsw,128px) minmax(0,1fr)}
+.vsgrip{position:absolute;top:0;bottom:0;width:14px;z-index:3;cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
+.vsgrip::before{content:'';position:absolute;top:0;bottom:0;left:6px;width:2px;background:transparent;transition:background .15s}
+.vsgrip:hover::before,.notepad.sizing .vsgrip::before{background:#0078d4}
+.vsgrip i{position:relative;display:flex;align-items:center;justify-content:center;width:22px;height:20px;border-radius:10px;background:#3c3c3c;border:1px solid #5a5a5a;color:#ccc;font-style:normal;font-size:14px;line-height:1;opacity:0;transition:opacity .15s}
+.vsgrip:hover i,.notepad.sizing .vsgrip i{opacity:1}
+@media(hover:none){.vsgrip{width:26px}.vsgrip::before{left:12px}.vsgrip i{opacity:1;width:26px;height:22px;font-size:16px}}

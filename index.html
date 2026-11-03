@@ -1282,6 +1282,35 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .fpkfoot button:hover{background:var(--sky)}
 .fpkfoot .fpkok{background:#2e9e4f;color:#fff;font-family:var(--pix);letter-spacing:.04em}.fpkfoot .fpkok:hover{background:#38b25b}
 @media(max-width:600px){.fpkw{grid-template-columns:1fr}.fpks{display:none}.fpkgrid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr));padding:10px}.fpki svg{width:50px;height:42px}}
+
+/* pop-ups cover only the app window they belong to */
+.ov.inwin{position:absolute;inset:0;z-index:40;padding:10px;border-radius:inherit}
+.ov.inwin .dlg{width:auto;max-width:min(460px,100%);max-height:100%;overflow:auto}
+
+/* VS Code: the U / M / A letter beside a changed file shows on phones too, like the real VS Code */
+.notepad .vsfile b{display:inline-block!important;flex:none;min-width:9px;text-align:center}
+
+/* drawn screenshots in the lessons shrink to fit narrow windows instead of sticking out past the card */
+#wsIn .irow,#wsIn .pair,#wsIn .trio{min-width:0}
+#wsIn .irow>*,#wsIn .pair>*,#wsIn .fig,#wsIn .shotwrap,#wsIn .shot{min-width:0;max-width:100%}
+#wsIn .shot .chrome{min-width:0}
+#wsIn .shot .chrome .url{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#wsIn .shot .ghbar,#wsIn .shot .ghbody{flex-wrap:wrap;min-width:0}
+#wsIn .shot *{overflow-wrap:break-word}
+#wsIn .shot div[style*="display:flex"]{flex-wrap:wrap;row-gap:4px}
+#wsIn .shot div[style*="display:flex"]>*{min-width:0}
+@media(max-width:700px){#wsIn .irow{grid-template-columns:minmax(0,1fr)}}
+#wsIn .shot [style*="min-width:260px"]{min-width:0!important}
+
+/* VS Code: drag the line between the file list and the editor */
+.notepad .vsmain{position:relative}
+.notepad.vswset:not(.merging) .vsmain,.notepad.vswset:not(.merging) .vsmain.scm{grid-template-columns:var(--vsa,30px) var(--vsw,128px) minmax(0,1fr)}
+.vsgrip{position:absolute;top:0;bottom:0;width:14px;z-index:3;cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
+.vsgrip::before{content:'';position:absolute;top:0;bottom:0;left:6px;width:2px;background:transparent;transition:background .15s}
+.vsgrip:hover::before,.notepad.sizing .vsgrip::before{background:#0078d4}
+.vsgrip i{position:relative;display:flex;align-items:center;justify-content:center;width:22px;height:20px;border-radius:10px;background:#3c3c3c;border:1px solid #5a5a5a;color:#ccc;font-style:normal;font-size:14px;line-height:1;opacity:0;transition:opacity .15s}
+.vsgrip:hover i,.notepad.sizing .vsgrip i{opacity:1}
+@media(hover:none){.vsgrip{width:26px}.vsgrip::before{left:12px}.vsgrip i{opacity:1;width:26px;height:22px;font-size:16px}}
 /* ---------- end Mini laptop desktop css ---------- */
 </style>
 <style id="lesson9css">
@@ -2265,7 +2294,13 @@ git log --oneline           short history          git push / git pull   sync wi
   function $(id){return document.getElementById(id)}
   /* ---------- pop-up system ---------- */
   var ov=$('ov'),ovBox=ov.querySelector('.popup'),lastFocus=null;
-  function closePop(){ov.hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+  function closePop(){ov.hidden=true;if(lastFocus&&lastFocus.focus&&document.contains(lastFocus))lastFocus.focus({preventScroll:true})}
+  /* a pop-up belongs to the app window you were using: it covers that window only, not the whole screen */
+  var popWin=null;function popMark(e){var t=e.target;if(t&&t.closest&&!t.closest('#ov'))popWin=t.closest('.dwin,#notepad')}
+  document.addEventListener('pointerdown',popMark,true);document.addEventListener('keydown',popMark,true);
+  function popHome(){var w=popWin;
+    var shown=w&&document.contains(w)&&!w.hidden&&!w.classList.contains('docked')&&getComputedStyle(w).display!=='none';
+    if(shown){if(ov.parentNode!==w)w.appendChild(ov);ov.classList.add('inwin')}else{if(ov.parentNode!==document.body)document.body.appendChild(ov);ov.classList.remove('inwin')}}
   function pop(kind,title,text,btns){
     lastFocus=document.activeElement;
     ovBox.className='dlg popup'+(kind==='err'?' err':'');
@@ -2275,7 +2310,7 @@ git log --oneline           short history          git push / git pull   sync wi
       var x=document.createElement('button');x.textContent=b.t;
       x.onclick=function(){closePop();if(b.fn)b.fn()};bb.appendChild(x);
     });
-    ov.hidden=false;bb.firstChild.focus();
+    popHome();ov.hidden=false;bb.firstChild.focus({preventScroll:true});
   }
   window.gitPop=pop;
   $('ovX').onclick=closePop;
@@ -3604,7 +3639,18 @@ git log --oneline           short history          git push / git pull   sync wi
     el.addEventListener('click',function(e){if(el._lp&&Date.now()-el._lp<900){e.preventDefault();e.stopPropagation();el._lp=0}},true)}
   function vsPath(){return vsAbs(S.fvf)}
   var vsSel=null;
-  function vsKeep(){var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l}}vsSel=null}
+  /* the line between the file list and the editor can be dragged to make the list wider or narrower (a little ⋮ grip on phones) */
+  var vsGripD=null;
+  function vsGrip(){var mn=np.querySelector('.vsmain'),sd=mn&&mn.querySelector('.vsside');if(!mn||!sd||np.classList.contains('merging')){var og=np.querySelector('.vsgrip');if(og)og.remove();return}
+    var g=mn.querySelector('.vsgrip');if(!g){g=document.createElement('span');g.className='vsgrip';g.setAttribute('role','separator');g.setAttribute('aria-orientation','vertical');g.setAttribute('aria-label','Drag to resize the file list');g.title='Drag to resize';g.innerHTML='<i>&#8596;</i>';mn.appendChild(g)}
+    g.style.left=Math.round(sd.offsetLeft+sd.offsetWidth-(g.offsetWidth||14)/2)+'px'}
+  np.addEventListener('pointerdown',function(e){var g=e.target.closest&&e.target.closest('.vsgrip');if(!g)return;e.preventDefault();e.stopPropagation();var sd=np.querySelector('.vsside'),ac=np.querySelector('.vsact');
+    vsGripD={x:e.clientX,w:sd.offsetWidth,a:ac?ac.offsetWidth:30};np.style.setProperty('--vsa',vsGripD.a+'px');np.classList.add('sizing');try{g.setPointerCapture(e.pointerId)}catch(z){}},true);
+  np.addEventListener('pointermove',function(e){if(!vsGripD)return;var max=np.clientWidth-vsGripD.a-90,w=Math.round(Math.max(70,Math.min(max,vsGripD.w+e.clientX-vsGripD.x)));
+    np.style.setProperty('--vsw',w+'px');np.classList.add('vswset');vsGrip()});
+  ['pointerup','pointercancel'].forEach(function(n){np.addEventListener(n,function(){if(vsGripD){vsGripD=null;np.classList.remove('sizing')}})});
+  addEventListener('resize',function(){if(np.classList.contains('show'))vsGrip()});
+  function vsKeep(){vsGrip();var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l}}vsSel=null}
   $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
     S.files[vsPath()]=v===''||/\n$/.test(v)?v:v+'\n';
     var sc=ta.closest('.vscode');vsSel={f:S.fvf,s:ta.selectionStart,e:ta.selectionEnd,t:sc?sc.scrollTop:0,l:sc?sc.scrollLeft:0};render()});
