@@ -563,7 +563,7 @@
       case 'whoami':pl('you');return;
       case 'ls':{var fl=t.filter(function(x,i){return i>0&&x[0]==='-'}).join(''),all=/a/.test(fl),lng=/l/.test(fl);if(all)S.ran.lsa=1;var dir=norm(t.filter(function(x,i){return i>0&&x[0]!=='-'})[0]||'.');
         if(!S.dirs[dir]){perr("ls: cannot access '"+(t[1]||'')+"': No such file or directory");return}
-        var items=[];if(all&&S.repos[dir])items.push('<span class="b">.git/</span>');
+        var items=[];if(all){items.push('<span class="b">./</span>','<span class="b">../</span>');if(S.repos[dir])items.push('<span class="b">.git/</span>')} /* ls -a always shows . and .. too, like Git Bash */
         keys(S.dirs).forEach(function(d){if(d!==dir&&dirname(d)===dir)items.push('<span class="b">'+esc(base(d))+'/</span>')});
         keys(S.files).forEach(function(f){if(dirname(f)===dir&&(all||base(f)[0]!=='.'))items.push(esc(base(f)))});
         if(lng){/* ls -l: one line each, with permissions, owner, size in bytes, date and name, like Git Bash */
