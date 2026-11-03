@@ -2,19 +2,18 @@
   if(!document.getElementById('pg'))return;
   var $=function(i){return document.getElementById(i)};
   var np=document.createElement('div');np.className='notepad';np.id='notepad';
-  np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div><span class="npr" id="npR" title="Drag to resize" aria-hidden="true"></span>';
+  np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div><button type="button" tabindex="-1" class="npr" id="npR" title="Drag to resize" aria-hidden="true"></button>';
   document.body.appendChild(np);
   (function(){var h=$('nph'),ox,oy,drag=false;
     var vsh=null;
     h.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('button'))return;
-      if(innerWidth<=700){vsh={y:e.clientY,h:np.getBoundingClientRect().height};try{h.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault();return} /* phones: drag the title bar up or down to resize */
-      drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{h.setPointerCapture(e.pointerId)}catch(z){}});
+      e.preventDefault();drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{h.setPointerCapture(e.pointerId)}catch(z){}});
     h.addEventListener('pointermove',function(e){if(vsh){var hh=Math.max(120,Math.min(innerHeight-48-8,vsh.h+(vsh.y-e.clientY)));np.style.maxHeight='none';np.style.height=Math.round(hh)+'px';np.style.top='auto';np.style.bottom='';return}
-      if(!drag)return;np.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';np.style.top=Math.max(0,Math.min(innerHeight-60,e.clientY-oy))+'px';np.style.right='auto';np.style.bottom='auto'});
+      if(!drag)return;var nw=np.offsetWidth;np.style.left=Math.round(Math.max(Math.min(0,80-nw),Math.min(innerWidth-80,e.clientX-ox)))+'px';np.style.top=Math.round(Math.max(0,Math.min(innerHeight-38-36,e.clientY-oy)))+'px';np.style.right='auto';np.style.bottom='auto'});
     ['pointerup','pointercancel'].forEach(function(n){h.addEventListener(n,function(){drag=false;vsh=null})});
     np.addEventListener('pointerdown',function(){var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.width=r.width+'px';np.style.right='auto';np.style.bottom='auto'});
     (function(){var g=$('npR'),sx,sy,sw,sh,on=false;
-      g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.right='auto';np.style.bottom='auto';sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;np.classList.add('sizing');g.setPointerCapture(e.pointerId)});
+      g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.right='auto';np.style.bottom='auto';np.style.maxHeight='none';sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;np.classList.add('sizing');g.setPointerCapture(e.pointerId)});
       g.addEventListener('pointermove',function(e){if(!on)return;var r=np.getBoundingClientRect();np.style.width=Math.max(220,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';np.style.height=Math.max(90,Math.min(innerHeight-r.top-6,sh+e.clientY-sy))+'px'});
       g.addEventListener('pointerup',function(){on=false;np.classList.remove('sizing')});
     })();
@@ -106,10 +105,10 @@
   function track(){var r=R();if(!r||!r.remote||!r.rbr)return null;var o=r.rbr[r.head],h=headId();if(!o||!h)return null;
     var A=anc(h),B=anc(o),ah=0,bh=0;keys(A).forEach(function(k){if(!B[k])ah++});keys(B).forEach(function(k){if(!A[k])bh++});return {ah:ah,bh:bh,o:'origin/'+r.head}}
   function cmt(n){return n+' commit'+(n===1?'':'s')}
-  function isSsh(u){return /^(git@|ssh:\/\/)/.test(String(u||''))}
-  function sshRefused(u){perr('git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.');
-    var m=String(u).match(/github\.com[:\/]([^\s]+?)(?:\.git)?$/);pl('This Mini laptop has no SSH key. Use the HTTPS address instead'+(m?': https://github.com/'+m[1]+'.git':' (it starts with https://github.com/)'),'y')}
-  function ghKey(u){return String(u||'').trim().replace(/\.git$/,'').replace(/\/+$/,'').toLowerCase()}
+  /* SSH addresses work just like HTTPS ones (as if this laptop has an SSH key set up):
+     git@github.com:you/repo.git and ssh://git@github.com/you/repo point at the same repo as https://github.com/you/repo */
+  function asHttps(u){u=String(u||'').trim();var m=u.match(/^(?:ssh:\/\/)?git@([\w.-]+)[:\/](.+)$/);return m?'https://'+m[1]+'/'+m[2]:u}
+  function ghKey(u){return asHttps(u).replace(/\.git$/,'').replace(/\/+$/,'').toLowerCase()}
   function ancIn(cm,id){var set={},st=[id];while(st.length){var x=st.pop();if(!x||set[x]||!cm[x])continue;set[x]=1;cm[x].p.forEach(function(q){st.push(q)})}return set}
   /* copy GitHub's side of repo `from` into repo `to` (the commits stay hidden in `to` until it fetches them) */
   function ghCopy(from,to){keys(from.remote.br).forEach(function(b){var tip=from.remote.br[b];
@@ -217,10 +216,9 @@
       pl('Initialized empty Git repository in '+S.cwd+'/.git/','g');return}
     if(sub==='clone'){
       var url=a[1];if(!url){perr('fatal: You must specify a repository to clone.\n\nusage: git clone <repo> [<dir>]');return}
-      if(isSsh(url)){pl("Cloning into '"+(a[2]||base(url.replace(/\/+$/,'')).replace(/\.git$/,''))+"'...");sshRefused(url);return}
       var name=a[2]||base(url.replace(/\/+$/,'')).replace(/\.git$/,'');var root=norm(name);
       if(exists(root)&&!(S.dirs[root]&&!keys(S.files).some(function(f){return under(f,root)})&&!keys(S.dirs).some(function(d){return d!==root&&under(d,root)}))){perr("fatal: destination path '"+name+"' already exists and is not an empty directory.");return}
-      var isUrl=/^(https?:\/\/|git@)/.test(url),loc=!isUrl&&S.repos[norm(url)];
+      var isUrl=/^(https?:\/\/|git@|ssh:\/\/)/.test(url),loc=!isUrl&&S.repos[norm(url)];
       if(!isUrl&&!loc){perr("fatal: repository '"+url+"' does not exist");return}
       pl("Cloning into '"+name+"'...");
       function made(){S.dirs[root]=1;var nr={root:root,head:'main',br:{},cm:{},list:[],index:{},conf:{},merge:null,remote:{url:url,br:{},ids:{}},rbr:{}};S.repos[root]=nr;return nr}
@@ -230,8 +228,8 @@
         nr.head=def;nr.br[def]=tip;var fl=nr.cm[tip].files;keys(fl).forEach(function(f){S.files[root+'/'+f]=fl[f];var d=dirname(root+'/'+f);while(d!==root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});nr.index=copy(fl);pl('Now type: cd '+name,'y')}
       if(RL.on&&!loc){
         /* Real GitHub mode: any GitHub repo your token can read (every public repo, and your own private ones) */
-        var m=url.match(/^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
-        if(!m){perr("fatal: repository '"+url+"' not found");pl('Real GitHub mode can only clone from github.com, like https://github.com/owner/repo','y');return}
+        var m=asHttps(url).match(/^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
+        if(!m){perr("fatal: repository '"+url+"' not found");pl('Real GitHub mode can only clone from github.com, like https://github.com/owner/repo (or git@github.com:owner/repo.git)','y');return}
         var full=m[1]+'/'+m[2];pend=true;busy=true;inp.disabled=true;
         /* the terminal stays locked until every branch has arrived, like a real clone */
         function unlock(){pend=false;if(!scripting){busy=false;inp.disabled=false;try{inp.focus({preventScroll:true})}catch(z){}}setPrompt()}
@@ -240,7 +238,7 @@
           if(info.s===404||info.s===403||info.s===401){perr("remote: Repository not found.\nfatal: repository 'https://github.com/"+full+"/' not found");unlock();render();return}
           if(info.s!==200){perr('fatal: unable to access \'https://github.com/'+full+'/\': GitHub said '+info.s);unlock();render();return}
           var def=info.j.default_branch||'main';full=info.j.full_name||full;
-          nr=made();nr.ghRepo=full;nr.ghDef=def;nr.remote.url='https://github.com/'+full+'.git';S.forceRepo=nr;RL.trunc=false;
+          nr=made();nr.ghRepo=full;nr.ghDef=def;nr.remote.url=/^(git@|ssh:\/\/)/.test(url)?url:'https://github.com/'+full+'.git';S.forceRepo=nr;RL.trunc=false;
           return gh('GET','/repos/'+full+'/branches?per_page=100').then(function(x){return x.s===200&&x.j.length?x.j.map(function(b){return b.name}):[def]},function(){return [def]}).then(function(list){
             list.sort(function(x,y){return x===def?-1:y===def?1:0});list=list.slice(0,20);var i=0,bad=null,shallow=false;
             (function next(){if(i>=list.length||bad||(shallow&&i>0)){done();return}S.forceRepo=nr;realFetch(list[i++],function(res){S.forceRepo=nr;if(res&&res.err)bad=res.err;if(res&&res.shallow)shallow=true;next()},true,DEPTH)})();
@@ -523,7 +521,6 @@
         r.remote={url:a[3],br:{},ids:{}};var src0=!RL.on&&ghSource(a[3],r);if(src0)ghCopy(src0,r);return}
       if(a[1]==='-v'||!a[1]){if(r.remote){if(a[1])pl('origin\t'+r.remote.url+' (fetch)\norigin\t'+r.remote.url+' (push)');else pl('origin')}return}
       perr('error: unsupported remote command');return}
-    if((sub==='push'||sub==='fetch'||sub==='pull')&&r.remote&&isSsh(r.remote.url)){sshRefused(r.remote.url);return}
     if(sub==='push'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
       var pw=a.slice(1).filter(function(x){return x[0]!=='-'}),allTags=a.indexOf('--tags')>=0;
@@ -1518,7 +1515,7 @@
     .then(function(){
       pl('To https://github.com/'+repo+'.git');pl(' * '+(rt?'updated':'[new branch]')+'      '+br+' -> '+br,'g');
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
-      if(!r.ghRepo&&(!r.remote.url||r.remote.url.indexOf(RL.repo)<0))r.remote.url='https://github.com/'+repo+'.git';
+      if(!r.ghRepo&&(!r.remote.url||ghKey(r.remote.url).indexOf(RL.repo.toLowerCase())<0))r.remote.url='https://github.com/'+repo+'.git';
       window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(repo)+'.');
       refreshLive();
     }).catch(function(e){

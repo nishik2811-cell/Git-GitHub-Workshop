@@ -1175,21 +1175,15 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
   .dico .dic{width:40px;height:40px}
   .desk.small .dico{width:62px}
   .desk .dhint{left:10px;right:10px;max-width:none}
-  .dwin{left:8px!important;right:8px;width:auto!important;max-width:none;top:auto!important;bottom:46px;height:var(--ph,min(62vh,440px))!important}
-  /* phones: a little grab bar on the title bar: drag it up or down to resize the window (VS Code too) */
-  .dwin:not(.max) .dwh,.notepad .nph{position:relative;touch-action:none;cursor:ns-resize}
-  .dwin:not(.max) .dwh::after,.notepad .nph::after{content:'';position:absolute;top:3px;left:50%;width:34px;height:4px;margin-left:-17px;border-radius:2px;background:rgba(255,255,255,.65);pointer-events:none}
-  .notepad .nph::after{background:rgba(255,255,255,.35)}
-  /* phones: the workshop opens beside the icon column; the full-screen button makes it fill the screen */
-  #wsWin{left:var(--wsl,0px)!important;right:0;top:var(--wst,0px)!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
-  #wsWin.max{left:0!important;top:0!important;border-width:0}
-  #labWin{left:var(--wsl,0px)!important;right:0;top:var(--wst,0px)!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
-  #labWin.max{left:0!important;top:0!important;border-width:0}
+  /* phones: windows work like on a laptop: hold the title bar to move, drag the bottom-right corner to resize */
+  .dwin{min-width:0;max-width:none}
+  #wsWin,#labWin{min-width:200px;min-height:180px}
+  .dwin:not(.max) .dwh,.notepad .nph{touch-action:none;cursor:move}
+  .dwin.max{border-width:0}
   #labIn{padding:2px 10px 20px}
   /* start screen: the warning wraps to two lines on phones, so START sits closer under it */
   #boot .scene .start{top:51%}
-  .dwh{cursor:default}
-  .dwr{display:none}
+  .dwr{width:28px;height:28px;z-index:3}
   .tk.tkapp{display:flex;padding:3px 8px}
   .tk.tkapp span{display:none}
   .brlogo{font-size:28px}
@@ -1223,6 +1217,14 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 
 /* Start menu: the topic list scrolls when it does not fit the screen */
 #smList{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+
+/* VS Code opens a little in from the right edge, so it never covers the resize corner of the window behind it */
+.notepad{right:44px}
+@media(max-width:700px){.notepad{right:36px}}
+
+/* the resize corners are buttons, so on phones a finger on the corner is not snapped to a nearby button instead */
+.dwr,.npr{border:0;padding:0;margin:0;border-radius:0;box-shadow:none;transform:none;min-width:0;min-height:0;background-color:transparent;font:inherit}
+.dwr:hover,.dwr:active,.npr:hover,.npr:active{transform:none;box-shadow:none}
 /* ---------- end Mini laptop desktop css ---------- */
 </style>
 <style id="lesson9css">
@@ -2613,19 +2615,18 @@ git log --oneline           short history          git push / git pull   sync wi
   if(!document.getElementById('pg'))return;
   var $=function(i){return document.getElementById(i)};
   var np=document.createElement('div');np.className='notepad';np.id='notepad';
-  np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div><span class="npr" id="npR" title="Drag to resize" aria-hidden="true"></span>';
+  np.innerHTML='<div class="nph" id="nph"><span class="vdots"><i></i><i></i><i></i></span><span id="fvT" class="npt">Visual Studio Code</span><button id="npMin" aria-label="Minimise" title="Minimise">_</button></div><div class="npb fvb" id="fvB"></div><button type="button" tabindex="-1" class="npr" id="npR" title="Drag to resize" aria-hidden="true"></button>';
   document.body.appendChild(np);
   (function(){var h=$('nph'),ox,oy,drag=false;
     var vsh=null;
     h.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('button'))return;
-      if(innerWidth<=700){vsh={y:e.clientY,h:np.getBoundingClientRect().height};try{h.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault();return} /* phones: drag the title bar up or down to resize */
-      drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{h.setPointerCapture(e.pointerId)}catch(z){}});
+      e.preventDefault();drag=true;var r=np.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{h.setPointerCapture(e.pointerId)}catch(z){}});
     h.addEventListener('pointermove',function(e){if(vsh){var hh=Math.max(120,Math.min(innerHeight-48-8,vsh.h+(vsh.y-e.clientY)));np.style.maxHeight='none';np.style.height=Math.round(hh)+'px';np.style.top='auto';np.style.bottom='';return}
-      if(!drag)return;np.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';np.style.top=Math.max(0,Math.min(innerHeight-60,e.clientY-oy))+'px';np.style.right='auto';np.style.bottom='auto'});
+      if(!drag)return;var nw=np.offsetWidth;np.style.left=Math.round(Math.max(Math.min(0,80-nw),Math.min(innerWidth-80,e.clientX-ox)))+'px';np.style.top=Math.round(Math.max(0,Math.min(innerHeight-38-36,e.clientY-oy)))+'px';np.style.right='auto';np.style.bottom='auto'});
     ['pointerup','pointercancel'].forEach(function(n){h.addEventListener(n,function(){drag=false;vsh=null})});
     np.addEventListener('pointerdown',function(){var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.width=r.width+'px';np.style.right='auto';np.style.bottom='auto'});
     (function(){var g=$('npR'),sx,sy,sw,sh,on=false;
-      g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.right='auto';np.style.bottom='auto';sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;np.classList.add('sizing');g.setPointerCapture(e.pointerId)});
+      g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=np.getBoundingClientRect();np.style.left=r.left+'px';np.style.top=r.top+'px';np.style.right='auto';np.style.bottom='auto';np.style.maxHeight='none';sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;np.classList.add('sizing');g.setPointerCapture(e.pointerId)});
       g.addEventListener('pointermove',function(e){if(!on)return;var r=np.getBoundingClientRect();np.style.width=Math.max(220,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';np.style.height=Math.max(90,Math.min(innerHeight-r.top-6,sh+e.clientY-sy))+'px'});
       g.addEventListener('pointerup',function(){on=false;np.classList.remove('sizing')});
     })();
@@ -2717,10 +2718,10 @@ git log --oneline           short history          git push / git pull   sync wi
   function track(){var r=R();if(!r||!r.remote||!r.rbr)return null;var o=r.rbr[r.head],h=headId();if(!o||!h)return null;
     var A=anc(h),B=anc(o),ah=0,bh=0;keys(A).forEach(function(k){if(!B[k])ah++});keys(B).forEach(function(k){if(!A[k])bh++});return {ah:ah,bh:bh,o:'origin/'+r.head}}
   function cmt(n){return n+' commit'+(n===1?'':'s')}
-  function isSsh(u){return /^(git@|ssh:\/\/)/.test(String(u||''))}
-  function sshRefused(u){perr('git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.');
-    var m=String(u).match(/github\.com[:\/]([^\s]+?)(?:\.git)?$/);pl('This Mini laptop has no SSH key. Use the HTTPS address instead'+(m?': https://github.com/'+m[1]+'.git':' (it starts with https://github.com/)'),'y')}
-  function ghKey(u){return String(u||'').trim().replace(/\.git$/,'').replace(/\/+$/,'').toLowerCase()}
+  /* SSH addresses work just like HTTPS ones (as if this laptop has an SSH key set up):
+     git@github.com:you/repo.git and ssh://git@github.com/you/repo point at the same repo as https://github.com/you/repo */
+  function asHttps(u){u=String(u||'').trim();var m=u.match(/^(?:ssh:\/\/)?git@([\w.-]+)[:\/](.+)$/);return m?'https://'+m[1]+'/'+m[2]:u}
+  function ghKey(u){return asHttps(u).replace(/\.git$/,'').replace(/\/+$/,'').toLowerCase()}
   function ancIn(cm,id){var set={},st=[id];while(st.length){var x=st.pop();if(!x||set[x]||!cm[x])continue;set[x]=1;cm[x].p.forEach(function(q){st.push(q)})}return set}
   /* copy GitHub's side of repo `from` into repo `to` (the commits stay hidden in `to` until it fetches them) */
   function ghCopy(from,to){keys(from.remote.br).forEach(function(b){var tip=from.remote.br[b];
@@ -2828,10 +2829,9 @@ git log --oneline           short history          git push / git pull   sync wi
       pl('Initialized empty Git repository in '+S.cwd+'/.git/','g');return}
     if(sub==='clone'){
       var url=a[1];if(!url){perr('fatal: You must specify a repository to clone.\n\nusage: git clone <repo> [<dir>]');return}
-      if(isSsh(url)){pl("Cloning into '"+(a[2]||base(url.replace(/\/+$/,'')).replace(/\.git$/,''))+"'...");sshRefused(url);return}
       var name=a[2]||base(url.replace(/\/+$/,'')).replace(/\.git$/,'');var root=norm(name);
       if(exists(root)&&!(S.dirs[root]&&!keys(S.files).some(function(f){return under(f,root)})&&!keys(S.dirs).some(function(d){return d!==root&&under(d,root)}))){perr("fatal: destination path '"+name+"' already exists and is not an empty directory.");return}
-      var isUrl=/^(https?:\/\/|git@)/.test(url),loc=!isUrl&&S.repos[norm(url)];
+      var isUrl=/^(https?:\/\/|git@|ssh:\/\/)/.test(url),loc=!isUrl&&S.repos[norm(url)];
       if(!isUrl&&!loc){perr("fatal: repository '"+url+"' does not exist");return}
       pl("Cloning into '"+name+"'...");
       function made(){S.dirs[root]=1;var nr={root:root,head:'main',br:{},cm:{},list:[],index:{},conf:{},merge:null,remote:{url:url,br:{},ids:{}},rbr:{}};S.repos[root]=nr;return nr}
@@ -2841,8 +2841,8 @@ git log --oneline           short history          git push / git pull   sync wi
         nr.head=def;nr.br[def]=tip;var fl=nr.cm[tip].files;keys(fl).forEach(function(f){S.files[root+'/'+f]=fl[f];var d=dirname(root+'/'+f);while(d!==root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});nr.index=copy(fl);pl('Now type: cd '+name,'y')}
       if(RL.on&&!loc){
         /* Real GitHub mode: any GitHub repo your token can read (every public repo, and your own private ones) */
-        var m=url.match(/^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
-        if(!m){perr("fatal: repository '"+url+"' not found");pl('Real GitHub mode can only clone from github.com, like https://github.com/owner/repo','y');return}
+        var m=asHttps(url).match(/^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
+        if(!m){perr("fatal: repository '"+url+"' not found");pl('Real GitHub mode can only clone from github.com, like https://github.com/owner/repo (or git@github.com:owner/repo.git)','y');return}
         var full=m[1]+'/'+m[2];pend=true;busy=true;inp.disabled=true;
         /* the terminal stays locked until every branch has arrived, like a real clone */
         function unlock(){pend=false;if(!scripting){busy=false;inp.disabled=false;try{inp.focus({preventScroll:true})}catch(z){}}setPrompt()}
@@ -2851,7 +2851,7 @@ git log --oneline           short history          git push / git pull   sync wi
           if(info.s===404||info.s===403||info.s===401){perr("remote: Repository not found.\nfatal: repository 'https://github.com/"+full+"/' not found");unlock();render();return}
           if(info.s!==200){perr('fatal: unable to access \'https://github.com/'+full+'/\': GitHub said '+info.s);unlock();render();return}
           var def=info.j.default_branch||'main';full=info.j.full_name||full;
-          nr=made();nr.ghRepo=full;nr.ghDef=def;nr.remote.url='https://github.com/'+full+'.git';S.forceRepo=nr;RL.trunc=false;
+          nr=made();nr.ghRepo=full;nr.ghDef=def;nr.remote.url=/^(git@|ssh:\/\/)/.test(url)?url:'https://github.com/'+full+'.git';S.forceRepo=nr;RL.trunc=false;
           return gh('GET','/repos/'+full+'/branches?per_page=100').then(function(x){return x.s===200&&x.j.length?x.j.map(function(b){return b.name}):[def]},function(){return [def]}).then(function(list){
             list.sort(function(x,y){return x===def?-1:y===def?1:0});list=list.slice(0,20);var i=0,bad=null,shallow=false;
             (function next(){if(i>=list.length||bad||(shallow&&i>0)){done();return}S.forceRepo=nr;realFetch(list[i++],function(res){S.forceRepo=nr;if(res&&res.err)bad=res.err;if(res&&res.shallow)shallow=true;next()},true,DEPTH)})();
@@ -3134,7 +3134,6 @@ git log --oneline           short history          git push / git pull   sync wi
         r.remote={url:a[3],br:{},ids:{}};var src0=!RL.on&&ghSource(a[3],r);if(src0)ghCopy(src0,r);return}
       if(a[1]==='-v'||!a[1]){if(r.remote){if(a[1])pl('origin\t'+r.remote.url+' (fetch)\norigin\t'+r.remote.url+' (push)');else pl('origin')}return}
       perr('error: unsupported remote command');return}
-    if((sub==='push'||sub==='fetch'||sub==='pull')&&r.remote&&isSsh(r.remote.url)){sshRefused(r.remote.url);return}
     if(sub==='push'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
       var pw=a.slice(1).filter(function(x){return x[0]!=='-'}),allTags=a.indexOf('--tags')>=0;
@@ -4129,7 +4128,7 @@ git log --oneline           short history          git push / git pull   sync wi
     .then(function(){
       pl('To https://github.com/'+repo+'.git');pl(' * '+(rt?'updated':'[new branch]')+'      '+br+' -> '+br,'g');
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
-      if(!r.ghRepo&&(!r.remote.url||r.remote.url.indexOf(RL.repo)<0))r.remote.url='https://github.com/'+repo+'.git';
+      if(!r.ghRepo&&(!r.remote.url||ghKey(r.remote.url).indexOf(RL.repo.toLowerCase())<0))r.remote.url='https://github.com/'+repo+'.git';
       window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(repo)+'.');
       refreshLive();
     }).catch(function(e){
@@ -4484,24 +4483,20 @@ git log --oneline           short history          git push / git pull   sync wi
     var tkv=$('tkVS');if(tkv)tkv.onclick=tkClick(np);
     var npWas=false;new MutationObserver(function(){var vis=isVis(np);if(vis&&!npWas)zOrder(np,true);else tkSync();npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
   function makeWin(id,title,icon,tk,w,h,o){o=o||{};var el=document.createElement('div');el.className='dwin';el.id=id;el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label',title);
-    el.innerHTML='<div class="dwh"><i>'+icon+'</i><span>'+esc(title)+'</span><button type="button" class="dmin" title="Minimise" aria-label="Minimise">_</button>'+(o.max?'<button type="button" class="dmax" title="Full screen" aria-label="Full screen">&#9633;</button>':'')+(o.noClose?'':'<button type="button" class="dx" title="Close" aria-label="Close">x</button>')+'</div><div class="dwb"></div><span class="dwr" aria-hidden="true"></span>';
+    el.innerHTML='<div class="dwh"><i>'+icon+'</i><span>'+esc(title)+'</span><button type="button" class="dmin" title="Minimise" aria-label="Minimise">_</button>'+(o.max?'<button type="button" class="dmax" title="Full screen" aria-label="Full screen">&#9633;</button>':'')+(o.noClose?'':'<button type="button" class="dx" title="Close" aria-label="Close">x</button>')+'</div><div class="dwb"></div><button type="button" class="dwr" tabindex="-1" aria-hidden="true"></button>';
     document.body.appendChild(el);var W={el:el,body:el.querySelector('.dwb'),tk:tk,placed:false,w:w,h:h};wins[id]=W;
     el.addEventListener('pointerdown',function(){zOrder(el)},true);
     var hd=el.querySelector('.dwh'),ox,oy,dr=false,ph=null;
-    /* phones: windows are sheets along the bottom; dragging the title bar up or down makes the sheet taller or shorter */
-    var sheet=function(){return innerWidth<=700&&!el.classList.contains('max')},tall=id==='wsWin'||id==='labWin';
-    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button'))return;
-      /* the workshop and the Practice Lab fill the height: dragging their title bar down moves their top edge (shorter window, desktop above) */
-      if(sheet()){var rr=el.getBoundingClientRect();ph={y:e.clientY,h:rr.height,t:rr.top};try{hd.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault();return}
-      if(innerWidth<=700||el.classList.contains('max'))return;dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{hd.setPointerCapture(e.pointerId)}catch(z){}});
-    hd.addEventListener('pointermove',function(e){
-      if(ph){if(tall){var t2=Math.max(0,Math.min(innerHeight-38-200,ph.t+(e.clientY-ph.y)));el.style.setProperty('--wst',Math.round(t2)+'px')}
-        else{var h=Math.max(150,Math.min(innerHeight-46-8,ph.h+(ph.y-e.clientY)));el.style.setProperty('--ph',Math.round(h)+'px')}el.classList.add('sizing');return}
-      if(!dr)return;el.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(innerHeight-80,e.clientY-oy))+'px'});
-    ['pointerup','pointercancel'].forEach(function(n){hd.addEventListener(n,function(){dr=false;if(ph){ph=null;el.classList.remove('sizing')}})});
+    /* hold the title bar and drag to move the window, on laptops and phones alike; a strip of it always stays on screen */
+    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button')||el.classList.contains('max'))return;
+      dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;el.classList.add('sizing');try{hd.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault()});
+    hd.addEventListener('pointermove',function(e){if(!dr)return;var w=el.offsetWidth;
+      el.style.left=Math.round(Math.max(Math.min(0,80-w),Math.min(innerWidth-80,e.clientX-ox)))+'px';el.style.top=Math.round(Math.max(0,Math.min(innerHeight-38-36,e.clientY-oy)))+'px'});
+    ['pointerup','pointercancel'].forEach(function(n){hd.addEventListener(n,function(){if(dr){dr=false;el.classList.remove('sizing')}})});
     var g=el.querySelector('.dwr'),sx,sy,sw,sh,on=false;
     g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=el.getBoundingClientRect();sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;el.classList.add('sizing');g.setPointerCapture(e.pointerId)});
-    g.addEventListener('pointermove',function(e){if(!on)return;var r=el.getBoundingClientRect();el.style.width=Math.max(240,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';el.style.height=Math.max(150,Math.min(innerHeight-r.top-44,sh+e.clientY-sy))+'px'});
+    g.addEventListener('pointermove',function(e){if(!on)return;var r=el.getBoundingClientRect();el.style.width=Math.max(Math.min(innerWidth<=700?180:240,innerWidth-16),Math.min(innerWidth-r.left-4,sw+e.clientX-sx))+'px';el.style.height=Math.max(150,Math.min(innerHeight-r.top-40,sh+e.clientY-sy))+'px'});
+    g.addEventListener('pointercancel',function(){on=false;el.classList.remove('sizing')});
     g.addEventListener('pointerup',function(){on=false;el.classList.remove('sizing')});
     el.querySelector('.dmin').onclick=function(){winDock(id,true)};
     if(!o.noClose){el.querySelector('.dx').onclick=function(){winClose(id)};
@@ -4509,6 +4504,10 @@ git log --oneline           short history          git push / git pull   sync wi
     if(o.max){el.querySelector('.dmax').onclick=function(){winMax(id)};hd.addEventListener('dblclick',function(e){if(!e.target.closest('button')&&innerWidth>700)winMax(id)})}
     tk.onclick=tkClick(el);
     return W}
+  /* after rotating the phone or shrinking the window, pull any window back so its title bar can still be reached */
+  addEventListener('resize',function(){Object.keys(wins).forEach(function(k){var el=wins[k].el;if(el.hidden||el.classList.contains('max')||!el.style.left)return;
+    if(el.offsetWidth>innerWidth-8)el.style.width=Math.max(200,innerWidth-8)+'px';var l=parseFloat(el.style.left)||0,t=parseFloat(el.style.top)||0,w=el.offsetWidth;
+    el.style.left=Math.round(Math.max(Math.min(0,80-w),Math.min(innerWidth-80,l)))+'px';el.style.top=Math.round(Math.max(0,Math.min(innerHeight-38-36,t)))+'px'})});
   function vsFront(){if(np)zOrder(np)}
   function openVS(k){ML.openInVS(k);vsFront()}
   function winOpen(id,auto){var W=wins[id],el=W.el,was=isVis(el);el.hidden=false;el.classList.remove('docked');W.tk.hidden=false;
@@ -4533,7 +4532,7 @@ git log --oneline           short history          git push / git pull   sync wi
   [].slice.call(document.body.children).forEach(function(el){if(el.tagName==='SCRIPT'||KEEP[el.id]||el.classList.contains('dwin')||el.classList.contains('ctxm')||el.classList.contains('tktip'))return;wsIn.appendChild(el)});
   /* the workshop sits to the right of every built-in icon column, so no app icon starts hidden behind it */
   function appCols(){if(desk.hidden||!desk.clientHeight)return 1;var L=layout(items()),m=0;items().forEach(function(it){if(it.app&&L[it.k])m=Math.max(m,L[it.k].col)});return m+1}
-  WS.place=function(){var c=cell(),n=appCols();if(innerWidth<=700){WS.el.style.setProperty('--wsl',Math.min(c.x0+n*c.w+4,Math.round(innerWidth*0.45))+'px');return}var l=Math.min(c.x0+n*c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
+  WS.place=function(){var c=cell(),n=appCols();if(innerWidth<=700){var pl=Math.min(c.x0+n*c.w+4,Math.round(innerWidth*0.45));WS.el.style.left=pl+'px';WS.el.style.top='0px';WS.el.style.width=(innerWidth-pl)+'px';WS.el.style.height=(innerHeight-38)+'px';return}var l=Math.min(c.x0+n*c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
   var WSBASE=980;
   function wsZoom(){var w=wsBody.clientWidth;if(!w)return;var base=innerWidth<=700?innerWidth:WSBASE,nz=w&&w<base*0.97?String(Math.round(w/base*1000)/1000):'';if(nz!==wsIn.style.zoom)wsIn.style.zoom=nz}
   /* keep your reading position when the window is resized, made full screen or rescaled:
@@ -4543,6 +4542,8 @@ git log --oneline           short history          git push / git pull   sync wi
     if(wsBody.scrollTop<2){bookmark=null;return}
     var found=null;[0.4,0.55,0.25,0.7].some(function(f){var hit=document.elementFromPoint(wr.left+wr.width/2,wr.top+wr.height*f);
       if(!hit||!wsIn.contains(hit)||(hit.closest&&hit.closest('.loadwrap,.wnav,.wbtns')))return false; // sticky bars never move: useless as a bookmark
+      /* landed in a gap between cards (the whole module): use the nearest card, banner or topic list instead, which keeps its shape when the window is resized */
+      if(!(hit.closest&&hit.closest('.card,.banner,.idx'))){var y=wr.top+wr.height*f,best=null,bd=1e9;wsIn.querySelectorAll('section.phase .card,section.phase .banner,section.phase .idx').forEach(function(c){var r=c.getBoundingClientRect();if(!r.height)return;var dd=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(dd<bd){bd=dd;best=c}});if(best)hit=best}
       found={el:hit,f:f,d:(wr.top+wr.height*f-hit.getBoundingClientRect().top)/z};return true});
     if(found)bookmark=found}
   function wsRestore(){if(!bookmark||!wsIn.contains(bookmark.el)||WS.el.hidden||WS.el.classList.contains('docked'))return;var wr=wsBody.getBoundingClientRect(),z=parseFloat(wsIn.style.zoom)||1;if(!wr.height)return;
@@ -4597,7 +4598,7 @@ git log --oneline           short history          git push / git pull   sync wi
       +'<p class="note">You can also double-click <b>Practice Lab</b> on the desktop, or search for it in the Start menu.</p>');
     $('labGo').onclick=function(){openLab()};
     var pgb=labIn.querySelector('.btns.pgb');if(pgb){var cb2=document.createElement('button');cb2.type='button';cb2.id='pgCheat';cb2.textContent='Cheat sheet';pgb.insertBefore(cb2,pgb.firstChild);cb2.onclick=function(){activate(CS.el,true)}}})();
-  LAB.place=function(){if(innerWidth<=700){LAB.el.style.setProperty('--wsl','0px');return} /* phones: the terminal needs the whole width */
+  LAB.place=function(){if(innerWidth<=700){LAB.el.style.left='0px';LAB.el.style.top='0px';LAB.el.style.width=innerWidth+'px';LAB.el.style.height=(innerHeight-38)+'px';return} /* phones: the terminal starts with the whole width */
     var c=cell(),l=Math.min(c.x0+appCols()*c.w+40,Math.round(innerWidth*0.3)+28),w=Math.max(340,Math.min(1060,innerWidth-l-20));
     LAB.el.style.left=l+'px';LAB.el.style.top='22px';LAB.el.style.width=w+'px';LAB.el.style.height=Math.max(240,innerHeight-38-40)+'px'};
   var LABBASE=1000;

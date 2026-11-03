@@ -381,21 +381,15 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
   .dico .dic{width:40px;height:40px}
   .desk.small .dico{width:62px}
   .desk .dhint{left:10px;right:10px;max-width:none}
-  .dwin{left:8px!important;right:8px;width:auto!important;max-width:none;top:auto!important;bottom:46px;height:var(--ph,min(62vh,440px))!important}
-  /* phones: a little grab bar on the title bar: drag it up or down to resize the window (VS Code too) */
-  .dwin:not(.max) .dwh,.notepad .nph{position:relative;touch-action:none;cursor:ns-resize}
-  .dwin:not(.max) .dwh::after,.notepad .nph::after{content:'';position:absolute;top:3px;left:50%;width:34px;height:4px;margin-left:-17px;border-radius:2px;background:rgba(255,255,255,.65);pointer-events:none}
-  .notepad .nph::after{background:rgba(255,255,255,.35)}
-  /* phones: the workshop opens beside the icon column; the full-screen button makes it fill the screen */
-  #wsWin{left:var(--wsl,0px)!important;right:0;top:var(--wst,0px)!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
-  #wsWin.max{left:0!important;top:0!important;border-width:0}
-  #labWin{left:var(--wsl,0px)!important;right:0;top:var(--wst,0px)!important;bottom:38px;width:auto!important;height:auto!important;min-width:0;border-radius:0;border-width:0 0 0 3px;box-shadow:none}
-  #labWin.max{left:0!important;top:0!important;border-width:0}
+  /* phones: windows work like on a laptop: hold the title bar to move, drag the bottom-right corner to resize */
+  .dwin{min-width:0;max-width:none}
+  #wsWin,#labWin{min-width:200px;min-height:180px}
+  .dwin:not(.max) .dwh,.notepad .nph{touch-action:none;cursor:move}
+  .dwin.max{border-width:0}
   #labIn{padding:2px 10px 20px}
   /* start screen: the warning wraps to two lines on phones, so START sits closer under it */
   #boot .scene .start{top:51%}
-  .dwh{cursor:default}
-  .dwr{display:none}
+  .dwr{width:28px;height:28px;z-index:3}
   .tk.tkapp{display:flex;padding:3px 8px}
   .tk.tkapp span{display:none}
   .brlogo{font-size:28px}
@@ -429,3 +423,11 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 
 /* Start menu: the topic list scrolls when it does not fit the screen */
 #smList{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+
+/* VS Code opens a little in from the right edge, so it never covers the resize corner of the window behind it */
+.notepad{right:44px}
+@media(max-width:700px){.notepad{right:36px}}
+
+/* the resize corners are buttons, so on phones a finger on the corner is not snapped to a nearby button instead */
+.dwr,.npr{border:0;padding:0;margin:0;border-radius:0;box-shadow:none;transform:none;min-width:0;min-height:0;background-color:transparent;font:inherit}
+.dwr:hover,.dwr:active,.npr:hover,.npr:active{transform:none;box-shadow:none}

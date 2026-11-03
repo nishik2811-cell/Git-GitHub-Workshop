@@ -147,24 +147,20 @@
     var tkv=$('tkVS');if(tkv)tkv.onclick=tkClick(np);
     var npWas=false;new MutationObserver(function(){var vis=isVis(np);if(vis&&!npWas)zOrder(np,true);else tkSync();npWas=vis}).observe(np,{attributes:true,attributeFilter:['class']})}
   function makeWin(id,title,icon,tk,w,h,o){o=o||{};var el=document.createElement('div');el.className='dwin';el.id=id;el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label',title);
-    el.innerHTML='<div class="dwh"><i>'+icon+'</i><span>'+esc(title)+'</span><button type="button" class="dmin" title="Minimise" aria-label="Minimise">_</button>'+(o.max?'<button type="button" class="dmax" title="Full screen" aria-label="Full screen">&#9633;</button>':'')+(o.noClose?'':'<button type="button" class="dx" title="Close" aria-label="Close">x</button>')+'</div><div class="dwb"></div><span class="dwr" aria-hidden="true"></span>';
+    el.innerHTML='<div class="dwh"><i>'+icon+'</i><span>'+esc(title)+'</span><button type="button" class="dmin" title="Minimise" aria-label="Minimise">_</button>'+(o.max?'<button type="button" class="dmax" title="Full screen" aria-label="Full screen">&#9633;</button>':'')+(o.noClose?'':'<button type="button" class="dx" title="Close" aria-label="Close">x</button>')+'</div><div class="dwb"></div><button type="button" class="dwr" tabindex="-1" aria-hidden="true"></button>';
     document.body.appendChild(el);var W={el:el,body:el.querySelector('.dwb'),tk:tk,placed:false,w:w,h:h};wins[id]=W;
     el.addEventListener('pointerdown',function(){zOrder(el)},true);
     var hd=el.querySelector('.dwh'),ox,oy,dr=false,ph=null;
-    /* phones: windows are sheets along the bottom; dragging the title bar up or down makes the sheet taller or shorter */
-    var sheet=function(){return innerWidth<=700&&!el.classList.contains('max')},tall=id==='wsWin'||id==='labWin';
-    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button'))return;
-      /* the workshop and the Practice Lab fill the height: dragging their title bar down moves their top edge (shorter window, desktop above) */
-      if(sheet()){var rr=el.getBoundingClientRect();ph={y:e.clientY,h:rr.height,t:rr.top};try{hd.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault();return}
-      if(innerWidth<=700||el.classList.contains('max'))return;dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;try{hd.setPointerCapture(e.pointerId)}catch(z){}});
-    hd.addEventListener('pointermove',function(e){
-      if(ph){if(tall){var t2=Math.max(0,Math.min(innerHeight-38-200,ph.t+(e.clientY-ph.y)));el.style.setProperty('--wst',Math.round(t2)+'px')}
-        else{var h=Math.max(150,Math.min(innerHeight-46-8,ph.h+(ph.y-e.clientY)));el.style.setProperty('--ph',Math.round(h)+'px')}el.classList.add('sizing');return}
-      if(!dr)return;el.style.left=Math.max(0,Math.min(innerWidth-120,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(innerHeight-80,e.clientY-oy))+'px'});
-    ['pointerup','pointercancel'].forEach(function(n){hd.addEventListener(n,function(){dr=false;if(ph){ph=null;el.classList.remove('sizing')}})});
+    /* hold the title bar and drag to move the window, on laptops and phones alike; a strip of it always stays on screen */
+    hd.addEventListener('pointerdown',function(e){if(e.target.closest('button')||el.classList.contains('max'))return;
+      dr=true;var r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;el.classList.add('sizing');try{hd.setPointerCapture(e.pointerId)}catch(z){}e.preventDefault()});
+    hd.addEventListener('pointermove',function(e){if(!dr)return;var w=el.offsetWidth;
+      el.style.left=Math.round(Math.max(Math.min(0,80-w),Math.min(innerWidth-80,e.clientX-ox)))+'px';el.style.top=Math.round(Math.max(0,Math.min(innerHeight-38-36,e.clientY-oy)))+'px'});
+    ['pointerup','pointercancel'].forEach(function(n){hd.addEventListener(n,function(){if(dr){dr=false;el.classList.remove('sizing')}})});
     var g=el.querySelector('.dwr'),sx,sy,sw,sh,on=false;
     g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();var r=el.getBoundingClientRect();sx=e.clientX;sy=e.clientY;sw=r.width;sh=r.height;on=true;el.classList.add('sizing');g.setPointerCapture(e.pointerId)});
-    g.addEventListener('pointermove',function(e){if(!on)return;var r=el.getBoundingClientRect();el.style.width=Math.max(240,Math.min(innerWidth-r.left-6,sw+e.clientX-sx))+'px';el.style.height=Math.max(150,Math.min(innerHeight-r.top-44,sh+e.clientY-sy))+'px'});
+    g.addEventListener('pointermove',function(e){if(!on)return;var r=el.getBoundingClientRect();el.style.width=Math.max(Math.min(innerWidth<=700?180:240,innerWidth-16),Math.min(innerWidth-r.left-4,sw+e.clientX-sx))+'px';el.style.height=Math.max(150,Math.min(innerHeight-r.top-40,sh+e.clientY-sy))+'px'});
+    g.addEventListener('pointercancel',function(){on=false;el.classList.remove('sizing')});
     g.addEventListener('pointerup',function(){on=false;el.classList.remove('sizing')});
     el.querySelector('.dmin').onclick=function(){winDock(id,true)};
     if(!o.noClose){el.querySelector('.dx').onclick=function(){winClose(id)};
@@ -172,6 +168,10 @@
     if(o.max){el.querySelector('.dmax').onclick=function(){winMax(id)};hd.addEventListener('dblclick',function(e){if(!e.target.closest('button')&&innerWidth>700)winMax(id)})}
     tk.onclick=tkClick(el);
     return W}
+  /* after rotating the phone or shrinking the window, pull any window back so its title bar can still be reached */
+  addEventListener('resize',function(){Object.keys(wins).forEach(function(k){var el=wins[k].el;if(el.hidden||el.classList.contains('max')||!el.style.left)return;
+    if(el.offsetWidth>innerWidth-8)el.style.width=Math.max(200,innerWidth-8)+'px';var l=parseFloat(el.style.left)||0,t=parseFloat(el.style.top)||0,w=el.offsetWidth;
+    el.style.left=Math.round(Math.max(Math.min(0,80-w),Math.min(innerWidth-80,l)))+'px';el.style.top=Math.round(Math.max(0,Math.min(innerHeight-38-36,t)))+'px'})});
   function vsFront(){if(np)zOrder(np)}
   function openVS(k){ML.openInVS(k);vsFront()}
   function winOpen(id,auto){var W=wins[id],el=W.el,was=isVis(el);el.hidden=false;el.classList.remove('docked');W.tk.hidden=false;
@@ -196,7 +196,7 @@
   [].slice.call(document.body.children).forEach(function(el){if(el.tagName==='SCRIPT'||KEEP[el.id]||el.classList.contains('dwin')||el.classList.contains('ctxm')||el.classList.contains('tktip'))return;wsIn.appendChild(el)});
   /* the workshop sits to the right of every built-in icon column, so no app icon starts hidden behind it */
   function appCols(){if(desk.hidden||!desk.clientHeight)return 1;var L=layout(items()),m=0;items().forEach(function(it){if(it.app&&L[it.k])m=Math.max(m,L[it.k].col)});return m+1}
-  WS.place=function(){var c=cell(),n=appCols();if(innerWidth<=700){WS.el.style.setProperty('--wsl',Math.min(c.x0+n*c.w+4,Math.round(innerWidth*0.45))+'px');return}var l=Math.min(c.x0+n*c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
+  WS.place=function(){var c=cell(),n=appCols();if(innerWidth<=700){var pl=Math.min(c.x0+n*c.w+4,Math.round(innerWidth*0.45));WS.el.style.left=pl+'px';WS.el.style.top='0px';WS.el.style.width=(innerWidth-pl)+'px';WS.el.style.height=(innerHeight-38)+'px';return}var l=Math.min(c.x0+n*c.w+12,Math.round(innerWidth*0.3));WS.el.style.left=l+'px';WS.el.style.top='8px';WS.el.style.width=Math.max(320,innerWidth-l-10)+'px';WS.el.style.height=Math.max(220,innerHeight-38-16)+'px'};
   var WSBASE=980;
   function wsZoom(){var w=wsBody.clientWidth;if(!w)return;var base=innerWidth<=700?innerWidth:WSBASE,nz=w&&w<base*0.97?String(Math.round(w/base*1000)/1000):'';if(nz!==wsIn.style.zoom)wsIn.style.zoom=nz}
   /* keep your reading position when the window is resized, made full screen or rescaled:
@@ -206,6 +206,8 @@
     if(wsBody.scrollTop<2){bookmark=null;return}
     var found=null;[0.4,0.55,0.25,0.7].some(function(f){var hit=document.elementFromPoint(wr.left+wr.width/2,wr.top+wr.height*f);
       if(!hit||!wsIn.contains(hit)||(hit.closest&&hit.closest('.loadwrap,.wnav,.wbtns')))return false; // sticky bars never move: useless as a bookmark
+      /* landed in a gap between cards (the whole module): use the nearest card, banner or topic list instead, which keeps its shape when the window is resized */
+      if(!(hit.closest&&hit.closest('.card,.banner,.idx'))){var y=wr.top+wr.height*f,best=null,bd=1e9;wsIn.querySelectorAll('section.phase .card,section.phase .banner,section.phase .idx').forEach(function(c){var r=c.getBoundingClientRect();if(!r.height)return;var dd=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(dd<bd){bd=dd;best=c}});if(best)hit=best}
       found={el:hit,f:f,d:(wr.top+wr.height*f-hit.getBoundingClientRect().top)/z};return true});
     if(found)bookmark=found}
   function wsRestore(){if(!bookmark||!wsIn.contains(bookmark.el)||WS.el.hidden||WS.el.classList.contains('docked'))return;var wr=wsBody.getBoundingClientRect(),z=parseFloat(wsIn.style.zoom)||1;if(!wr.height)return;
@@ -260,7 +262,7 @@
       +'<p class="note">You can also double-click <b>Practice Lab</b> on the desktop, or search for it in the Start menu.</p>');
     $('labGo').onclick=function(){openLab()};
     var pgb=labIn.querySelector('.btns.pgb');if(pgb){var cb2=document.createElement('button');cb2.type='button';cb2.id='pgCheat';cb2.textContent='Cheat sheet';pgb.insertBefore(cb2,pgb.firstChild);cb2.onclick=function(){activate(CS.el,true)}}})();
-  LAB.place=function(){if(innerWidth<=700){LAB.el.style.setProperty('--wsl','0px');return} /* phones: the terminal needs the whole width */
+  LAB.place=function(){if(innerWidth<=700){LAB.el.style.left='0px';LAB.el.style.top='0px';LAB.el.style.width=innerWidth+'px';LAB.el.style.height=(innerHeight-38)+'px';return} /* phones: the terminal starts with the whole width */
     var c=cell(),l=Math.min(c.x0+appCols()*c.w+40,Math.round(innerWidth*0.3)+28),w=Math.max(340,Math.min(1060,innerWidth-l-20));
     LAB.el.style.left=l+'px';LAB.el.style.top='22px';LAB.el.style.width=w+'px';LAB.el.style.height=Math.max(240,innerHeight-38-40)+'px'};
   var LABBASE=1000;
