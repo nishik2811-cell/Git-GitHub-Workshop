@@ -938,7 +938,7 @@
   var vsGripD=null;
   function vsGrip(){var mn=np.querySelector('.vsmain'),sd=mn&&mn.querySelector('.vsside');if(!mn||!sd||np.classList.contains('merging')){var og=np.querySelector('.vsgrip');if(og)og.remove();return}
     var g=mn.querySelector('.vsgrip');if(!g){g=document.createElement('span');g.className='vsgrip';g.setAttribute('role','separator');g.setAttribute('aria-orientation','vertical');g.setAttribute('aria-label','Drag to resize the file list');g.title='Drag to resize';g.innerHTML='<i>&#8596;</i>';mn.appendChild(g)}
-    g.style.left=Math.round(sd.offsetLeft+sd.offsetWidth-(g.offsetWidth||14)/2)+'px'}
+    }
   np.addEventListener('pointerdown',function(e){var g=e.target.closest&&e.target.closest('.vsgrip');if(!g)return;e.preventDefault();e.stopPropagation();var sd=np.querySelector('.vsside'),ac=np.querySelector('.vsact');
     vsGripD={x:e.clientX,w:sd.offsetWidth,a:ac?ac.offsetWidth:30};np.style.setProperty('--vsa',vsGripD.a+'px');np.classList.add('sizing');try{g.setPointerCapture(e.pointerId)}catch(z){}},true);
   np.addEventListener('pointermove',function(e){if(!vsGripD)return;var max=np.clientWidth-vsGripD.a-90,w=Math.round(Math.max(70,Math.min(max,vsGripD.w+e.clientX-vsGripD.x)));
@@ -1095,12 +1095,12 @@
   /* Open Folder: a folder picker like the one on a real computer, showing the Mini laptop's folders */
   function folderPick(){if(document.querySelector('.fpk'))return;var cur=HOME,sel=null,back=[],lastTap={d:null,t:0};
     var FI='<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M2 7a3 3 0 0 1 3-3h13l5 5h20a3 3 0 0 1 3 3v23a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#d9a83a"/><path d="M2 14h44v21a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#ffd36e"/></svg>';
-    var ov=document.createElement('div');ov.className='fpk';
+    var ov=document.createElement('div');ov.className='fpk inwin'+(np.clientWidth<560?' narrow':'');
     ov.innerHTML='<div class="fpkw" role="dialog" aria-modal="true" aria-label="Open Folder"><div class="fpkt"><span>Open Folder</span><button type="button" data-k="cancel" class="fpktx" aria-label="Close" title="Close">x</button></div><div class="fpks"><div class="fpkh">Places</div><div class="fpkside"></div></div>'
       +'<div class="fpkm"><div class="fpkbar"><button type="button" data-k="back" aria-label="Back" title="Back">&#8249;</button><button type="button" data-k="up" aria-label="Up one folder" title="Up one folder">&#8593;</button><div class="fpkpath"></div>'
       +'<button type="button" data-k="new" title="New folder">+ Folder</button></div>'
       +'<div class="fpkgrid" role="listbox" aria-label="Folders"></div><div class="fpkfoot"><span class="fpkinfo"></span><button type="button" data-k="cancel">Cancel</button><button type="button" data-k="ok" class="fpkok">Select</button></div></div></div>';
-    document.body.appendChild(ov);
+    np.appendChild(ov);vsShowWin();
     function tl(d){return d===HOME?'~':'~'+d.slice(HOME.length)}
     function kids(d){return keys(S.dirs).filter(function(x){return x!==d&&dirname(x)===d&&base(x).charAt(0)!=='.'}).sort(function(a,b){return base(a).toLowerCase()<base(b).toLowerCase()?-1:1})}
     function go(d){if(d===cur)return;back.push(cur);cur=d;sel=null;draw()}

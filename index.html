@@ -1305,12 +1305,22 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 /* VS Code: drag the line between the file list and the editor */
 .notepad .vsmain{position:relative}
 .notepad.vswset:not(.merging) .vsmain,.notepad.vswset:not(.merging) .vsmain.scm{grid-template-columns:var(--vsa,30px) var(--vsw,128px) minmax(0,1fr)}
-.vsgrip{position:absolute;top:0;bottom:0;width:14px;z-index:3;cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
+.vsgrip{position:relative;grid-column:2;grid-row:1;justify-self:end;align-self:stretch;margin-right:-7px;width:14px;z-index:3;cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
 .vsgrip::before{content:'';position:absolute;top:0;bottom:0;left:6px;width:2px;background:transparent;transition:background .15s}
 .vsgrip:hover::before,.notepad.sizing .vsgrip::before{background:#0078d4}
 .vsgrip i{position:relative;display:flex;align-items:center;justify-content:center;width:22px;height:20px;border-radius:10px;background:#3c3c3c;border:1px solid #5a5a5a;color:#ccc;font-style:normal;font-size:14px;line-height:1;opacity:0;transition:opacity .15s}
 .vsgrip:hover i,.notepad.sizing .vsgrip i{opacity:1}
-@media(hover:none){.vsgrip{width:26px}.vsgrip::before{left:12px}.vsgrip i{opacity:1;width:26px;height:22px;font-size:16px}}
+@media(hover:none){.vsgrip{width:26px;margin-right:-13px}.vsgrip::before{left:12px}.vsgrip i{opacity:1;width:26px;height:22px;font-size:16px}}
+
+/* the Open Folder picker sits inside the VS Code window, like every other pop-up */
+.fpk.inwin{position:absolute;inset:0;z-index:30;padding:8px;border-radius:inherit}
+.fpk.inwin .fpkw{width:100%;height:100%}
+.fpk.narrow .fpkw{grid-template-columns:1fr}.fpk.narrow .fpks{display:none}
+.fpk.narrow .fpkgrid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr));padding:10px}
+.notepad:not(.merging) .vsmain>.vsact{grid-column:1;grid-row:1}
+.notepad:not(.merging) .vsmain>.vsside{grid-column:2;grid-row:1}
+.notepad:not(.merging) .vsmain>.vsed{grid-column:3;grid-row:1}
+.notepad.merging .vsgrip{display:none}
 /* ---------- end Mini laptop desktop css ---------- */
 </style>
 <style id="lesson9css">
@@ -3643,7 +3653,7 @@ git log --oneline           short history          git push / git pull   sync wi
   var vsGripD=null;
   function vsGrip(){var mn=np.querySelector('.vsmain'),sd=mn&&mn.querySelector('.vsside');if(!mn||!sd||np.classList.contains('merging')){var og=np.querySelector('.vsgrip');if(og)og.remove();return}
     var g=mn.querySelector('.vsgrip');if(!g){g=document.createElement('span');g.className='vsgrip';g.setAttribute('role','separator');g.setAttribute('aria-orientation','vertical');g.setAttribute('aria-label','Drag to resize the file list');g.title='Drag to resize';g.innerHTML='<i>&#8596;</i>';mn.appendChild(g)}
-    g.style.left=Math.round(sd.offsetLeft+sd.offsetWidth-(g.offsetWidth||14)/2)+'px'}
+    }
   np.addEventListener('pointerdown',function(e){var g=e.target.closest&&e.target.closest('.vsgrip');if(!g)return;e.preventDefault();e.stopPropagation();var sd=np.querySelector('.vsside'),ac=np.querySelector('.vsact');
     vsGripD={x:e.clientX,w:sd.offsetWidth,a:ac?ac.offsetWidth:30};np.style.setProperty('--vsa',vsGripD.a+'px');np.classList.add('sizing');try{g.setPointerCapture(e.pointerId)}catch(z){}},true);
   np.addEventListener('pointermove',function(e){if(!vsGripD)return;var max=np.clientWidth-vsGripD.a-90,w=Math.round(Math.max(70,Math.min(max,vsGripD.w+e.clientX-vsGripD.x)));
@@ -3800,12 +3810,12 @@ git log --oneline           short history          git push / git pull   sync wi
   /* Open Folder: a folder picker like the one on a real computer, showing the Mini laptop's folders */
   function folderPick(){if(document.querySelector('.fpk'))return;var cur=HOME,sel=null,back=[],lastTap={d:null,t:0};
     var FI='<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M2 7a3 3 0 0 1 3-3h13l5 5h20a3 3 0 0 1 3 3v23a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#d9a83a"/><path d="M2 14h44v21a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#ffd36e"/></svg>';
-    var ov=document.createElement('div');ov.className='fpk';
+    var ov=document.createElement('div');ov.className='fpk inwin'+(np.clientWidth<560?' narrow':'');
     ov.innerHTML='<div class="fpkw" role="dialog" aria-modal="true" aria-label="Open Folder"><div class="fpkt"><span>Open Folder</span><button type="button" data-k="cancel" class="fpktx" aria-label="Close" title="Close">x</button></div><div class="fpks"><div class="fpkh">Places</div><div class="fpkside"></div></div>'
       +'<div class="fpkm"><div class="fpkbar"><button type="button" data-k="back" aria-label="Back" title="Back">&#8249;</button><button type="button" data-k="up" aria-label="Up one folder" title="Up one folder">&#8593;</button><div class="fpkpath"></div>'
       +'<button type="button" data-k="new" title="New folder">+ Folder</button></div>'
       +'<div class="fpkgrid" role="listbox" aria-label="Folders"></div><div class="fpkfoot"><span class="fpkinfo"></span><button type="button" data-k="cancel">Cancel</button><button type="button" data-k="ok" class="fpkok">Select</button></div></div></div>';
-    document.body.appendChild(ov);
+    np.appendChild(ov);vsShowWin();
     function tl(d){return d===HOME?'~':'~'+d.slice(HOME.length)}
     function kids(d){return keys(S.dirs).filter(function(x){return x!==d&&dirname(x)===d&&base(x).charAt(0)!=='.'}).sort(function(a,b){return base(a).toLowerCase()<base(b).toLowerCase()?-1:1})}
     function go(d){if(d===cur)return;back.push(cur);cur=d;sel=null;draw()}
