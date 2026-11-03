@@ -50,7 +50,7 @@ Every module has things to click: diagrams you can play with (the four places a 
   5. **Your own project:** type a folder name, your name and email, and the setup is done for you. Then it's your turn: make a file, `git add .`, `git commit` and `git push` it yourself.
 - **Missions** for every story, to try on your own, with a *Type it for me* button for when you're stuck. In *Your own project* there's no button: you type it all yourself.
 - **A live picture** of your working folder, staging area, commit history and GitHub, updating with every command you type. The graph shows where `origin/main` is, so you can watch `git fetch` move it and `git pull` catch up. Every commit shows which files it added, changed or deleted: click it to see the list.
-- **A VS Code window** with the Explorer, Source Control and the merge conflict buttons, so the first time you open the real thing, it already looks familiar.
+- **A VS Code window** with the Explorer, Source Control and the merge conflict buttons, so the first time you open the real thing, it already looks familiar. Like the real one, it starts with no folder open: press *Open Folder* to pick one from the Mini laptop's folders (repos get a little git badge), or just `cd` into a folder in the terminal.
 
 **The Git it understands**, the everyday commands (and the terminal basics around them), answering like the real thing:
 
