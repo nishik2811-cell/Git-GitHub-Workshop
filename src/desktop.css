@@ -513,3 +513,7 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .notepad:not(.merging) .vsmain>.vsside{grid-column:2;grid-row:1}
 .notepad:not(.merging) .vsmain>.vsed{grid-column:3;grid-row:1}
 .notepad.merging .vsgrip{display:none}
+
+/* inside the lessons the little yellow sparkle has no outline and vanishes on yellow and cream tiles:
+   show the outlined star sticker there instead */
+#wsIn .card .sp-sparkle,#wsIn .banner .sp-sparkle{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD8AAAA/CAYAAABXXxDfAAAA90lEQVR42u2bwQ2DMAwA7YoZ6BoV43SUDsQ8rMEU9IdQpKI0EbZbn1+ID5x8OMYEHaeXZI2bJI7U8IPjtbfDsZJ54P9X+131dV72k/fnw+URQHu0N1adzAOfs8kR78qP9mifpMKTeeCDVHuvyo/2aH8+aWlW96LJT00omQe+TvtQzUnPPdSsFGiP9oUeR20i9+eF6lR7tO9scvRD5RTvx6HQW1r7f7RH+4Y+2XJF+LaSk3nggQceeOCBp8mRX/gUdcU8H+3R3v71U7xfk9Ee7YNMVyynRmifNbTzNxPLDcMbkxy0j1HtLX8PYU8O8MADDzzwwANfHW/0rkF93FjKWgAAAABJRU5ErkJggg==)!important;aspect-ratio:1/1}
