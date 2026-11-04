@@ -1632,6 +1632,11 @@ section.phase .scmgrp li.on{background:#37373d;outline:1px solid #0078d4;outline
 section.phase .scmclean{color:#8a8a8a;font-style:italic}
 section.phase .scmagain{margin-left:6px;padding:3px 12px;border:2px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);font:700 13px 'Nunito',sans-serif;cursor:pointer;box-shadow:none}
 section.phase .scmagain:hover{background:var(--sky)}
+section.phase .sxy{display:inline-block;width:2ch;white-space:pre;text-align:left;border-bottom:none!important;box-shadow:inset 0 -2px 0 rgba(120,170,255,.55);margin-right:.2ch}
+section.phase .sxy b{font-weight:700}
+section.phase .sxy .sxs{color:#5fd38a}
+section.phase .sxy .sxw{color:#ff7b7b}
+section.phase .sxy:hover,section.phase .sxy:focus-visible,section.phase .sxy.on{background:rgba(255,227,110,.25)!important}
 </style>
 <script id="preboot">document.documentElement.classList.add('preboot');try{var nv=performance.getEntriesByType('navigation')[0];if(nv&&nv.type==='reload'&&sessionStorage.getItem('mlStarted')==='1')document.documentElement.classList.add('skipboot')}catch(e){};addEventListener('load',function(){if(!document.getElementById('boot'))document.documentElement.classList.remove('preboot')})</script></head>
 <body>
@@ -1832,11 +1837,11 @@ $ git log --oneline
 
 <span class="c"># View status in compact/short format</span>
 <span class="k">git</span> <span class="sc">status</span> <span class="f">-s</span></pre></div><p class="sub"><code>git status -s</code> prints two letters per file. Hover or tap each code:</p><div class="term"><div class="bar"><i></i><span>GIT BASH / TERMINAL</span></div><pre>$ <span class="k">git</span> <span class="sc">status</span> <span class="f">-s</span>
-<span class="o"><span class="hd" tabindex="0" role="button" data-tip="?? = untracked: a new file Git has never seen. git add it to start tracking it.">??</span> notes.txt
- <span class="hd" tabindex="0" role="button" data-tip="Right column M = modified in your working folder, but NOT staged yet.">M</span> index.html
-<span class="hd" tabindex="0" role="button" data-tip="Left column M = modified AND staged: it will go into the next commit.">M </span> styles.css
-<span class="hd" tabindex="0" role="button" data-tip="A = a new file that has been added to the staging area.">A </span> app.js
- <span class="hd" tabindex="0" role="button" data-tip="D = deleted in your working folder.">D</span> old.txt</span></pre></div><div class="sticky " style="--r:-2deg"><i class="tape"></i>Left letter = <b>staging area</b>.<br>Right letter = <b>working folder</b>.</div><h4 class="h4">2. Staging &amp; committing</h4><div class="term"><div class="bar"><i></i><span>GIT BASH / TERMINAL</span></div><pre><span class="c"># Stage specific files</span>
+<span class="o"><span class="hd sxy" tabindex="0" role="button" data-tip="?? = untracked: a new file Git has never seen. git add it to start tracking it."><b class="sxw">?</b><b class="sxw">?</b></span> notes.txt
+<span class="hd sxy" tabindex="0" role="button" data-tip="Right column M = modified in your working folder, but NOT staged yet."><b class="sxs"> </b><b class="sxw">M</b></span> index.html
+<span class="hd sxy" tabindex="0" role="button" data-tip="Left column M = modified AND staged: it will go into the next commit."><b class="sxs">M</b><b class="sxw"> </b></span> styles.css
+<span class="hd sxy" tabindex="0" role="button" data-tip="Left column A = a new file that has been added to the staging area."><b class="sxs">A</b><b class="sxw"> </b></span> app.js
+<span class="hd sxy" tabindex="0" role="button" data-tip="Right column D = deleted in your working folder, but not staged yet."><b class="sxs"> </b><b class="sxw">D</b></span> old.txt</span></pre></div><div class="sticky " style="--r:-2deg"><i class="tape"></i>Left letter = <b>staging area</b>.<br>Right letter = <b>working folder</b>.</div><h4 class="h4">2. Staging &amp; committing</h4><div class="term"><div class="bar"><i></i><span>GIT BASH / TERMINAL</span></div><pre><span class="c"># Stage specific files</span>
 <span class="k">git</span> <span class="sc">add</span> index.html styles.css
 
 <span class="c"># Stage all modified and new untracked files</span>
