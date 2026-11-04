@@ -1587,9 +1587,9 @@ section.phase .fig .pw>.co{top:-9px;left:-9px;right:auto;width:20px;height:20px;
 section.phase .fig .pw.blk>.co,section.phase .fig .tabsrow .pw>.co{top:-9px;left:-9px;right:auto}
 section.phase .fig.tour .pw>.co{cursor:pointer;background:#fff;color:#16327a;box-shadow:0 0 0 2px #16327a}
 section.phase .fig.tour .pw>.co:hover{background:#ffe0ea}
-section.phase .fig.tour .pw.hl>.co{background:#e8336d;color:#fff;transform:scale(1.2)}
+section.phase .fig.tour .pw.tourhl>.co{background:#e8336d;color:#fff;transform:scale(1.2)}
 section.phase .fig.tour .pw{border-radius:6px;transition:box-shadow .2s}
-section.phase .fig.tour .pw.hl{box-shadow:0 0 0 3px #e8336d,0 0 0 8px rgba(232,51,109,.18)}
+section.phase .fig.tour .pw.tourhl{box-shadow:0 0 0 3px #e8336d,0 0 0 8px rgba(232,51,109,.18)}
 section.phase .fig.tour .legend{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px;width:auto}
 section.phase .fig.tour .legend li{display:block}
 section.phase .tourchip{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 6px;border:2px solid #16327a;border-radius:16px;background:#fff;color:#16327a;font:700 13px 'Nunito',sans-serif;cursor:pointer;box-shadow:none;text-align:left}
@@ -1611,6 +1611,7 @@ section.phase .ba.vs .baarrow{display:flex;align-items:center;justify-content:ce
 section.phase .ba ul.fl{display:block;columns:auto;grid-template-columns:none;margin:0;padding:0}
 section.phase .ba ul.fl li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:3px 0;margin:0;border:0;background:none}
 section.phase .ba ul.fl li::before{display:none}
+section.phase .chipf,section.phase .chipf.cm,section.phase .chipf.m,section.phase .chipf.st,section.phase .chipf.up,section.phase .chipf.new{color:#16327a}
 </style>
 <script id="preboot">document.documentElement.classList.add('preboot');try{var nv=performance.getEntriesByType('navigation')[0];if(nv&&nv.type==='reload'&&sessionStorage.getItem('mlStarted')==='1')document.documentElement.classList.add('skipboot')}catch(e){};addEventListener('load',function(){if(!document.getElementById('boot'))document.documentElement.classList.remove('preboot')})</script></head>
 <body>
@@ -4495,7 +4496,7 @@ git log --oneline           short history          git push / git pull   sync wi
       var b=document.createElement('button');b.type='button';b.className='tourchip';b.setAttribute('data-n',n);b.innerHTML='<span class="co">'+n+'</span><span>'+t.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span>';li.innerHTML='';li.appendChild(b);b.onclick=function(){pick(n)}});
     Object.keys(pins).forEach(function(n){var c=pins[n].querySelector('.co');c.setAttribute('role','button');c.tabIndex=0;c.setAttribute('aria-label','What is part '+n+'?');
       c.addEventListener('click',function(e){e.stopPropagation();pick(n)});c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(n)}})});
-    function pick(n){Object.keys(pins).forEach(function(k){pins[k].classList.toggle('hl',k===n)});fg.classList.add('picked');
+    function pick(n){Object.keys(pins).forEach(function(k){pins[k].classList.toggle('tourhl',k===n)});fg.classList.add('picked');
       $$(lg,'.tourchip').forEach(function(b){var on=b.getAttribute('data-n')===n;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false')});
       var t=label[n]||'',more=MORE[t.toLowerCase()];box.innerHTML='<div class="tourtitle"><span class="co">'+n+'</span>'+t.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>'+(more?'<p class="tourtext">'+more+'</p>':'')}});
 })();
