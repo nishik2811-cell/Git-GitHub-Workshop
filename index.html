@@ -1623,6 +1623,11 @@ section.phase .prsay.bad,section.phase .prsay.good{padding:10px 14px;border:2.5p
 section.phase .prsay.bad{background:#ffe5e5}
 section.phase .prsay.good{background:#e3f9ea}
 section.phase .prsay.bad,section.phase .prsay.good{color:#16327a}
+section.phase .scmgrp li span[data-v]{cursor:pointer}
+section.phase .scmgrp li.on{background:#37373d;outline:1px solid #0078d4;outline-offset:-1px}
+section.phase .scmclean{color:#8a8a8a;font-style:italic}
+section.phase .scmagain{margin-left:6px;padding:3px 12px;border:2px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);font:700 13px 'Nunito',sans-serif;cursor:pointer;box-shadow:none}
+section.phase .scmagain:hover{background:var(--sky)}
 </style>
 <script id="preboot">document.documentElement.classList.add('preboot');try{var nv=performance.getEntriesByType('navigation')[0];if(nv&&nv.type==='reload'&&sessionStorage.getItem('mlStarted')==='1')document.documentElement.classList.add('skipboot')}catch(e){};addEventListener('load',function(){if(!document.getElementById('boot'))document.documentElement.classList.remove('preboot')})</script></head>
 <body>
@@ -4432,16 +4437,35 @@ git log --oneline           short history          git push / git pull   sync wi
       draw(fl)}
     $$(w,'.szcmds button').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-c'))}});reset();draw()});
 
-  /* VS Code Source Control */
-  $$(document,'[data-w="scm"]').forEach(function(w){var files=[['index.html','M'],['search.js','U'],['old.css','D']],staged=[],say=w.querySelector('.scmsay');
-    function row(f,s){return '<li><em class="'+f[1]+'">'+f[1]+'</em><span>'+esc(f[0])+'</span><button type="button" data-f="'+esc(f[0])+'" data-s="'+(s?1:0)+'" title="'+(s?'Unstage Changes':'Stage Changes')+'" aria-label="'+(s?'Unstage ':'Stage ')+esc(f[0])+'">'+(s?'−':'+')+'</button></li>'}
+  /* VS Code Source Control: stage, unstage, commit, see each file's changes, start again */
+  $$(document,'[data-w="scm"]').forEach(function(w){
+    var START=[['index.html','M'],['search.js','U'],['old.css','D']];
+    var DIFF={'index.html':[['-','  <h1>Recipes</h1>'],['+','  <h1>My Recipes</h1>'],['+','  <input type="search">']],
+      'search.js':[['+','function search(word) {'],['+','  return recipes.filter(r => r.includes(word))'],['+','}']],
+      'old.css':[['-','.old-header { color: red; }'],['-','.old-footer { display: none; }']]};
+    var KIND={M:'changed',U:'new file',D:'deleted'};
+    var files,staged,cur,say=w.querySelector('.scmsay'),dh=w.querySelector('.scmdh'),dp=w.querySelector('.scmdiff pre'),inp=w.querySelector('.scmmsg input');
+    function reset(){files=START.map(function(f){return f.slice()});staged=[];cur='index.html';inp.value='add search to recipe page';say.innerHTML='Click <b>+</b> next to a file to stage it, then press <b>Commit</b>. Click a file name to see what changed.';draw()}
+    function row(f,s){return '<li class="'+(f[0]===cur?'on':'')+'"><em class="'+f[1]+'">'+f[1]+'</em><span data-v="'+esc(f[0])+'" title="'+esc(f[0])+' ('+KIND[f[1]]+')">'+esc(f[0])+'</span><button type="button" data-f="'+esc(f[0])+'" data-s="'+(s?1:0)+'" title="'+(s?'Unstage Changes':'Stage Changes')+'" aria-label="'+(s?'Unstage ':'Stage ')+esc(f[0])+'">'+(s?'−':'+')+'</button></li>'}
     function draw(){w.querySelector('ul[data-l="s"]').innerHTML=staged.map(function(f){return row(f,1)}).join('');w.querySelector('ul[data-l="c"]').innerHTML=files.map(function(f){return row(f,0)}).join('');
-      w.querySelector('[data-n="s"]').textContent=staged.length;w.querySelector('[data-n="c"]').textContent=files.length}
-    w.addEventListener('click',function(e){var b=e.target.closest('button[data-f]');if(b){var nm=b.getAttribute('data-f'),from=b.getAttribute('data-s')==='1'?staged:files,to=from===staged?files:staged,i=from.findIndex(function(f){return f[0]===nm});to.push(from.splice(i,1)[0]);
+      w.querySelector('[data-n="s"]').textContent=staged.length;w.querySelector('[data-n="c"]').textContent=files.length;
+      var all=staged.concat(files),f=all.filter(function(x){return x[0]===cur})[0];
+      if(!f&&all.length){f=all[0];cur=f[0]}
+      if(!f){dh.textContent='No changes';dp.innerHTML='<span class="scmclean">Nothing has changed since the last commit.\nYour working tree is clean.</span>';return}
+      var st=staged.indexOf(f)>=0;dh.textContent=f[0]+(st?' (Index)':' (Working Tree)')+' · '+KIND[f[1]];
+      dp.innerHTML=DIFF[f[0]].map(function(l){return '<span class="'+(l[0]==='+'?'dfa':'dfd')+'">'+esc(l[0]+' '+l[1])+'</span>'}).join('')}
+    w.addEventListener('click',function(e){
+      if(e.target.closest('.scmagain')){reset();return}
+      var v=e.target.closest('[data-v]');if(v){cur=v.getAttribute('data-v');draw();return}
+      var b=e.target.closest('button[data-f]');if(b){var nm=b.getAttribute('data-f'),from=b.getAttribute('data-s')==='1'?staged:files,to=from===staged?files:staged,i=from.findIndex(function(f){return f[0]===nm});to.push(from.splice(i,1)[0]);cur=nm;
         say.innerHTML=from===files?'Staged: same as <code>git add '+esc(nm)+'</code>':'Unstaged: same as <code>git restore --staged '+esc(nm)+'</code>';draw();return}
-      if(e.target.closest('.scmcommit')){var msg=w.querySelector('.scmmsg input').value.trim();if(!staged.length){say.innerHTML='There are no staged changes to commit. Click <b>+</b> on a file first (VS Code would offer to stage everything).';return}if(!msg){say.innerHTML='Type a commit message first.';return}
-        say.innerHTML='✔ Committed '+staged.length+' file'+(staged.length>1?'s':'')+': same as <code>git commit -m "'+esc(msg)+'"</code>';staged=[];draw()}});
-    w.querySelector('.scmmsg input').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();w.querySelector('.scmcommit').click()}});draw()});
+      if(e.target.closest('.scmcommit')){var msg=inp.value.trim();
+        if(!staged.length&&!files.length){say.innerHTML='There are no changes to commit. <button type="button" class="scmagain">Start again</button>';return}
+        if(!staged.length){say.innerHTML='There are no staged changes to commit. Click <b>+</b> on a file to stage it first. (Real VS Code offers to stage everything for you.)';return}
+        if(!msg){say.innerHTML='Type a commit message first.';inp.focus();return}
+        var n=staged.length;staged=[];inp.value='';draw();
+        say.innerHTML='✔ Committed '+n+' file'+(n>1?'s':'')+': same as <code>git commit -m "'+esc(msg)+'"</code>'+(files.length?'. '+files.length+' change'+(files.length>1?'s are':' is')+' still waiting: stage them and commit again.':'. Nothing left to commit. <button type="button" class="scmagain">Start again</button>')}});
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();w.querySelector('.scmcommit').click()}});reset()});
   $$(document,'.trysc[data-try="vs"]').forEach(function(b){b.onclick=function(){if(window.ML&&ML.showVS){ML.showVS();setTimeout(function(){var s=document.querySelector('#notepad [data-view="scm"]');if(s)s.click()},120)}}});
 
   /* fork & pull request */
