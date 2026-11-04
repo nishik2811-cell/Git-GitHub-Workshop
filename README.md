@@ -6,31 +6,42 @@
 
 <img src="docs/screenshots/start-screen.jpg" alt="The start screen: a pixel-art window called GIT-WORKSHOP.EXE with a big green START button" width="420">
 
-**[Open the workshop in your browser](https://gitgithubworkshop-ten.vercel.app/)**
+### [▶ Open the workshop](https://gitgithubworkshop-ten.vercel.app/)
+
+A beginner's Git and GitHub course on a tiny pixel computer in your browser.<br>
+Read a little, try it straight away, and break things on purpose.
 
 </div>
 
-## What it is
+---
 
-A complete beginner's course in Git and GitHub that runs on a tiny pixel computer in your browser.
+## Start in 30 seconds
 
-Press **START** and you get a little desktop called the **Mini laptop**. On it you'll find lessons that explain everything from zero, a **Practice Lab** where you type real Git commands, and a **VS Code** look-alike. Whatever you read about, you can try straight away, on a computer you can't break.
-
-It is one HTML file: nothing to install, no account, and it works on laptops, tablets and phones, even offline.
+1. **Open the link** on a laptop, tablet or phone. No account, nothing to install.
+2. **Press START.** A little desktop called the **Mini laptop** appears, with the lessons already open.
+3. **Read a module, then open the Practice Lab** and type the commands yourself.
 
 <div align="center">
 <img src="docs/screenshots/mini-laptop.jpg" alt="The Mini laptop desktop: the Practice Lab window in the middle of the Teammates story, right after git fetch. The terminal said up to date, but the graph now shows origin/main one commit ahead of main, and a VS Code window shows plan.txt still unchanged" width="100%">
 </div>
 
-## How you learn
+## What's on the Mini laptop
 
-1. **Read a little.** Every idea gets one plain sentence, a picture and something to click.
-2. **Try it.** Type the real commands in the Practice Lab, or click the same buttons you would in VS Code. Git answers the way real Git does, error messages included.
-3. **Break things on purpose.** Cause a merge conflict, delete a file, undo it. Nothing leaves your browser unless you choose to.
+| App | What it's for |
+|---|---|
+| **Workshop** | The lessons: nine modules from "what is Git?" to working in a team |
+| **Practice Lab** | A Git terminal with a live picture of your files, commits and GitHub |
+| **VS Code** | A look-alike of the real editor, with Source Control and merge conflict buttons |
+| **Cheat Sheet** | Every command the lab understands, with search, *Try it* and *Copy* |
+| **File Explorer and Bin** | Folders, drag and drop, and restoring things you deleted |
+| **Browser** | The project's GitHub page and the setup guide website |
+| **Setup-Guide.pdf** | Installing Git, Git Bash and VS Code on your own computer |
+| **hehehe** | A folder of memes to push to GitHub, without leaking the secret key inside |
+| **Notepad** | A drawing app, for sketching branches and merges |
 
-## What's inside
+It behaves like a real desktop: windows move, resize, minimise and pin on phones as well as laptops, and the Start menu search finds lessons, files and commands. Try typing *undo*.
 
-### 1. The Workshop: nine modules
+## The nine modules
 
 | | Module | You'll learn |
 |---|---|---|
@@ -44,40 +55,34 @@ It is one HTML file: nothing to install, no account, and it works on laptops, ta
 | 8 | Teamwork | Forks, pull requests, issues, branch protection and the three ways to merge |
 | 9 | Good habits | Commit messages, small commits, keeping secrets out, and using AI safely |
 
-Each module has diagrams you can play with, drawn GitHub and VS Code screens where you tap a part to learn what it is for, code with a *Copy* button, words you can tap for a definition, and a short quiz at the end.
+Every module has something to click: diagrams you can play with, drawn GitHub screens where you tap a part to learn what it does, code with a *Copy* button, and a short quiz at the end.
 
-### 2. The Practice Lab
+## The Practice Lab
 
-A terminal, with a live picture beside it that updates with every command: **working folder → staging area → your commits → GitHub**.
+Type a command and watch it happen in four boxes: **working folder → staging area → your commits → GitHub**. Git answers the way real Git does, error messages included.
 
-- **Five guided stories** that play out step by step:
-  1. A pasta recipe that ends in a merge conflict.
-  2. A deleted file you bring back.
-  3. A password you keep out of GitHub with `.gitignore`.
-  4. **Teammates:** someone pushes while you're not looking. You see why `git status` still says *up to date*, and how `git fetch` and `git pull` differ.
-  5. **Your own project:** you type every command yourself.
-- **Missions** after each story, with a *Type it for me* button if you get stuck.
-- **A commit graph** that shows where `origin/main` is. Click a commit to see which files it changed.
+Five guided stories walk you through it:
 
-### 3. VS Code
+| Story | What happens |
+|---|---|
+| Pasta, branch, conflict | You save a recipe, make a branch, and end in a merge conflict you fix |
+| Deleting files | You delete a file by mistake and bring it back |
+| The .gitignore file | You keep a password out of GitHub with `.gitignore` |
+| Teammates: fetch and pull | Someone pushes while you're not looking: see why `git status` still says *up to date* |
+| Your own project | No help this time: you type every command yourself |
 
-A look-alike of the real editor, with the Explorer, Source Control (stage, unstage, commit, switch branches) and the merge conflict buttons. The first time you open the real VS Code, it already looks familiar.
+After each story there are missions to try alone, with a *Type it for me* button if you get stuck.
 
-### 4. Real GitHub mode
+## Real GitHub mode
 
-When you're ready, connect a throwaway GitHub repo with a token, and your `git push`, `git pull` and `git clone` work on real GitHub. Use a token you delete straight after the workshop.
+When you're ready, the same commands can work on real GitHub:
 
-### 5. The rest of the Mini laptop
+1. Make a new, empty repo at **github.com/new**.
+2. Make a token at **github.com/settings/tokens/new**, tick **repo**, and copy it.
+3. In the Practice Lab, press **Real GitHub mode**, paste the repo link and the token, and press **Connect**.
+4. Now `git push`, `git pull`, `git fetch` and `git clone` talk to GitHub for real.
 
-- **Cheat Sheet:** every command the lab understands, each with a line on what it does, a search box, *Try it* and *Copy*.
-- **File Explorer and Bin:** folders, drag and drop, select several things, restore deleted files.
-- **Start menu search:** type what you want to do, like *undo* or *upload*, and it suggests the command.
-- **Setup guide:** installing Git, Git Bash and VS Code on your own computer, as a PDF and as a website in the Browser.
-- **The hehehe folder:** real picture files to `git add` and push, with a practice task: upload it without leaking the secret key hidden inside.
-- **Notepad:** a little drawing app, for sketching branches and merges.
-- **A real-feeling desktop:** windows you can move, resize, minimise and pin, on a phone as well as a laptop, plus wallpapers and colour themes.
-
-Everything you make lives in your browser tab only. It is gone when you close or reload the page, and the page asks first if you would lose work.
+The token stays in your browser tab and is never saved. Use a throwaway repo, and delete the token after the workshop.
 
 ## The commands it understands
 
@@ -93,7 +98,7 @@ Everything you make lives in your browser tab only. It is gone when you close or
 
 Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`.
 
-## How it's different
+## Why this one
 
 Tools like *Learn Git Branching* draw the commit graph as you type. This workshop shows the whole picture:
 
@@ -104,21 +109,27 @@ Tools like *Learn Git Branching* draw the commit graph as you type. This worksho
 
 ## Running a workshop with it
 
-- Everyone opens the same link, on any laptop, tablet or phone. No accounts, nothing to install.
-- It's one HTML file, so it works offline too: hand it out on a USB stick if the Wi-Fi gives up.
-- When people want Git on their own computer, the **Setup-Guide.pdf** on the desktop walks them through it, on Windows or Linux.
+- **One link for everyone.** It works on any laptop, tablet or phone.
+- **Works offline.** It's a single HTML file, so you can hand it out on a USB stick if the Wi-Fi gives up.
+- **Nothing is saved.** Work lives in the browser tab only. The page asks before you close it if you'd lose something.
+- **Going further.** The Setup-Guide.pdf on the desktop gets people set up on their own computer, on Windows or Linux.
 
 ## How the project is built
 
-- **`index.html`** is the whole site. Open it in a browser and it runs.
-- The lesson text lives directly in `index.html`.
-- The Practice Lab, the desktop and their styles live in `src/playground.js`, `src/desktop.js` and `src/desktop.css`. After changing them, run this from the project folder to copy them into `index.html`:
+| File | What's in it |
+|---|---|
+| `index.html` | The whole site. Open it in a browser and it runs. The lesson text lives here. |
+| `src/playground.js` | The Practice Lab and VS Code |
+| `src/desktop.js`, `src/desktop.css` | The Mini laptop desktop and its apps |
+| `src/sync.py` | Copies the `src/` files, the PDF and the memes into `index.html` |
+| `docs/` | The setup guide PDF, screenshots and the link preview picture |
+| `memes/` | The pictures for the hehehe folder |
 
-  ```bash
-  python3 src/sync.py
-  ```
+After changing anything in `src/`, `docs/` or `memes/`, rebuild the page from the project folder:
 
-- `docs/` holds the setup guide PDF, the screenshots and the link preview picture. `memes/` holds the pictures for the hehehe folder.
+```bash
+python3 src/sync.py
+```
 
 ---
 
