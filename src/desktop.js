@@ -23,7 +23,7 @@
     pad:px(['..K.K.K.K.K.....','.KWKWKWKWKWK....','.KWWWWWWWWWK..KK','.KWBBBBBBBWK.KOK','.KWWWWWWWWWKKOOK','.KWBBBBBBWWKOOK.','.KWWWWWWWWKOOK..','.KWPPWWWWKOOKK..','.KWPWPWWWKKKK...','.KWWPWPWKKKKK...','.KWWWWPPWWWWK...','.KWWWWWWWWWWK...','.KWBBBBBBBWWK...','.KWWWWWWWWWWK...','.KKKKKKKKKKKK...','................'],{K:'#16327a',W:'#ffffff',B:'#a9c4f0',P:'#e8336d',O:'#ffb74d'}),
     pdf:px(['..KKKKKKKKK.....','..KWWWWWWWKK....','..KWWWWWWWKGK...','..KWWWWWWWKKKK..','..KWBBBBBBWWWK..','..KWWWWWWWWWWK..','..KWBBBBBBBWWK..','.KRRRRRRRRRRRK..','.KRWWRWWRRWWRK..','.KRWRRWRWRWRRK..','.KRWWRWRWRWWRK..','.KRWRRWWRRWRRK..','.KRRRRRRRRRRRK..','..KWWWWWWWWWWK..','..KKKKKKKKKKKK..','................'],{K:'#16327a',W:'#ffffff',G:'#cfd8ee',B:'#7fa3e0',R:'#d93a3a'}),
     lab:px(['................','KKKKKKKKKKKKKKKK','KBBBBBBBBBPPYYGK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDGDDDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDDDGDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDGDDDGGGGGDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','.....KKKKKK.....','...KKKKKKKKKK...'],{K:'#16327a',B:'#1d4ba6',D:'#1b2440',G:'#5cf08a',P:'#e8336d',Y:'#ffd34e'}),
-    term:px(['................','KKKKKKKKKKKKKKKK','KTTTTTTTTTTTOOTK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDGGGDYYYDDDDDDK','KDDDDDDDDDDDDDDK','KDDDWWDDDDDDDDDK','KDDWDDDDDDDDDDDK','KDDDWWDDDDDDDDDK','KDDDDDWDDDDDDDDK','KDDWWDDDWWWDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','................','................'],{K:'#16327a',T:'#3b4252',O:'#f05033',D:'#14171c',G:'#5cf08a',Y:'#ffd34e',W:'#e6edf3'}),
+    term:px(['................','................','.KKKKKKKKKKKKKK.','KTTTTTTTTTTTTTTK','KTRTYTGTTTTTTTTK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDWWDDDDDDDDDDDK','KDDWWDDDDDDDDDDK','KDDDWWDDDDDDDDDK','KDDWWDDDDDDDDDDK','KDWWDDDWWWWWDDDK','KDDDDDDDDDDDDDDK','.KKKKKKKKKKKKKK.','................','................'],{K:'#16327a',T:'#4a5468',R:'#ff6b6b',Y:'#ffd34e',G:'#5cf08a',D:'#16191f',W:'#f2f5f9'}),
     setup:px(['.......KK.......','......KGGK......','......KGGK......','......KGGK......','...KKKKGGKKKK...','....KGGGGGGK....','.....KGGGGK.....','......KGGK......','.......KK.......','..KK........KK..','..KSK......KSK..','..KSKKKKKKKKSK..','..KSSSSSSSSSSK..','..KKKKKKKKKKKK..','................','................'],{K:'#16327a',G:'#2e9e4f',S:'#cfd8ee'}),
     cheat:px(['..KKKKKKKKKKK...','..KYYYYYYYYYKK..','..KYKKYYYYYYKYK.','..KYYYYYYYYYKKKK','..KYGYBBBBBYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBBYYK','..KYYYYYYYYYYYYK','..KYGYBBBBYYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBYYYK','..KYYYYYYYYYYYYK','..KYGYBBBBBYYYYK','..KYYYYYYYYYYYYK','..KKKKKKKKKKKKKK','................'],{K:'#16327a',Y:'#fff6c9',G:'#2e9e4f',B:'#7fa3e0'}),
     pic:px(['................','KKKKKKKKKKKKKKKK','KSSSSSSSSSSSSSSK','KSSSSSSSSSSYYSSK','KSSSSSSSSSYYYYSK','KSSSSSSSSSSYYSSK','KSSSSGSSSSSSSSSK','KSSSGGGSSSSSSSSK','KSSGGGGGSSSGSSSK','KSGGGGGGGSGGGSSK','KGGGGGGGGGGGGGGK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','................','................'],{K:'#16327a',S:'#9fd0ff',Y:'#ffd34e',G:'#4caf50',D:'#2e7d32'}),
@@ -509,21 +509,22 @@
     ['git-out-alive.jpg','In case of fire: 1. git commit, 2. git push, 3. git out!'],
     ['star-forks.jpg','A fork held up in front of the GitHub logo: May the fork be with you.'],
     ['bathroom-tile-commit-streak.jpg','Your GitHub contribution graph with a few green squares, versus a whole wall of green tiles.']];
-  var HHTASK='TASK: upload this folder to a new GitHub repo called workshop-demo, without uploading the secret key\n\n'
-    +'1. Open Git Bash / Terminal (its icon is on the desktop) and log in with your GitHub token.\n   (No token? Press "Use without GitHub" to practise on the Mini laptop\'s pretend GitHub.)\n'
-    +'2. Go into this folder:   cd ~/hehehe\n'
-    +'3. Look at everything, hidden files too:   ls -a\n   See .env? It holds a secret key (a fake one). It must never reach GitHub.\n'
-    +'4. Make a new folder with bash, and put a file in it:\n   mkdir notes\n   echo "my favourite meme is star-forks" > notes/fav.txt\n   Check it is there:   ls notes\n   (Git only uploads folders that have a file inside. An empty folder never reaches GitHub.)\n'
-    +'5. Turn the folder into a Git repo:   git init\n'
-    +'6. Tell Git who you are (if you have not yet):\n   git config --global user.name "Your Name"\n   git config --global user.email "you@example.com"\n'
-    +'7. Ask Git what it sees:   git status\n   Uh oh: .env is in the list, so git add . would save it. (Your notes folder is in the list too: good.)\n'
-    +'8. Make Git ignore it: create a .gitignore file with .env in it\n   echo ".env" > .gitignore\n'
-    +'9. Ask again:   git status\n   .env is gone from the list, and .gitignore is new.\n'
-    +'10. Stage everything and save it:   git add .   then   git commit -m "Add memes"\n'
-    +'11. Make the new repo workshop-demo on GitHub, connect this folder to it and upload, all in one go:\n   gh repo create workshop-demo --public --source=. --remote=origin --push\n'
-    +'   (the long way, same result:\n     gh repo create workshop-demo --public\n     git remote add origin https://github.com/YOUR-NAME/workshop-demo.git\n     git push -u origin main )\n'
-    +'12. Check it:   git remote -v   shows https://github.com/YOUR-NAME/workshop-demo.git\n   and on github.com/YOUR-NAME/workshop-demo you can see your files.\n\n'
-    +'Done when workshop-demo on GitHub has the 5 memes, README.md, task.txt, .gitignore and notes/fav.txt, and NOT .env.\n';
+  var HHTASK='TASK: upload this folder to a new GitHub repo called workshop-demo, without uploading the secret key\n'
+    +'Type each command on its own: copy one line at a time.\n\n'
+    +'1. Open Git Bash / Terminal (its icon is on the desktop) and log in with your GitHub token.\n   (No token? Press "Use without GitHub" to practise on the Mini laptop\'s pretend GitHub.)\n\n'
+    +'2. Go into this folder:\n     cd ~/hehehe\n\n'
+    +'3. Look at everything, hidden files too:\n     ls -a\n   See .env? It holds a secret key (a fake one). It must never reach GitHub.\n\n'
+    +'4. Turn the folder into a Git repo:\n     git init\n\n'
+    +'5. Tell Git who you are (if you have not yet), with your own name and email:\n     git config --global user.name "Your Name"\n     git config --global user.email "you@example.com"\n\n'
+    +'6. Ask Git what it sees:\n     git status\n   Uh oh: .env is in the list, so git add . would save it.\n\n'
+    +'7. Make Git ignore it: a .gitignore file with .env in it:\n     echo ".env" > .gitignore\n\n'
+    +'8. Ask again:\n     git status\n   .env is gone from the list, and .gitignore is new.\n\n'
+    +'9. Stage everything and save it (your first commit):\n     git add .\n     git commit -m "Add memes"\n\n'
+    +'10. Make the new repo workshop-demo on GitHub, connect this folder to it, and upload, all in one go:\n     gh repo create workshop-demo --public --source=. --remote=origin --push\n\n'
+    +'11. Check where it is connected:\n     git remote -v\n   It prints your workshop-demo link twice (fetch and push), with your GitHub name in it.\n\n'
+    +'12. Now add something new: make a folder with bash, and put a note in it:\n     mkdir notes\n     echo "my favourite meme is star-forks" > notes/fav.txt\n     ls notes\n   (Git only uploads folders that have a file inside. An empty folder never reaches GitHub.)\n\n'
+    +'13. Save it as a second commit and upload it:\n     git add notes\n     git commit -m "Add my favourite meme"\n     git push\n\n'
+    +'Done when workshop-demo on GitHub has 2 commits, the 5 memes, README.md, task.txt, .gitignore and notes/fav.txt, and NOT .env.\n';
   var HHREADME='# hehehe\n\nA folder of Git memes from the Git & GitHub Workshop.\n\n'
     +'- google-drive-crimes.jpg: where do you save your code?\n- final_final_FINAL_v3.jpg: file names before Git\n- git-out-alive.jpg: in case of fire\n'
     +'- star-forks.jpg: may the fork be with you\n- bathroom-tile-commit-streak.jpg: that commit streak\n\n'

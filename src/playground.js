@@ -433,6 +433,11 @@
       args.forEach(function(x){
         if(x==='.'||x==='-A'||x==='--all'){keys(w).forEach(function(f){if(!ignored(f)||f in r.index){r.index[f]=w[f];did=true}});keys(r.index).forEach(function(f){if(!(f in w)){delete r.index[f];did=true}});keys(r.conf).forEach(function(f){delete r.conf[f]})}
         else{var f=rel(norm(x));
+          /* a folder: everything inside it (new, changed and deleted files), like real Git: git add notes */
+          if(f!==null&&S.dirs[norm(x)]&&!(f in w)){var pre=f===''?'':f+'/',hit=0;
+            keys(w).forEach(function(k){if(k.indexOf(pre)===0&&(!ignored(k)||k in r.index)){r.index[k]=w[k];delete r.conf[k];hit++}});
+            keys(r.index).forEach(function(k){if(k.indexOf(pre)===0&&!(k in w)){delete r.index[k];hit++}});
+            if(hit)did=true;return}
           if(f===null||(!(f in w)&&!(f in r.index))){perr("fatal: pathspec '"+x+"' did not match any files");return}
           if(f in w){r.index[f]=w[f]}else delete r.index[f];delete r.conf[f];did=true}});
       return}
@@ -536,6 +541,8 @@
     if(sub==='remote'){
       if(a[1]==='add'){if(!a[3]){perr('usage: git remote add <name> <url>');return}if(r.remote){perr("error: remote origin already exists.");return}
         r.remote={url:a[3],br:{},ids:{}};var src0=!RL.on&&ghSource(a[3],r);if(src0)ghCopy(src0,r);return}
+      /* extra words after git remote -v are an unknown subcommand, like real Git (it does not just ignore them) */
+      if(a[1]==='-v'&&a[2]){perr("error: unknown subcommand: `"+a[2]+"`\nusage: git remote [-v | --verbose]\n   or: git remote add <name> <url>\n   or: git remote set-url <name> <newurl>");return}
       if(a[1]==='-v'||!a[1]){if(r.remote){if(a[1])pl('origin\t'+r.remote.url+' (fetch)\norigin\t'+r.remote.url+' (push)');else pl('origin')}return}
       /* change the link (git remote set-url origin <url>), take it away (git remote remove origin), or print it */
       if(a[1]==='set-url'){if(!a[3]){perr('usage: git remote set-url <name> <newurl>');return}if(a[2]!=='origin'||!r.remote){perr("error: No such remote '"+a[2]+"'");return}
@@ -544,7 +551,7 @@
         var now2=realTarget(r);if(RL.on&&String(was).toLowerCase()!==String(now2).toLowerCase()){r.rlknown={};r.rlmap={};r.remote.br={}}return}
       if(a[1]==='remove'||a[1]==='rm'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote: '"+(a[2]||'')+"'");return}r.remote=null;r.rbr={};return}
       if(a[1]==='get-url'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote '"+(a[2]||'')+"'");return}pl(r.remote.url);return}
-      perr('error: unsupported remote command');return}
+      perr("error: unknown subcommand: `"+a[1]+"`\nusage: git remote [-v | --verbose]\n   or: git remote add <name> <url>\n   or: git remote set-url <name> <newurl>");return}
     if(sub==='push'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
       if(RL.on&&!realOk(r)){realRoute(r,'push',function(){git(a)});return}
