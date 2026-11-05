@@ -3015,7 +3015,7 @@ git log --oneline           short history          git push / git pull   sync wi
     if(S.ran.f1&&!S.mate2&&cur&&cur!==rb&&!anc(cur)[rb])S.ran.p1=1; // only when the pull really brings something new
     if(!cur){var s0=diffStat({},C(rb).files);applyTree(C(rb).files);r.br[r.head]=rb;pl('Fast-forward','y');pl(statLine(s0));return}
     if(cur===rb||anc(cur)[rb]){pl('Already up to date.');return}
-    if(!anc(rb)[cur]&&!lca(cur,rb)&&!allowU){perr('fatal: refusing to merge unrelated histories');pl("Your laptop's history and GitHub's started separately (for example, the repo was created with a README on GitHub). To join them, type:  git pull --allow-unrelated-histories",'y');return}
+    if(!anc(rb)[cur]&&!lca(cur,rb)&&!allowU){perr('fatal: refusing to merge unrelated histories');pl("Your laptop's history and GitHub's started separately (for example, the repo was created with a README on GitHub). To join them, type:  git pull origin "+r.head+" --allow-unrelated-histories",'y');return}
     if(reb){rebaseOnto(rb,'origin/'+r.head);return}
     mergeInto(rb,'origin/'+r.head,"Merge branch '"+r.head+"' of "+r.remote.url)}
   /* ---------- git rebase: replay your commits, one by one, on top of another branch (new commits, new ids) ---------- */
@@ -3093,7 +3093,7 @@ git log --oneline           short history          git push / git pull   sync wi
       /* check out GitHub's default branch, and remember every GitHub branch as origin/<name> */
       function checkout(nr,def){var tip=nr.remote.br[def];keys(nr.remote.br).forEach(function(b){nr.rbr[b]=nr.remote.br[b]});nr.tags={};keys(nr.remote.tags||{}).forEach(function(t){nr.tags[t]={id:nr.remote.tags[t]}});
         nr.list.forEach(function(c){c.hidden=false});if(!tip){nr.head=def||'main';nr.br[nr.head]=null;pl('warning: You appear to have cloned an empty repository.','y');return}
-        nr.head=def;nr.br[def]=tip;var fl=nr.cm[tip].files;keys(fl).forEach(function(f){S.files[root+'/'+f]=fl[f];var d=dirname(root+'/'+f);while(d!==root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});nr.index=copy(fl);pl('Now type: cd '+name,'y')}
+        nr.head=def;nr.br[def]=tip;nr.up={};nr.up[def]=1;var fl=nr.cm[tip].files;keys(fl).forEach(function(f){S.files[root+'/'+f]=fl[f];var d=dirname(root+'/'+f);while(d!==root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});nr.index=copy(fl);pl('Now type: cd '+name,'y')}
       if(RL.on&&!loc){
         /* Real GitHub mode: any GitHub repo your token can read (every public repo, and your own private ones) */
         var m=asHttps(url).match(/^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
@@ -3364,11 +3364,15 @@ git log --oneline           short history          git push / git pull   sync wi
         if(n===r.head){perr("error: Cannot delete branch '"+n+"' checked out");return}
         var tip=r.br[n];if(tip&&a.indexOf('-D')<0&&!anc(headId())[tip]){perr("error: the branch '"+n+"' is not fully merged.\nIf you are sure, use 'git branch -D "+n+"'.");return}
         delete r.br[n];pl("Deleted branch "+n+" (was "+tip+").");return}
+      var su=a.filter(function(x){return /^--set-upstream-to=|^-u$/.test(x)})[0];
+      if(su){var tgt=su==='-u'?a[a.indexOf('-u')+1]:su.split('=')[1],lb=a.slice(1).filter(function(x){return x[0]!=='-'&&x!==tgt})[0]||r.head,rb=(tgt||'').replace(/^origin\//,'');
+        if(!r.remote||!tgt||!r.rbr||!r.rbr[rb]){perr("error: the requested upstream branch '"+(tgt||'')+"' does not exist\nhint: git fetch first, or push the branch with  git push -u origin "+lb);return}
+        r.up=r.up||{};r.up[lb]=1;pl("branch '"+lb+"' set up to track '"+tgt+"'.");return}
       var mv=a.indexOf('-m')>=0||a.indexOf('-M')>=0;
       if(mv){var from=names.length>1?names[0]:r.head,to=names.length>1?names[1]:names[0];
         if(!to){perr('fatal: branch name required');return}if(!(from in r.br)){perr("error: refname refs/heads/"+from+" not found\nfatal: Branch rename failed");return}
         if(from===to)return;if((to in r.br)&&a.indexOf('-M')<0){perr("fatal: a branch named '"+to+"' already exists");return}
-        r.br[to]=r.br[from];delete r.br[from];if(r.head===from)r.head=to;return}
+        r.br[to]=r.br[from];delete r.br[from];if(r.head===from)r.head=to;if(r.up&&r.up[from]){delete r.up[from];r.up[to]=1}return}
       if(names.length){var nb=names[0];if(nb in r.br){perr("fatal: a branch named '"+nb+"' already exists");return}
         if(!headId()){perr("fatal: not a valid object name: '"+r.head+"'.");return}r.br[nb]=headId();return}
       keys(r.br).sort().forEach(function(b){pr(b===r.head?'<span class="g">* '+esc(b)+'</span>':'  '+esc(b))});
@@ -3379,7 +3383,7 @@ git log --oneline           short history          git push / git pull   sync wi
       if(mk){if(tn in r.br){perr("fatal: a branch named '"+tn+"' already exists");return}
         r.br[tn]=headId();r.head=tn;pl("Switched to a new branch '"+tn+"'");return}
       if(!(tn in r.br)&&r.rbr&&r.rbr[tn]){var st4=status();if(st4.staged.length||st4.unstaged.length||st4.conf.length){perr('error: Your local changes would be overwritten by checkout.\nPlease commit your changes first.');return}
-        r.br[tn]=r.rbr[tn];applyTree(C(r.rbr[tn]).files);r.head=tn;pl("branch '"+tn+"' set up to track 'origin/"+tn+"'.\nSwitched to a new branch '"+tn+"'");return}
+        r.br[tn]=r.rbr[tn];applyTree(C(r.rbr[tn]).files);r.head=tn;r.up=r.up||{};r.up[tn]=1;pl("branch '"+tn+"' set up to track 'origin/"+tn+"'.\nSwitched to a new branch '"+tn+"'");return}
       if(!(tn in r.br)){perr("fatal: invalid reference: "+tn);return}
       if(tn===r.head){pl("Already on '"+tn+"'");return}
       var st3=status();if(st3.staged.length||st3.unstaged.length||st3.conf.length){perr('error: Your local changes would be overwritten by checkout.\nPlease commit your changes first.');return}
@@ -3406,11 +3410,15 @@ git log --oneline           short history          git push / git pull   sync wi
         var keepBr=r.remote.br,was=realTarget(r);r.remote={url:a[3],br:{},ids:{}};var src1=!RL.on&&ghSource(a[3],r);if(src1)ghCopy(src1,r);else if(RL.on)r.remote.br=keepBr;
         /* Real GitHub mode, now pointing at a different GitHub repo: this folder starts fresh with it */
         var now2=realTarget(r);if(RL.on&&String(was).toLowerCase()!==String(now2).toLowerCase()){r.rlknown={};r.rlmap={};r.remote.br={}}return}
-      if(a[1]==='remove'||a[1]==='rm'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote: '"+(a[2]||'')+"'");return}r.remote=null;r.rbr={};return}
+      if(a[1]==='remove'||a[1]==='rm'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote: '"+(a[2]||'')+"'");return}r.remote=null;r.rbr={};r.up={};return}
       if(a[1]==='get-url'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote '"+(a[2]||'')+"'");return}pl(r.remote.url);return}
       perr("error: unknown subcommand: `"+a[1]+"`\nusage: git remote [-v | --verbose]\n   or: git remote add <name> <url>\n   or: git remote set-url <name> <newurl>");return}
     if(sub==='push'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
+      var pw0=a.slice(1).filter(function(x){return x[0]!=='-'});
+      if(pw0.length<2&&a.indexOf('--tags')<0&&!(r.up&&r.up[r.head])&&r.br[r.head]!==undefined){
+        perr("fatal: The current branch "+r.head+" has no upstream branch.\nTo push the current branch and set the remote as upstream, use\n\n    git push --set-upstream origin "+r.head+"\n\nTo have this happen automatically for branches without a tracking\nupstream, see 'push.autoSetupRemote' in 'git help config'.\n");
+        pl('The first push of a branch needs -u:  git push -u origin '+r.head+'   (after that, plain  git push  works)','y');return}
       if(RL.on&&!realOk(r)){realRoute(r,'push',function(){git(a)});return}
       var pw=a.slice(1).filter(function(x){return x[0]!=='-'}),allTags=a.indexOf('--tags')>=0;
       if(pw[0]&&pw[0]!=='origin'){perr("fatal: '"+pw[0]+"' does not appear to be a git repository\nfatal: Could not read from remote repository.");return}
@@ -3425,14 +3433,18 @@ git log --oneline           short history          git push / git pull   sync wi
       var rt=r.remote.br[br],lt=r.br[br];
       if(rt&&rt!==lt&&!anc(lt)[rt]){pushRejected(r.remote.url,br,r.rbr[br]===rt);return}
       pl('Enumerating objects: 5, done.\nCounting objects: 100% (5/5), done.\nWriting objects: 100% (3/3), 280 bytes | 280.00 KiB/s, done.');
-      if(rt===lt){pl('Everything up-to-date');return}
-      if(RL.on){realPush(br,rt,lt,a.indexOf('-u')>=0||a.indexOf('--set-upstream')>=0);return}
+      if(rt===lt){if(a.indexOf('-u')>=0||a.indexOf('--set-upstream')>=0){r.up=r.up||{};r.up[br]=1}pl('Everything up-to-date');return}
+      var setU=a.indexOf('-u')>=0||a.indexOf('--set-upstream')>=0;
+      if(RL.on){realPush(br,rt,lt,setU);return}
       pl('To '+r.remote.url);
       pl(rt?' '+rt+'..'+lt+'  '+br+' -> '+br:' * [new branch]      '+br+' -> '+br,'g');
-      if(a.indexOf('-u')>=0)pl("branch '"+br+"' set up to track 'origin/"+br+"'.");
+      if(setU){pl("branch '"+br+"' set up to track 'origin/"+br+"'.");r.up=r.up||{};r.up[br]=1}
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;ghShare(r);return}
     if(sub==='fetch'||sub==='pull'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
+      var pa=a.slice(1).filter(function(x){return x[0]!=='-'});
+      if(sub==='pull'&&pa.length<2&&!(r.up&&r.up[r.head])&&r.br[r.head]){
+        perr("There is no tracking information for the current branch.\nPlease specify which branch you want to merge with.\nSee git-pull(1) for details.\n\n    git pull <remote> <branch>\n\nIf you wish to set tracking information for this branch you can do so with:\n\n    git branch --set-upstream-to=origin/"+r.head+" "+r.head+"\n");return}
       if(RL.on&&!realOk(r)){realRoute(r,'fetch',function(){git(a)});return}
       var allowU=a.indexOf('--allow-unrelated-histories')>=0,reb=a.indexOf('--rebase')>=0||a.indexOf('-r')>=0;
       if(r.rebase){perr('error: Pulling is not possible because you are in the middle of a rebase.\nhint: Use "git rebase --continue", "--skip" or "--abort".');return}
@@ -4107,7 +4119,7 @@ git log --oneline           short history          git push / git pull   sync wi
   $('pgReadme').onclick=function(){if(busy)return;
     if(!S.repo||!S.cfg.name){window.gitPop&&window.gitPop('warn','MAKE A REPO FIRST','A README lives inside a repo. Run <code>git init</code> and set your name and email first, or press Start the story.');return}
     var cm=['echo "# My Project" > README.md','echo "What it is: a small demo project." >> README.md','echo "How to use it: open the files and read." >> README.md','git add README.md','git commit -m "Add README"'];
-    if(S.repo.remote)cm.push('git push');scriptRun(cm,900,null,true)};
+    if(S.repo.remote)cm.push(S.repo.up&&S.repo.up[S.repo.head]?'git push':'git push -u origin '+S.repo.head);scriptRun(cm,900,null,true)};
   function ghUrl(){return 'https://github.com/'+(RL.on?RL.repo:'you/'+((cs===4?(S.own&&S.own.f):['recipes','notes','shop','team'][cs])||'recipes'))+'.git'}
   /* ---------- guided story ---------- */
   var si=0;
@@ -4313,8 +4325,8 @@ git log --oneline           short history          git push / git pull   sync wi
        (even after "Delete everything", which keeps the history). Bring them down first, then push again. */
     function afterRun(){if(g!==sGen)return;
       if(RL.on&&S.pushRej&&R()&&!R().merge&&!S.mate2){S.pushRej=false;
-        $('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> GitHub refused: your demo repo already has commits from before (<b>Delete everything</b> removes files but keeps the history). Real Git makes you bring them down first with <b>git pull --allow-unrelated-histories</b>, then push again.';
-        scriptRun(['git pull --allow-unrelated-histories','git push -u origin '+R().head],1300,function(){if(g!==sGen)return;
+        $('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> GitHub refused: your demo repo already has commits from before (<b>Delete everything</b> removes files but keeps the history). Real Git makes you bring them down first with <b>git pull origin '+R().head+' --allow-unrelated-histories</b>, then push again.';
+        scriptRun(['git pull origin '+R().head+' --allow-unrelated-histories','git push -u origin '+R().head],1300,function(){if(g!==sGen)return;
           if(R()&&R().merge){sAuto=false;$('stSay').innerHTML='<span class="stn">STEP '+(k+1)+'</span> The old files on GitHub clash with this story (a merge conflict). Fix the file in VS Code, then <b>git add</b>, <b>git commit</b> and <b>git push</b>. Or press <b>Delete everything in this repo</b> and <b>Restart story</b>.'}
           finish()},true);return}
       finish()}
@@ -4647,7 +4659,7 @@ git log --oneline           short history          git push / git pull   sync wi
       return gh('POST',path,{ref:'refs/heads/'+br,sha:tip}).then(function(x){if(x.s===422&&/exist/i.test((x.j&&x.j.message)||''))rejected();return chk(x)})})
     .then(function(){RL.known[br]=tip;RL.map[tip]=lt;if(wasEmpty&&br!==def)RL.known[def]=tip;
       pl('To https://github.com/'+repo+'.git');pl(rt?' '+rt+'..'+lt+'  '+br+' -> '+br:' * [new branch]      '+br+' -> '+br,'g');
-      if(setU)pl("branch '"+br+"' set up to track 'origin/"+br+"'.");
+      if(setU){pl("branch '"+br+"' set up to track 'origin/"+br+"'.");r.up=r.up||{};r.up[br]=1}
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
       if(!r.ghRepo&&(!r.remote.url||ghKey(r.remote.url).indexOf(RL.repo.toLowerCase())<0))r.remote.url='https://github.com/'+repo+'.git';
       if(tvCur==='lab')window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(repo)+'.');
@@ -5868,12 +5880,13 @@ git log --oneline           short history          git push / git pull   sync wi
     ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url add','#n6-1','git remote add origin '],
     ['git remote set-url origin <url>','Change the GitHub address (fix a wrong link, or move to another repo)','change fix wrong link remote url address set','#n6-1','git remote set-url origin '],
     ['git remote -v','Show which GitHub address your repo is connected to','remote address url origin show connected','#n6-1','git remote -v'],
-    ['git push -u origin main','Upload your commits to GitHub the first time (and remember where)','upload push send share github online first','#t2-4','git push -u origin main'],
-    ['git push','Upload your new commits to GitHub','upload push send share github online','#t2-4','git push'],
-    ['git push origin <branch>','Upload one branch to GitHub, even if you are on another','push branch upload','#t2-4','git push origin '],
+    ['git push -u origin main','The first upload of a branch: it also links the branch to GitHub (-u is short for --set-upstream). After this, plain git push and git pull work','upload push send share github online first upstream set-upstream link track','#t2-4','git push -u origin main'],
+    ['git push','Upload your new commits to GitHub. Works once the branch is linked (pushed with -u, or cloned); before that Git says "no upstream branch"','upload push send share github online upstream','#t2-4','git push'],
+    ['git push origin <branch>','Upload one branch by name, even if you are on another. It does not link the branch: add -u for that','push branch upload','#t2-4','git push origin '],
+    ['git branch --set-upstream-to=origin/main','Link the branch you are on to GitHub\'s main without pushing (then plain git push and git pull work)','upstream link track set-upstream-to no upstream tracking information','#t2-4','git branch --set-upstream-to=origin/main'],
     ['git fetch','Download new commits from GitHub without changing your files (origin/main moves)','download fetch check update look remote teammate','#n6-2','git fetch'],
-    ['git pull','Download new commits from GitHub and merge them into your branch','download pull get update latest sync teammate','#n6-2','git pull'],
-    ['git pull --allow-unrelated-histories','Join two histories that started separately (e.g. a README made on GitHub)','unrelated histories pull join refusing','#t2-4','git pull --allow-unrelated-histories'],
+    ['git pull','Download new commits from GitHub and merge them into your branch. Like git push, it needs the branch linked first (pushed with -u, or cloned)','download pull get update latest sync teammate upstream','#n6-2','git pull'],
+    ['git pull origin main --allow-unrelated-histories','Join two histories that started separately (e.g. a README made on GitHub before your first push)','unrelated histories pull join refusing readme','#t2-4','git pull origin main --allow-unrelated-histories'],
     ['git merge origin/main','Merge what you fetched, by hand (git pull does fetch + this)','merge origin fetched remote','#t2-4','git merge origin/main']]},
    {g:'Terminal (Git Bash)',l:[
     ['pwd','Show which folder you are in','where folder path pwd current','#t2-2','pwd'],
