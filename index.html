@@ -4270,7 +4270,7 @@ git log --oneline           short history          git push / git pull   sync wi
     gh('GET','/repos/'+rp).then(function(x){
       if(x.s!==200){RL.tok='';setupForm('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
       if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
-      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};
+      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
       pl('Connected to github.com/'+rp+' for real. Add it as origin and push!','y');
       pl('git remote add origin https://github.com/'+rp+'.git','c');
@@ -4312,24 +4312,55 @@ git log --oneline           short history          git push / git pull   sync wi
     seq(tl,function(t){return gh('POST','/repos/'+repo+'/git/refs',{ref:'refs/tags/'+t,sha:sha[r.tags[t].id]}).then(function(x){if(x.s>=300)throw new Error(x.s+' '+((x.j&&x.j.message)||''));r.remote.tags=r.remote.tags||{};r.remote.tags[t]=r.tags[t].id})})
     .then(function(){pl('To https://github.com/'+repo+'.git');tl.forEach(function(t){pl(' * [new tag]         '+t+' -> '+t,'g')})},function(e){perr('error: GitHub refused the tag: '+e.message)})
     .then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()})}
+  /* git push, for real. Each commit on your Mini laptop becomes ONE commit on GitHub, the way real Git does it:
+     upload each changed file (a blob), make the folder listing (a tree, built on the parent's tree), make the commit
+     (tree + parents + message), and only at the end move the branch to it. A merge keeps both parents.
+     If anything fails half way, the branch on GitHub has not moved, so nothing is left half pushed. */
   function realPush(br,rt,lt){
     var r=R(),repo=ghRepo(r),def=ghDef(r),list=reach(lt).filter(function(c){return !rt||!anc(rt)[c.id]}).reverse();
     pend=true;busy=true;inp.disabled=true;pl('Sending '+list.length+' commit'+(list.length===1?'':'s')+' to GitHub (this one is real)...','y');
+    var shaOf={},treeOf={},head=null,wasEmpty=false,tip=null;S.pushFail=false;
+    keys(RL.map).forEach(function(k){shaOf[RL.map[k]]=k});if(rt&&RL.known[br]&&!shaOf[rt])shaOf[rt]=RL.known[br];
+    RL.up=RL.up||{};var up=RL.up[repo]=RL.up[repo]||{};
+    function chk(x){if(x.s>=300){var er=new Error(x.s+' '+((x.j&&x.j.message)||'')+' [on '+x.m+' '+x.u.split('?')[0]+(x.need?'; needs: '+x.need:'')+']');er.code=x.s;er.msg=(x.j&&x.j.message)||'';throw er}return x}
+    function rejected(){var er=new Error('rejected');er.rejected=true;throw er}
+    /* 1. where is the branch on GitHub now? Someone else may have pushed since you last fetched */
     var ensure=gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){
-      if(x.s===200&&x.j.object.sha!==RL.known[br]){var er=new Error('rejected');er.rejected=true;throw er}});
-    if(br!==def)ensure=ensure.then(function(){return gh('GET','/repos/'+repo+'/git/ref/heads/'+br).then(function(x){if(x.s===200)return;
-      return gh('GET','/repos/'+repo+'/git/ref/heads/'+def).then(function(d){if(d.s!==200)return;return gh('POST','/repos/'+repo+'/git/refs',{ref:'refs/heads/'+br,sha:d.j.object.sha})})})});
-    /* each file's newest version id on GitHub, from GitHub's own answers during this push (asking again could get an out-of-date answer) */
-    var now={},okId=null;S.pushFail=false;
-    ensure.then(function(){return seq(list,function(c){return seq(treeDiff(c),function(ch){
-      var path='/repos/'+repo+'/contents/'+ch[1].split('/').map(encodeURIComponent).join('/');
-      var known=ch[1] in now?Promise.resolve(now[ch[1]]):gh('GET',path+'?ref='+encodeURIComponent(br)).then(function(ex){return ex.s===200?ex.j.sha:undefined});
-      return known.then(function(sha){
-        if(ch[0]==='del'){if(!sha)return;return gh('DELETE',path,{message:c.msg,sha:sha,branch:br}).then(chk).then(function(){now[ch[1]]=undefined})}
-        return gh('PUT',path,{message:c.msg,content:isBin(ch[2])?binInfo(ch[2]).b64:b64(ch[2]),sha:sha,branch:br}).then(chk).then(function(x){var ns=x.j&&x.j.content&&x.j.content.sha;if(ns)now[ch[1]]=ns;else delete now[ch[1]]})});
-      function chk(x){if(x.s>=300){var er=new Error(x.s+' '+(x.j.message||'')+' [on '+x.m+' '+x.u.split('?')[0]+(x.need?'; needs: '+x.need:'')+']');er.code=x.s;throw er}return x}}).then(function(){okId=c.id})})})
-    .then(function(){return gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=lt}})})
-    .then(function(){
+      if(x.s===200){if(x.j.object.sha!==RL.known[br])rejected();head=x.j.object.sha;return}
+      if(x.s===409){wasEmpty=true;
+        /* a brand-new repo with no commits cannot take files yet: wake it up with a tiny placeholder commit;
+           your own first commit then replaces it, so GitHub's history starts with yours */
+        return gh('PUT','/repos/'+repo+'/contents/.mini-laptop-start',{message:'Start the repo (replaced by your first commit)',content:b64('start\n'),branch:def}).then(chk)}});
+    /* the tree of a commit that is already on GitHub (asked once, then remembered) */
+    function treeFor(sha){if(treeOf[sha])return Promise.resolve(treeOf[sha]);
+      return gh('GET','/repos/'+repo+'/git/commits/'+sha).then(chk).then(function(x){treeOf[sha]=x.j.tree.sha;return treeOf[sha]})}
+    /* upload one file's contents, once per different contents */
+    function blobFor(t){if(up[t])return Promise.resolve(up[t]);
+      return gh('POST','/repos/'+repo+'/git/blobs',{content:isBin(t)?binInfo(t).b64:b64(t),encoding:'base64'}).then(chk).then(function(x){up[t]=x.j.sha;return x.j.sha})}
+    function oneCommit(c){if(shaOf[c.id])return Promise.resolve();
+      var parents=c.p.map(function(id){return shaOf[id]});
+      if(parents.some(function(s){return !s})){var er=new Error('GitHub does not have the commit before '+c.id+' yet. Type git push again.');return Promise.reject(er)}
+      /* changes compared with the first parent; a first commit lists every file */
+      var base=parents.length?treeFor(parents[0]):Promise.resolve(null);
+      return base.then(function(bt){var ch=bt?treeDiff(c):keys(c.files).sort().map(function(f){return ['put',f,c.files[f]]}),entries=[];
+        return seq(ch,function(x){if(x[0]==='del'){entries.push({path:x[1],mode:'100644',type:'blob',sha:null});return}
+            return blobFor(x[2]).then(function(s){entries.push({path:x[1],mode:'100644',type:'blob',sha:s})})})
+          .then(function(){if(bt&&!entries.length)return bt; /* nothing changed (like some merges): same tree as the parent */
+            var body={tree:entries};if(bt)body.base_tree=bt;
+            return gh('POST','/repos/'+repo+'/git/trees',body).then(chk).then(function(x){return x.j.sha})})
+          .then(function(ts){return gh('POST','/repos/'+repo+'/git/commits',{message:c.msg,tree:ts,parents:parents}).then(chk).then(function(x){
+            shaOf[c.id]=x.j.sha;treeOf[x.j.sha]=(x.j.tree&&x.j.tree.sha)||ts;RL.map[x.j.sha]=c.id})})})}
+    ensure.then(function(){return seq(list,oneCommit)})
+    /* 2. move the branch to the newest commit, in one step. Without force, GitHub itself refuses if it moved meanwhile */
+    .then(function(){tip=shaOf[lt];if(!tip)throw new Error('the newest commit did not reach GitHub');
+      var path='/repos/'+repo+'/git/refs';
+      if(wasEmpty){
+        if(br===def)return gh('PATCH',path+'/heads/'+encodeURIComponent(br),{sha:tip,force:true}).then(chk);
+        /* the first branch pushed to an empty repo: the default branch shows it too, so the placeholder is gone everywhere */
+        return gh('POST',path,{ref:'refs/heads/'+br,sha:tip}).then(chk).then(function(){return gh('PATCH',path+'/heads/'+encodeURIComponent(def),{sha:tip,force:true}).then(chk)})}
+      if(head)return gh('PATCH',path+'/heads/'+encodeURIComponent(br),{sha:tip,force:false}).then(function(x){if(x.s===422)rejected();return chk(x)});
+      return gh('POST',path,{ref:'refs/heads/'+br,sha:tip}).then(function(x){if(x.s===422&&/exist/i.test((x.j&&x.j.message)||''))rejected();return chk(x)})})
+    .then(function(){RL.known[br]=tip;RL.map[tip]=lt;if(wasEmpty&&br!==def)RL.known[def]=tip;
       pl('To https://github.com/'+repo+'.git');pl(' * '+(rt?'updated':'[new branch]')+'      '+br+' -> '+br,'g');
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
       if(!r.ghRepo&&(!r.remote.url||ghKey(r.remote.url).indexOf(RL.repo.toLowerCase())<0))r.remote.url='https://github.com/'+repo+'.git';
@@ -4338,13 +4369,11 @@ git log --oneline           short history          git push / git pull   sync wi
     }).catch(function(e){
       if(e&&e.rejected){pushRejected('https://github.com/'+repo+'.git',br,false);return}
       S.pushFail=true;
-      if(r.ghRepo&&e&&(e.code===403||e.code===404)){perr('remote: Permission to '+repo+'.git denied.\nfatal: unable to access \'https://github.com/'+repo+'.git/\': The requested URL returned error: 403');pl('You cloned someone else\'s repo: you can change it on your laptop, but only its owners can push. On GitHub you would fork it first.','y');
-        if(okId)return gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=okId;r.remote.br[br]=okId;r.rbr[br]=okId}});return}
+      if(r.ghRepo&&e&&(e.code===403||e.code===404)){perr('remote: Permission to '+repo+'.git denied.\nfatal: unable to access \'https://github.com/'+repo+'.git/\': The requested URL returned error: 403');pl('You cloned someone else\'s repo: you can change it on your laptop, but only its owners can push. On GitHub you would fork it first.','y');return}
       perr('error: GitHub refused: '+e.message);
       var auth=e&&(e.code===401||e.code===403||e.code===404);
+      /* nothing moved on GitHub: the branch only moves at the very end, so typing git push again simply carries on */
       window.gitPop&&window.gitPop('err','ERROR: PUSH FAILED',esc(e.message)+'<br>'+(auth?'Check that it is a classic token with the repo box ticked.':'Type <code>git push</code> again to continue.'));
-      /* the commits that did arrive stay on GitHub: remember them, so the next git push carries on from there */
-      if(okId)return gh('GET','/repos/'+repo+'/git/ref/heads/'+encodeURIComponent(br)).then(function(x){if(x.s===200){RL.known[br]=x.j.object.sha;RL.map[x.j.object.sha]=okId;r.remote.br[br]=okId;r.rbr[br]=okId}});
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
