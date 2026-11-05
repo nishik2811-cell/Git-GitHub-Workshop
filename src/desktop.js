@@ -357,7 +357,7 @@
     +'<button type="button" class="padt on" data-tool="pen" aria-pressed="true" title="Pen">&#9998; Pen</button><button type="button" class="padt" data-tool="er" aria-pressed="false" title="Eraser">&#9003; Eraser</button></span>'
     +'<span class="padgrp">'+PCOL.map(function(c,i){return '<button type="button" class="padc'+(i?'':' on')+'" data-col="'+c[0]+'" style="background:'+c[0]+'" title="'+c[1]+'" aria-label="'+c[1]+'" aria-pressed="'+(i?'false':'true')+'"></button>'}).join('')+'</span>'
     +'<span class="padgrp">'+PSZ.map(function(z,i){return '<button type="button" class="padz'+(i===1?' on':'')+'" data-sz="'+z[0]+'" title="'+z[1]+'" aria-label="'+z[1]+' line" aria-pressed="'+(i===1)+'"><i style="width:'+(z[0]+3)+'px;height:'+(z[0]+3)+'px"></i></button>'}).join('')+'</span>'
-    +'<span class="padgrp"><button type="button" class="padt" data-act="undo" title="Undo (Ctrl+Z)">&#8630; Undo</button><button type="button" class="padt" data-act="clear" title="Clear the page">Clear</button><button type="button" class="padt pads" data-act="save" title="Save as a picture">Save</button></span></div>'
+    +'<span class="padgrp"><button type="button" class="padt" data-act="undo" title="Undo (Ctrl+Z)">&#8630; Undo</button><button type="button" class="padt" data-act="clear" title="Clear the page">Clear</button><button type="button" class="padt pads" data-act="save" title="Save the drawing: on the Mini laptop, on your device, or both">Save</button></span></div>'
     +'<div class="padpaper"><canvas id="padCv" aria-label="Drawing area. Draw with the mouse, a pen or your finger."></canvas></div>';
   var cv=$('padCv'),cx=cv.getContext('2d'),strokes=[],cur=null,pTool='pen',pCol=PCOL[0][0],pSz=5,dpr=1;
   function padFit(){var r=cv.parentNode.getBoundingClientRect();if(!r.width||!r.height)return;dpr=window.devicePixelRatio||1;cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);cv.style.width=r.width+'px';cv.style.height=r.height+'px';padRedraw()}
@@ -376,8 +376,32 @@
     else if(b.dataset.sz){pSz=+b.dataset.sz;pset('[data-sz]',b)}
     else if(b.dataset.act==='undo'){strokes.pop();padRedraw()}
     else if(b.dataset.act==='clear'){if(!strokes.length)return;confirmPop('Clear the page?','Your drawing will be wiped. (Undo cannot bring it back.)',function(){strokes=[];padRedraw()})}
-    else if(b.dataset.act==='save'){var o=document.createElement('canvas');o.width=cv.width;o.height=cv.height;var g=o.getContext('2d');g.fillStyle='#ffffff';g.fillRect(0,0,o.width,o.height);g.drawImage(cv,0,0);
-      var a=document.createElement('a');a.download='drawing.png';a.href=o.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()}});
+    else if(b.dataset.act==='save')padSave()});
+  /* Save: download the picture to your own device, save it as a file on the Mini laptop (in any folder, so you can
+     git add, commit and push it like any other file), or both */
+  var padDir=null;
+  function padPng(){var o=document.createElement('canvas');o.width=cv.width;o.height=cv.height;var g=o.getContext('2d');g.fillStyle='#ffffff';g.fillRect(0,0,o.width,o.height);g.drawImage(cv,0,0);return o.toDataURL('image/png')}
+  function padName(v){v=String(v||'').trim().replace(/\s+/g,'-').replace(/[^A-Za-z0-9_.-]/g,'').replace(/\.png$/i,'').replace(/^\.+/,'');return (v||'drawing')+'.png'}
+  function padDirs(){var st=S();return Object.keys(st.dirs).filter(function(d){return d===HOME||(d.indexOf(HOME+'/')===0&&!/\/\./.test(d.slice(HOME.length)))}).sort()}
+  /* the same picture always gets the same id, so Git sees two identical drawings as equal, like real Git does */
+  function padKey(b64){var h=2166136261;for(var i=0;i<b64.length;i++){h^=b64.charCodeAt(i);h=Math.imul(h,16777619)}return 'draw:'+(h>>>0).toString(16)+':'+b64.length}
+  function padDownload(url,name){var a=document.createElement('a');a.download=name;a.href=url;document.body.appendChild(a);a.click();a.remove()}
+  function padToLaptop(url,dir,name){var st=S();if(!st.dirs[dir])dir=HOME;name=ML.uniq(dir,name);var b64=url.slice(url.indexOf(',')+1),abs=dir+'/'+name;
+    st.files[abs]=ML.binReg(padKey(b64),b64,'image/png',name);padDir=dir;ML.render();return abs}
+  function padSave(){var st=S(),dirs=padDirs(),cur=padDir&&st.dirs[padDir]?padDir:HOME;
+    var opts=dirs.map(function(d){return '<option value="'+esc(d)+'"'+(d===cur?' selected':'')+'>'+esc(d===HOME?'Desktop (~)':'~'+d.slice(HOME.length))+'</option>'}).join('');
+    var html='<div class="padsv"><label>File name<input id="padSvN" type="text" value="'+esc(ML.uniq(cur,'drawing.png'))+'" spellcheck="false" autocomplete="off" aria-label="File name"></label>'
+      +'<label>Folder on the Mini laptop<select id="padSvD" aria-label="Folder on the Mini laptop">'+opts+'</select></label>'
+      +'<p>Saved on the <b>Mini laptop</b>, it becomes a file you can open, move into a repo folder, then <code>git add</code>, <code>git commit</code> and <code>git push</code>. <b>My device</b> downloads it to your real computer or phone.</p></div>';
+    function go(where){var url=padPng(),name=padName($('padSvN').value),dir=$('padSvD').value,msg=[],abs=null;
+      if(where!=='device'){abs=padToLaptop(url,dir,name);msg.push('On the Mini laptop: <b>'+esc(tilde(dirname(abs))+'/'+base(abs)).replace('~ (desktop)/','~/')+'</b>')}
+      if(where!=='laptop'){padDownload(url,abs?base(abs):name);msg.push('On your device: <b>'+esc(abs?base(abs):name)+'</b> (in your Downloads)')}
+      var btns=[{t:'OK'}];if(abs)btns.unshift({t:dirname(abs)===HOME?'Show on desktop':'Open the folder',fn:function(){openFolder(dirname(abs));fxSel=abs;fxSels={};fxSels[abs]=1;fxDraw()}});
+      window.gitPop('ok','SAVED',msg.join('<br>')+(abs?'<br><br>To put it on GitHub: in that repo folder run <code>git add '+esc(base(abs))+'</code>, then commit and push.':''),btns)}
+    window.gitPop('ok','SAVE DRAWING',html,[{t:'Save on Mini laptop',fn:function(){go('laptop')}},{t:'Save on my device',fn:function(){go('device')}},{t:'Both',fn:function(){go('both')}},{t:'Cancel'}]);
+    var bx=document.querySelector('#ov .dlg');if(bx)bx.classList.add('padsvdlg');
+    var n=$('padSvN');n.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();var f=$('ovB').firstChild;if(f)f.click()}});
+    n.focus({preventScroll:true});n.setSelectionRange(0,n.value.replace(/\.png$/i,'').length)}
   DW.el.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();strokes.pop();padRedraw()}});
   if(window.ResizeObserver)new ResizeObserver(function(){padFit()}).observe(cv.parentNode);else addEventListener('resize',padFit);
 

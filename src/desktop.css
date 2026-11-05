@@ -517,3 +517,23 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 /* inside the lessons the little yellow sparkle has no outline and vanishes on yellow and cream tiles:
    show the outlined star sticker there instead */
 #wsIn .card .sp-sparkle,#wsIn .banner .sp-sparkle{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD8AAAA/CAYAAABXXxDfAAAA90lEQVR42u2bwQ2DMAwA7YoZ6BoV43SUDsQ8rMEU9IdQpKI0EbZbn1+ID5x8OMYEHaeXZI2bJI7U8IPjtbfDsZJ54P9X+131dV72k/fnw+URQHu0N1adzAOfs8kR78qP9mifpMKTeeCDVHuvyo/2aH8+aWlW96LJT00omQe+TvtQzUnPPdSsFGiP9oUeR20i9+eF6lR7tO9scvRD5RTvx6HQW1r7f7RH+4Y+2XJF+LaSk3nggQceeOCBp8mRX/gUdcU8H+3R3v71U7xfk9Ee7YNMVyynRmifNbTzNxPLDcMbkxy0j1HtLX8PYU8O8MADDzzwwANfHW/0rkF93FjKWgAAAABJRU5ErkJggg==)!important;aspect-ratio:1/1}
+
+/* Notepad: Save dialog (file name + folder on the Mini laptop) */
+.ov .padsv{display:grid;gap:10px;text-align:left;margin-top:4px}
+.ov .padsv label{display:grid;gap:4px;font:700 13px 'Nunito',sans-serif;color:var(--ink,#16327a)}
+.ov .padsv input,.ov .padsv select{font:600 15px 'Nunito',sans-serif;padding:7px 9px;border:2px solid var(--ink,#16327a);border-radius:8px;background:#fff;color:#16327a;min-width:0;width:100%;box-sizing:border-box}
+.ov .padsv input:focus,.ov .padsv select:focus{outline:3px solid #8fb8ff;outline-offset:1px}
+.ov .padsv p{margin:0;font-size:13px;line-height:1.45}
+.ov .padsv code{white-space:nowrap}
+/* the Save dialog's 4 buttons sit in a tidy 2 x 2 grid, so it stays short enough for a phone's Notepad window */
+.dlg.padsvdlg #ovB{display:grid!important;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:4px}
+.dlg.padsvdlg #ovB button{margin:0!important;width:100%;min-width:0;white-space:normal;line-height:1.2;padding:9px 6px}
+@media (max-width:560px),(max-height:560px){
+  .ov .padsv{gap:7px;margin-top:0}
+  .ov .padsv label{font-size:12.5px;gap:3px}
+  .ov .padsv input,.ov .padsv select{font-size:15px;padding:5px 8px}
+  .ov .padsv p{font-size:12px;line-height:1.4}
+  .dlg.padsvdlg #ovP{margin-bottom:10px!important}
+  .dlg.padsvdlg #ovB{gap:8px}
+  .dlg.padsvdlg #ovB button{font-size:13px;padding:8px 4px}
+}
