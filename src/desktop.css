@@ -601,3 +601,30 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 /* VS Code: Undo / Redo stay in view at the right even when there are many tabs */
 .notepad .vstabs .vsur{position:sticky;right:0;z-index:2;background:#252526;box-shadow:-8px 0 8px -4px #252526}
 @media (max-width:359px){.brtab{flex:none}} /* very small phones: the tab row scrolls sideways instead of cutting words */
+
+/* Terminal app: a plain Git Bash window */
+.tmb{position:relative;padding:0!important;background:#0c0f14;overflow:hidden}
+.tmw{position:absolute;inset:0;display:flex;flex-direction:column;background:#0c0f14;color:#e6edf3;font:14px/1.55 'Fira Code',monospace;padding:10px 12px;box-sizing:border-box;cursor:text}
+.tmout{flex:1 1 auto;overflow:auto;min-height:0;white-space:pre-wrap;word-break:break-word}
+.tmout .ln{white-space:pre-wrap}
+.tmw .g{color:#5cf08a}.tmw .p{color:#d68cff}.tmw .y{color:#ffd34e}.tmw .c{color:#5fd7ff}.tmw .r{color:#ff7b7b}.tmw .b{color:#7aa7ff;font-weight:700}
+.tmps{flex:none;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.tmline{flex:none;display:flex;align-items:center;gap:8px}
+.tmd{color:#e6edf3}
+.tmline input{flex:1 1 auto;min-width:0;background:transparent;border:0;outline:0;color:#e6edf3;font:inherit;padding:2px 0;caret-color:#5cf08a;box-shadow:none}
+.tmline input:disabled{opacity:.5}
+@media (hover:none){.tmw{font-size:13px}.tmline input{font-size:16px}}
+.tmlog{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(12,15,20,.92);overflow:auto;box-sizing:border-box}
+.tmlog[hidden]{display:none}
+.tmcard{max-width:440px;width:100%;background:#e9efff;color:#16327a;border:3px solid #16327a;border-radius:10px;padding:14px 16px;font:14px/1.5 'Nunito',sans-serif;box-shadow:4px 4px 0 rgba(0,0,0,.35);margin:auto}
+.tmlh{display:flex;align-items:center;gap:8px;font-size:17px;margin-bottom:6px}.tmlh svg{width:24px;height:24px}
+.tmcard p{margin:6px 0}.tmcard ol{margin:6px 0 8px 18px;padding:0}.tmcard li{margin:3px 0}.tmcard a{color:#1d4ba6;font-weight:800}
+.tmcard code{font-family:'Fira Code',monospace;font-size:12.5px;background:#fff;border-radius:4px;padding:0 4px}
+.tmlab{display:block;font-weight:800;font-size:13px;margin:8px 0 4px}
+.tmlab input{display:block;width:100%;box-sizing:border-box;margin-top:4px;border:2px solid #16327a;border-radius:6px;padding:7px 9px;font:600 15px 'Nunito',sans-serif;color:#16327a;background:#fff}
+.tmerr{color:#b3366a;font-weight:800;font-size:13px;margin:6px 0}
+.tmbtns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px}
+.tmbtns button{border:2px solid #16327a;border-radius:8px;background:#fff;color:#16327a;font:800 14px 'Nunito',sans-serif;padding:7px 14px;cursor:pointer;box-shadow:2px 2px 0 #16327a}
+.tmbtns .tmgo{background:#2f9a5a;color:#fff}
+.tmbtns button:disabled{opacity:.6;cursor:default}
+.tmcard small{display:block;opacity:.85;line-height:1.4}

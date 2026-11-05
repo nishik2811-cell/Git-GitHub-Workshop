@@ -23,6 +23,7 @@
     pad:px(['..K.K.K.K.K.....','.KWKWKWKWKWK....','.KWWWWWWWWWK..KK','.KWBBBBBBBWK.KOK','.KWWWWWWWWWKKOOK','.KWBBBBBBWWKOOK.','.KWWWWWWWWKOOK..','.KWPPWWWWKOOKK..','.KWPWPWWWKKKK...','.KWWPWPWKKKKK...','.KWWWWPPWWWWK...','.KWWWWWWWWWWK...','.KWBBBBBBBWWK...','.KWWWWWWWWWWK...','.KKKKKKKKKKKK...','................'],{K:'#16327a',W:'#ffffff',B:'#a9c4f0',P:'#e8336d',O:'#ffb74d'}),
     pdf:px(['..KKKKKKKKK.....','..KWWWWWWWKK....','..KWWWWWWWKGK...','..KWWWWWWWKKKK..','..KWBBBBBBWWWK..','..KWWWWWWWWWWK..','..KWBBBBBBBWWK..','.KRRRRRRRRRRRK..','.KRWWRWWRRWWRK..','.KRWRRWRWRWRRK..','.KRWWRWRWRWWRK..','.KRWRRWWRRWRRK..','.KRRRRRRRRRRRK..','..KWWWWWWWWWWK..','..KKKKKKKKKKKK..','................'],{K:'#16327a',W:'#ffffff',G:'#cfd8ee',B:'#7fa3e0',R:'#d93a3a'}),
     lab:px(['................','KKKKKKKKKKKKKKKK','KBBBBBBBBBPPYYGK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDGDDDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDDDGDDDDDDDDDDK','KDDGDDDDDDDDDDDK','KDGDDDGGGGGDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','.....KKKKKK.....','...KKKKKKKKKK...'],{K:'#16327a',B:'#1d4ba6',D:'#1b2440',G:'#5cf08a',P:'#e8336d',Y:'#ffd34e'}),
+    term:px(['................','KKKKKKKKKKKKKKKK','KTTTTTTTTTTTOOTK','KKKKKKKKKKKKKKKK','KDDDDDDDDDDDDDDK','KDGGGDYYYDDDDDDK','KDDDDDDDDDDDDDDK','KDDDWWDDDDDDDDDK','KDDWDDDDDDDDDDDK','KDDDWWDDDDDDDDDK','KDDDDDWDDDDDDDDK','KDDWWDDDWWWDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','................','................'],{K:'#16327a',T:'#3b4252',O:'#f05033',D:'#14171c',G:'#5cf08a',Y:'#ffd34e',W:'#e6edf3'}),
     setup:px(['.......KK.......','......KGGK......','......KGGK......','......KGGK......','...KKKKGGKKKK...','....KGGGGGGK....','.....KGGGGK.....','......KGGK......','.......KK.......','..KK........KK..','..KSK......KSK..','..KSKKKKKKKKSK..','..KSSSSSSSSSSK..','..KKKKKKKKKKKK..','................','................'],{K:'#16327a',G:'#2e9e4f',S:'#cfd8ee'}),
     cheat:px(['..KKKKKKKKKKK...','..KYYYYYYYYYKK..','..KYKKYYYYYYKYK.','..KYYYYYYYYYKKKK','..KYGYBBBBBYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBBYYK','..KYYYYYYYYYYYYK','..KYGYBBBBYYYYYK','..KYYGYYYYYYYYYK','..KYGYBBBBBBYYYK','..KYYYYYYYYYYYYK','..KYGYBBBBBYYYYK','..KYYYYYYYYYYYYK','..KKKKKKKKKKKKKK','................'],{K:'#16327a',Y:'#fff6c9',G:'#2e9e4f',B:'#7fa3e0'}),
     pic:px(['................','KKKKKKKKKKKKKKKK','KSSSSSSSSSSSSSSK','KSSSSSSSSSSYYSSK','KSSSSSSSSSYYYYSK','KSSSSSSSSSSYYSSK','KSSSSGSSSSSSSSSK','KSSSGGGSSSSSSSSK','KSSGGGGGSSSGSSSK','KSGGGGGGGSGGGSSK','KGGGGGGGGGGGGGGK','KDDDDDDDDDDDDDDK','KDDDDDDDDDDDDDDK','KKKKKKKKKKKKKKKK','................','................'],{K:'#16327a',S:'#9fd0ff',Y:'#ffd34e',G:'#4caf50',D:'#2e7d32'}),
@@ -62,6 +63,7 @@
   var tkLab=tkBtn('tkLab','Practice Lab',I.lab);tkLab.hidden=true;tbar.insertBefore(tkLab,tray);
   var tkBR=tkBtn('tkBR','Browser',I.br);tkBR.hidden=true;tbar.insertBefore(tkBR,tray);
   var tkDraw=tkBtn('tkDraw','Notepad',I.pad);tkDraw.hidden=true;tbar.insertBefore(tkDraw,tray);
+  var tkTerm=tkBtn('tkTerm','Git Bash / Terminal',I.term);tkTerm.hidden=true;tbar.insertBefore(tkTerm,tkDraw);
   var tkGuide=tkBtn('tkGuide','Setup-Guide.pdf',I.pdf);tkGuide.hidden=true;tbar.insertBefore(tkGuide,tray);
   var tkMeme=tkBtn('tkMeme','Photos',I.pic);tkMeme.hidden=true;tbar.insertBefore(tkMeme,tray);
   var tkCred=tkBtn('tkCred','suspects.txt',I.file);tkCred.hidden=true;tbar.insertBefore(tkCred,tray);
@@ -135,7 +137,7 @@
   /* a double-click on a taskbar button counts as one click: its second click (detail 2) must not minimise the window the first one just brought up */
   function tkClick(el){return function(e){if(e&&e.detail>=2&&isVis(el)&&topWin()===el)return;activate(el)}}
   function activate(el,open,auto){if(!el)return;var isNp=el.id==='notepad',id=el.id;
-    if(!isVis(el)){if(isNp){ML.showVS();zOrder(el,auto)}else{winOpen(id,auto);if(id==='drawWin')padFit();if(id==='binWin')binDraw();if(id==='guideWin')guideInit();if(id==='memeWin')picDraw()}return}
+    if(!isVis(el)){if(isNp){ML.showVS();zOrder(el,auto)}else{winOpen(id,auto);if(id==='drawWin')padFit();if(id==='termWin')termShow();if(id==='binWin')binDraw();if(id==='guideWin')guideInit();if(id==='memeWin')picDraw()}return}
     if(open||topWin()!==el){zOrder(el,auto);return}
     if(isNp)window.vsDock(true);else winDock(id,true)}
   var np=$('notepad');if(np){np.addEventListener('pointerdown',function(){zOrder(np)},true);
@@ -391,6 +393,39 @@
   ['paste','cut','drop'].forEach(function(n){$('brUrl').addEventListener(n,function(e){e.preventDefault()})});
 
 
+  /* Terminal: a plain Git Bash. The first time it opens it asks for a GitHub token (like gh auth login);
+     after that it is an ordinary terminal: no stories, no boxes, no repo link to paste. */
+  var TW=makeWin('termWin','Git Bash / Terminal',I.term,tkTerm,760,480,{max:true});
+  TW.body.classList.add('tmb');
+  TW.body.innerHTML='<div class="tmw" id="tmW"><div class="tmout" id="tmOut" role="log" aria-label="Terminal output"></div>'
+    +'<div class="tmps" id="tmPs"></div><div class="tmline"><span class="tmd" aria-hidden="true">$</span><input id="tmIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command" enterkeyhint="send"></div></div>'
+    +'<div class="tmlog" id="tmLog" hidden><div class="tmcard"><div class="tmlh">'+I.term+'<b>Log in to GitHub</b></div>'
+    +'<p>Do it once, then use Git like on a real computer: <code>gh repo create</code>, <code>git clone https://…</code>, <code>git push</code>. No repo link needed.</p>'
+    +'<ol><li>Make a token: <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens/new</a>, tick <b>repo</b>, press <b>Generate token</b>, copy it.</li><li>Paste it here.</li></ol>'
+    +'<label class="tmlab">GitHub token<input id="tmTok" type="password" placeholder="ghp_… or github_pat_…" autocomplete="off"></label>'
+    +'<p class="tmerr" id="tmErr" role="alert" hidden></p>'
+    +'<div class="tmbtns"><button type="button" class="tmgo" id="tmGo">Log in</button><button type="button" id="tmSkip">Use without GitHub</button></div>'
+    +'<small>The token stays in this tab only: it is never saved. Without it, Git Bash uses the Mini laptop\'s pretend GitHub.</small></div></div>';
+  ML.termAttach($('tmOut'),$('tmIn'),$('tmPs'));
+  var tmAsked=false;
+  function tmFocus(){if(!$('tmLog').hidden)return;try{$('tmIn').focus({preventScroll:true})}catch(e){}}
+  function termAsk(){$('tmLog').hidden=false;$('tmErr').hidden=true;$('tmGo').disabled=false;$('tmGo').textContent='Log in';setTimeout(function(){try{$('tmTok').focus({preventScroll:true})}catch(e){}},40)}
+  function termShow(){if(!tmAsked){tmAsked=true;termAsk();return}setTimeout(tmFocus,40)}
+  ML.termLoginAsk=function(){activate(TW.el,true);termAsk()};ML.openTerm=function(){activate(TW.el,true)};
+  function tmLogin(){var b=$('tmGo');if(b.disabled)return;b.disabled=true;b.textContent='Logging in…';$('tmErr').hidden=true;
+    ML.termLogin($('tmTok').value,function(res){b.disabled=false;b.textContent='Log in';
+      if(res.err){$('tmErr').textContent=res.err;$('tmErr').hidden=false;return}
+      $('tmTok').value='';$('tmLog').hidden=true;tmFocus()})}
+  $('tmGo').onclick=tmLogin;$('tmTok').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tmLogin()}});
+  $('tmSkip').onclick=function(){$('tmLog').hidden=true;ML.termSkip();tmFocus()};
+  /* a tap anywhere on the black screen puts the cursor in the command line (but selecting text still works) */
+  $('tmW').addEventListener('click',function(e){if(e.target.closest('a,button,input'))return;var s=window.getSelection&&window.getSelection();if(s&&String(s).length)return;tmFocus()});
+  /* Start menu: Terminal, under the Practice Lab */
+  (function(){var L=$('smList');if(!L)return;var d=document.createElement('div');d.className='smi';
+    d.innerHTML='<a class="smp" id="smTerm" href="#"><b class="smweb">'+I.term+'</b>Git Bash / Terminal</a>';
+    var lp=L.querySelector('a.smp[href="#p5"]'),li=lp&&lp.closest('.smi');if(li&&li.nextSibling)L.insertBefore(d,li.nextSibling);else L.appendChild(d);
+    d.querySelector('a').addEventListener('click',function(e){e.preventDefault();$('startMenu').hidden=true;activate(TW.el,true)})})();
+
   /* drawing notepad */
   var DW=makeWin('drawWin','Notepad',I.pad,tkDraw,580,430);
   /* a pin in the title bar keeps a window above the others (Notepad, Cheat Sheet), like VS Code's pin; it is remembered */
@@ -474,20 +509,21 @@
     ['git-out-alive.jpg','In case of fire: 1. git commit, 2. git push, 3. git out!'],
     ['star-forks.jpg','A fork held up in front of the GitHub logo: May the fork be with you.'],
     ['bathroom-tile-commit-streak.jpg','Your GitHub contribution graph with a few green squares, versus a whole wall of green tiles.']];
-  var HHTASK='TASK: upload this folder to GitHub, without uploading the secret key\n\n'
-    +'1. Open the Practice Lab and go into this folder:   cd ~/hehehe\n'
-    +'2. Look at everything, hidden files too:   ls -a\n   See .env? It holds a secret key (a fake one). It must never reach GitHub.\n'
-    +'3. Make a new folder with bash, and put a file in it:\n   mkdir notes\n   echo "my favourite meme is star-forks" > notes/fav.txt\n   Check it is there:   ls notes\n   (Git only uploads folders that have a file inside. An empty folder never reaches GitHub.)\n'
-    +'4. Turn the folder into a Git repo:   git init\n'
-    +'5. Tell Git who you are (if you have not yet):\n   git config --global user.name "Your Name"\n   git config --global user.email "you@example.com"\n'
-    +'6. Ask Git what it sees:   git status\n   Uh oh: .env is in the list, so git add . would save it. (Your notes folder is in the list too: good.)\n'
-    +'7. Make Git ignore it: create a .gitignore file with .env in it\n   echo ".env" > .gitignore\n'
-    +'8. Ask again:   git status\n   .env is gone from the list, and .gitignore is new.\n'
-    +'9. Stage everything and save it:   git add .   then   git commit -m "Add memes"\n'
-    +'10. Make the repo on GitHub (it has to exist before you can upload to it):\n   Browser > + New repository, name it hehehe, press Create repository\n   or in the terminal:   gh repo create hehehe --public\n'
-    +'11. Connect it, with the link GitHub shows you:\n   git remote add origin https://github.com/you/hehehe.git\n   (in Real GitHub mode the link has your own GitHub name instead of "you")\n'
-    +'12. Upload it:   git push -u origin main\n\n'
-    +'Done when GitHub has the 5 memes, README.md, task.txt, .gitignore and notes/fav.txt, and NOT .env.\n';
+  var HHTASK='TASK: upload this folder to a new GitHub repo called workshop-demo, without uploading the secret key\n\n'
+    +'1. Open Git Bash / Terminal (its icon is on the desktop) and log in with your GitHub token.\n   (No token? Press "Use without GitHub" to practise on the Mini laptop\'s pretend GitHub.)\n'
+    +'2. Go into this folder:   cd ~/hehehe\n'
+    +'3. Look at everything, hidden files too:   ls -a\n   See .env? It holds a secret key (a fake one). It must never reach GitHub.\n'
+    +'4. Make a new folder with bash, and put a file in it:\n   mkdir notes\n   echo "my favourite meme is star-forks" > notes/fav.txt\n   Check it is there:   ls notes\n   (Git only uploads folders that have a file inside. An empty folder never reaches GitHub.)\n'
+    +'5. Turn the folder into a Git repo:   git init\n'
+    +'6. Tell Git who you are (if you have not yet):\n   git config --global user.name "Your Name"\n   git config --global user.email "you@example.com"\n'
+    +'7. Ask Git what it sees:   git status\n   Uh oh: .env is in the list, so git add . would save it. (Your notes folder is in the list too: good.)\n'
+    +'8. Make Git ignore it: create a .gitignore file with .env in it\n   echo ".env" > .gitignore\n'
+    +'9. Ask again:   git status\n   .env is gone from the list, and .gitignore is new.\n'
+    +'10. Stage everything and save it:   git add .   then   git commit -m "Add memes"\n'
+    +'11. Make the new repo workshop-demo on GitHub, connect this folder to it and upload, all in one go:\n   gh repo create workshop-demo --public --source=. --remote=origin --push\n'
+    +'   (the long way, same result:\n     gh repo create workshop-demo --public\n     git remote add origin https://github.com/YOUR-NAME/workshop-demo.git\n     git push -u origin main )\n'
+    +'12. Check it:   git remote -v   shows https://github.com/YOUR-NAME/workshop-demo.git\n   and on github.com/YOUR-NAME/workshop-demo you can see your files.\n\n'
+    +'Done when workshop-demo on GitHub has the 5 memes, README.md, task.txt, .gitignore and notes/fav.txt, and NOT .env.\n';
   var HHREADME='# hehehe\n\nA folder of Git memes from the Git & GitHub Workshop.\n\n'
     +'- google-drive-crimes.jpg: where do you save your code?\n- final_final_FINAL_v3.jpg: file names before Git\n- git-out-alive.jpg: in case of fire\n'
     +'- star-forks.jpg: may the fork be with you\n- bathroom-tile-commit-streak.jpg: that commit streak\n\n'
@@ -638,7 +674,7 @@
   function applyLook(){desk.classList.toggle('small',view==='small');desk.style.backgroundImage='url('+wallpaper(wp)+')';
     html.classList.remove('th-green','th-pink','th-purple','th-orange');if(theme!=='blue')html.classList.add('th-'+theme)}
   applyLook();
-  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:setup',n:'Setup guide',ic:I.setup,app:'setup'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
+  function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:term',n:'Git Bash / Terminal',ic:I.term,app:'term'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:setup',n:'Setup guide',ic:I.setup,app:'setup'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
     Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){var pic=ML.isPic(s.files[f]);mine.push({k:f,n:base(f),ic:pic?'<img class="dthumb" src="'+ML.binUrl(s.files[f])+'" alt="">':I.file,mark:ML.gitMark(f)})});
@@ -684,7 +720,7 @@
   function itemOf(k){var l=items();for(var i=0;i<l.length;i++)if(l[i].k===k)return l[i];return null}
   function openItem(it,open){if(!it)return;
     if(it.app==='setup'){openSetup();return}
-    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',cheat:'cheatWin',br:'brWin',setup:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
+    if(it.app){activate(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',term:'termWin',cheat:'cheatWin',br:'brWin',setup:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el,open);return}
     openFile(it.k)}
 
   /* rename right on the icon */
@@ -841,7 +877,7 @@
   desk.addEventListener('dblclick',function(e){if(lastPtr!=='mouse')return;var b=e.target.closest('.dico');if(!b||b.querySelector('.dren'))return;
     var it=itemOf(b.getAttribute('data-k'));if(appOpen(it))return;openItem(it)});
   /* once an app's window is open (even minimised), one click on its icon minimises or restores it, like the taskbar */
-  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',cheat:'cheatWin',br:'brWin',setup:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
+  function appEl(it){return it&&it.app?(it.app==='vs'?np:wins[{ws:'wsWin',lab:'labWin',term:'termWin',cheat:'cheatWin',br:'brWin',setup:'brWin',bin:'binWin',draw:'drawWin',guide:'guideWin',memes:'memeWin',credits:'credWin'}[it.app]].el):null}
   function appOpen(it){var el=appEl(it);if(!el)return false;return el.id==='notepad'?el.classList.contains('show'):!el.hidden}
   desk.addEventListener('keydown',function(e){if(e.target.closest('.dren')||e.target.closest('.selbar'))return;var b=e.target.closest('.dico'),k=b&&b.getAttribute('data-k'),it=k&&itemOf(k),l=selList(),many=l.length>1;
     if(e.key==='Enter'&&(it||many)){e.preventDefault();if(many)openMany(l);else openItem(it)}
@@ -993,7 +1029,7 @@
     function lessons(){var out=[];document.querySelectorAll('section.phase').forEach(function(sec){var t=sec.querySelector('h2');if(!t)return;
       sec.querySelectorAll('.idx a').forEach(function(a){if(a.getAttribute('href')==='#t2-3b')return;out.push({h:a.getAttribute('href'),t:a.textContent.replace(/^\s*\d+\.\s*/,''),p:t.textContent})})});
       out.push({h:'#t1-5',t:'Setup and installation',p:'Introduction'});return out}
-    var APPK={ws:'lessons workshop learn read exe',lab:'practice lab terminal git bash missions stories try commands',cheat:'cheat sheet commands list reference help all git bash terminal',vs:'vs code visual studio editor explorer source control',br:'browser internet web github repo search',setup:'setup guide website install installation first things first help web browser',
+    var APPK={term:'terminal git bash shell command line console cmd gh login token clone push real github',ws:'lessons workshop learn read exe',lab:'practice lab terminal git bash missions stories try commands',cheat:'cheat sheet commands list reference help all git bash terminal',vs:'vs code visual studio editor explorer source control',br:'browser internet web github repo search',setup:'setup guide website install installation first things first help web browser',
       draw:'notepad draw paint sketch pen',guide:'setup guide pdf install help windows linux',memes:'hehehe memes funny pictures images folder',credits:'suspects txt credits team names made by',bin:'bin trash recycle deleted restore'};
     /* everyday words people type, and the Git commands that do it */
     var CMDS=[];CHEAT.forEach(function(g){g.l.forEach(function(c){CMDS.push(c)})});
