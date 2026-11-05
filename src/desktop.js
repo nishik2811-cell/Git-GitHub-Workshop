@@ -295,7 +295,7 @@
   var SETUP='https://first-things-first-roan.vercel.app/',brTabNow='repo',brTimer=0,brLoaded=false,brSized=false;
   function brNewTab(u){var a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
   (function(){var tb=document.createElement('div');tb.className='brtabs';tb.setAttribute('role','tablist');tb.setAttribute('aria-label','Browser tabs');
-    tb.innerHTML='<button type="button" class="brtab on" data-t="repo" role="tab" aria-selected="true">'+I.repo+'<span>GitHub repo</span></button><button type="button" class="brtab" data-t="setup" role="tab" aria-selected="false">'+I.setup+'<span>Setup guide</span></button>';
+    tb.innerHTML='<button type="button" class="brtab on" data-t="repo" role="tab" aria-selected="true">'+I.repo+'<span>GitHub repo</span></button><button type="button" class="brtab" data-t="setup" role="tab" aria-selected="false">'+I.setup+'<span>Setup guide</span></button><button type="button" class="brtab" data-t="new" role="tab" aria-selected="false"><b class="brplus" aria-hidden="true">+</b><span class="brlg">New repository</span><span class="brsh">New repo</span></button>';
     var bar=BR.el.querySelector('.brbar');bar.parentNode.insertBefore(tb,bar);
     tb.addEventListener('click',function(e){var b=e.target.closest('.brtab');if(b)brTab(b.getAttribute('data-t'))});
     var pg=BR.body.querySelector('.brpage');pg.id='brRepo';
@@ -303,7 +303,8 @@
     sd.innerHTML='<div class="brframe"><div class="brfail" id="brFail" hidden role="status"><div class="brlogo">Setup <b>guide</b></div><p id="brFailMsg"></p>'
       +'<div class="brfbtns"><a class="brgo brnew" href="'+SETUP+'" target="_blank" rel="noopener">Open in a new tab</a><button type="button" class="brretry" id="brRetry">Try again</button></div></div></div>'
       +'<div class="brhint">Page blank? <a href="'+SETUP+'" target="_blank" rel="noopener">Open in a new tab</a></div>';
-    BR.body.appendChild(sd);$('brRetry').onclick=brLoad})();
+    BR.body.appendChild(sd);$('brRetry').onclick=brLoad;
+    var nw=document.createElement('div');nw.id='brNew';nw.hidden=true;BR.body.appendChild(nw)})();
   function brFail(why){clearTimeout(brTimer);var f=$('brFrame');if(f)f.hidden=true;$('brFailMsg').textContent=why==='offline'?'No internet right now, so the Setup guide cannot load here. Connect to the internet and press Try again, or open it in a new tab later.':'The Setup guide did not load inside this window. Open it in a new tab instead.';$('brFail').hidden=false}
   function brLoad(){var fr=BR.body.querySelector('.brframe'),f=$('brFrame');$('brFail').hidden=true;clearTimeout(brTimer);brLoaded=false;
     if(f)f.remove();f=document.createElement('iframe');f.id='brFrame';f.title='Setup guide';f.setAttribute('referrerpolicy','no-referrer');
@@ -315,11 +316,59 @@
     /* a quick check that the site can be reached at all: fails straight away when offline */
     try{fetch(SETUP,{mode:'no-cors',cache:'no-store'}).catch(function(){brFail('offline')})}catch(e){}}
   function brTab(t){brTabNow=t;BR.el.querySelectorAll('.brtab').forEach(function(b){var on=b.getAttribute('data-t')===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false')});
-    var setup=t==='setup';$('brRepo').hidden=setup;$('brSetup').hidden=!setup;BR.body.classList.toggle('brsetupon',setup);
-    $('brUrl').value=setup?SETUP:REPO;$('brGo').textContent=setup?'Open':'Search';$('brGo').title=setup?'Open the Setup guide in a new tab':'Open the repo in a new tab';
+    var setup=t==='setup',nw=t==='new';$('brRepo').hidden=setup||nw;$('brSetup').hidden=!setup;$('brNew').hidden=!nw;BR.body.classList.toggle('brsetupon',setup);
+    $('brUrl').value=setup?SETUP:nw?bnUrlNow():REPO;$('brGo').textContent=setup?'Open':'Search';$('brGo').title=setup?'Open the Setup guide in a new tab':'Open the repo in a new tab';$('brGo').hidden=nw;
+    if(nw){bnShow();return}
     if(setup){if(!$('brFrame'))brLoad();
       /* a website needs room: the first time, make a small Browser window bigger (laptops) */
       if(!brSized&&innerWidth>700&&!BR.el.classList.contains('max')){brSized=true;var w=Math.min(1000,innerWidth-24),h=Math.min(720,innerHeight-60);if(BR.el.offsetWidth<w){BR.el.style.width=w+'px';BR.el.style.height=h+'px';BR.el.style.left=Math.max(8,Math.round((innerWidth-w)/2))+'px';BR.el.style.top=Math.max(8,Math.round((innerHeight-38-h)/2))+'px'}}}}
+  /* New repository: a look-alike of github.com/new. Normal mode makes a pretend repo on the Mini laptop's GitHub;
+     Real GitHub mode makes a real one on your account (and Real GitHub mode switches to it). Then GitHub's
+     "Quick setup" page: the link to copy and the exact commands to connect a folder and push. */
+  var bnMade=null;
+  function bnUrlNow(){return bnMade?'https://github.com/'+bnMade.full:'https://github.com/new'}
+  function bnCopy(txt,btn){function ok(){var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o},1400)}
+    try{navigator.clipboard.writeText(txt).then(ok,function(){fallback()})}catch(e){fallback()}
+    function fallback(){var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(z){}ta.remove()}}
+  function bnShow(){var P=$('brNew');if(bnMade){bnDone(P);return}
+    var real=ML.realOn();
+    P.innerHTML='<div class="bnpage"><h2>Create a new repository</h2><p class="bnsub">A repository holds all your project\'s files and their history.</p>'
+      +'<div class="bnrow"><label class="bnf bnown">Owner<span id="bnOwner">'+(real?'&hellip;':'you')+'</span></label><span class="bnslash">/</span>'
+      +'<label class="bnf bngrow">Repository name <i>*</i><input id="bnName" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="my-project"></label></div>'
+      +'<p class="bnnote" id="bnNote" role="status">Great repository names are short and memorable.</p>'
+      +'<label class="bnf">Description <small>(optional)</small><input id="bnDesc" autocomplete="off"></label>'
+      +'<div class="bnvis" role="radiogroup" aria-label="Visibility"><label><input type="radio" name="bnVis" value="public" checked><span><b>Public</b><small>Anyone on the internet can see this repository. You choose who can commit.</small></span></label>'
+      +'<label><input type="radio" name="bnVis" value="private"><span><b>Private</b><small>You choose who can see and commit to this repository.</small></span></label></div>'
+      +'<p class="bninfo">The repo starts <b>empty</b> (no README), so your first <code>git push</code> just works.</p>'
+      +'<p class="bnmode '+(real?'real':'')+'">'+(real?'<b>Real GitHub mode:</b> this makes a REAL repo on your GitHub account, and Real GitHub mode switches to it.':'<b>Pretend GitHub:</b> the repo lives on this Mini laptop. To make a real one, switch on <b>Real GitHub mode</b> in the Practice Lab first.')+'</p>'
+      +'<p class="bnerr" id="bnErr" role="alert" hidden></p><button type="button" class="bnbtn" id="bnCreate">Create repository</button></div>';
+    if(real)ML.ghOwner(function(me){var o=$('bnOwner');if(o)o.textContent=me});
+    var nm=$('bnName');nm.addEventListener('input',function(){var f=ML.ghFixName(nm.value),n=$('bnNote');$('bnErr').hidden=true;
+      n.innerHTML=!nm.value.trim()?'Great repository names are short and memorable.':f!==nm.value.trim()?'Your new repository will be created as <b>'+ML.esc(f)+'</b>.':'&#10003; <b>'+ML.esc(f)+'</b> is a good name.'});
+    nm.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();bnGo()}});
+    $('bnCreate').onclick=bnGo;setTimeout(function(){try{nm.focus({preventScroll:true})}catch(e){}},30)}
+  function bnGo(){var nm=$('bnName'),b=$('bnCreate'),er=$('bnErr');if(b.disabled)return;
+    var name=ML.ghFixName(nm.value);if(!name){er.textContent='Repository name is required.';er.hidden=false;nm.focus();return}
+    var priv=!!document.querySelector('#brNew input[name="bnVis"][value="private"]:checked');b.disabled=true;b.textContent='Creating...';
+    ML.ghCreate({name:name,desc:$('bnDesc').value.trim(),priv:priv},function(res){b.disabled=false;b.textContent='Create repository';
+      if(res.err){er.innerHTML=ML.esc(/already exists/i.test(res.err)?'The repository '+(res.full||name)+' already exists on this account. Pick another name.':res.err)
+        +(res.kind==='perm'?'<br>Your token cannot make repos: use a classic token with the <b>repo</b> box ticked (a fine-grained token also needs Administration: Read and write).':'');er.hidden=false;return}
+      bnMade={full:res.full,priv:priv,real:!!res.real};say('Created github.com/'+ML.esc(res.full)+(res.real?' (for real)':'')+' in the Browser.');
+      $('brUrl').value=bnUrlNow();bnDone($('brNew'))})}
+  function bnDone(P){var m=bnMade,url='https://github.com/'+m.full+'.git',name=m.full.split('/')[1];
+    var push='git remote add origin '+url+'\ngit branch -M main\ngit push -u origin main';
+    var fresh='echo "# '+name+'" >> README.md\ngit init\ngit add README.md\ngit commit -m "first commit"\ngit branch -M main\ngit remote add origin '+url+'\ngit push -u origin main';
+    P.innerHTML='<div class="bnpage"><h2 class="bnhead">'+I.repo+'<span>'+ML.esc(m.full.split('/')[0])+' / <b>'+ML.esc(name)+'</b></span><em>'+(m.priv?'Private':'Public')+'</em></h2>'
+      +(m.real?'<p class="bnmode real"><b>This repo is real:</b> <a href="https://github.com/'+ML.esc(m.full)+'" target="_blank" rel="noopener">open it on github.com</a>. Real GitHub mode is now connected to it.</p>':'')
+      +'<div class="bnqs"><b>Quick setup</b> &mdash; if you\'ve done this kind of thing before<div class="bnurl"><span>HTTPS</span><input readonly id="bnUrl" value="'+ML.esc(url)+'" aria-label="Repository link"><button type="button" id="bnCopy">Copy</button></div></div>'
+      +'<h3>&hellip;or push an existing repository from the command line</h3><div class="bncmd"><pre>'+ML.esc(push)+'</pre><button type="button" data-cp="push">Copy</button></div>'
+      +'<h3>&hellip;or create a new repository on the command line</h3><div class="bncmd"><pre>'+ML.esc(fresh)+'</pre><button type="button" data-cp="fresh">Copy</button></div>'
+      +'<p class="bninfo">Type these in the <b>Practice Lab</b>, inside the folder you want to upload.</p>'
+      +'<button type="button" class="bnbtn bnagain" id="bnAgain">Create another repository</button></div>';
+    $('bnCopy').onclick=function(){bnCopy(url,this)};
+    P.querySelectorAll('[data-cp]').forEach(function(x){x.onclick=function(){bnCopy(x.getAttribute('data-cp')==='push'?push:fresh,x)}});
+    $('bnAgain').onclick=function(){bnMade=null;$('brUrl').value=bnUrlNow();bnShow()}}
+  ML.openNewRepo=function(){winOpen('brWin');brTab('new')};
   addEventListener('offline',function(){if(brTabNow==='setup'&&!BR.el.hidden)brFail('offline')});
   addEventListener('online',function(){if(brTabNow==='setup'&&!$('brFail').hidden)brLoad()});
   function openSetup(){winOpen('brWin');brTab('setup')}
@@ -428,15 +477,17 @@
   var HHTASK='TASK: upload this folder to GitHub, without uploading the secret key\n\n'
     +'1. Open the Practice Lab and go into this folder:   cd ~/hehehe\n'
     +'2. Look at everything, hidden files too:   ls -a\n   See .env? It holds a secret key (a fake one). It must never reach GitHub.\n'
-    +'3. Turn the folder into a Git repo:   git init\n'
-    +'4. Tell Git who you are (if you have not yet):\n   git config --global user.name "Your Name"\n   git config --global user.email "you@example.com"\n'
-    +'5. Ask Git what it sees:   git status\n   Uh oh: .env is in the list, so git add . would save it.\n'
-    +'6. Make Git ignore it: create a .gitignore file with .env in it\n   echo ".env" > .gitignore\n'
-    +'7. Ask again:   git status\n   .env is gone from the list, and .gitignore is new.\n'
-    +'8. Stage everything and save it:   git add .   then   git commit -m "Add memes"\n'
-    +'9. Connect a GitHub repo:   git remote add origin https://github.com/you/hehehe.git\n   (in Real GitHub mode, use your own repo link)\n'
-    +'10. Upload it:   git push -u origin main\n\n'
-    +'Done when GitHub has the 5 memes, README.md, task.txt and .gitignore, and NOT .env.\n';
+    +'3. Make a new folder with bash, and put a file in it:\n   mkdir notes\n   echo "my favourite meme is star-forks" > notes/fav.txt\n   Check it is there:   ls notes\n   (Git only uploads folders that have a file inside. An empty folder never reaches GitHub.)\n'
+    +'4. Turn the folder into a Git repo:   git init\n'
+    +'5. Tell Git who you are (if you have not yet):\n   git config --global user.name "Your Name"\n   git config --global user.email "you@example.com"\n'
+    +'6. Ask Git what it sees:   git status\n   Uh oh: .env is in the list, so git add . would save it. (Your notes folder is in the list too: good.)\n'
+    +'7. Make Git ignore it: create a .gitignore file with .env in it\n   echo ".env" > .gitignore\n'
+    +'8. Ask again:   git status\n   .env is gone from the list, and .gitignore is new.\n'
+    +'9. Stage everything and save it:   git add .   then   git commit -m "Add memes"\n'
+    +'10. Make the repo on GitHub (it has to exist before you can upload to it):\n   Browser > + New repository, name it hehehe, press Create repository\n   or in the terminal:   gh repo create hehehe --public\n'
+    +'11. Connect it, with the link GitHub shows you:\n   git remote add origin https://github.com/you/hehehe.git\n   (in Real GitHub mode the link has your own GitHub name instead of "you")\n'
+    +'12. Upload it:   git push -u origin main\n\n'
+    +'Done when GitHub has the 5 memes, README.md, task.txt, .gitignore and notes/fav.txt, and NOT .env.\n';
   var HHREADME='# hehehe\n\nA folder of Git memes from the Git & GitHub Workshop.\n\n'
     +'- google-drive-crimes.jpg: where do you save your code?\n- final_final_FINAL_v3.jpg: file names before Git\n- git-out-alive.jpg: in case of fire\n'
     +'- star-forks.jpg: may the fork be with you\n- bathroom-tile-commit-streak.jpg: that commit streak\n\n'
@@ -878,7 +929,9 @@
     ['git push origin v1.0','Upload a tag to GitHub','push tag upload release version','#n5-5','git push origin v1.0'],
     ['git push --tags','Upload all your tags to GitHub','push tags all upload','#n5-5','git push --tags']]},
    {g:'GitHub',l:[
+    ['gh repo create <name> --public','Make a new, empty repo on GitHub from the terminal (or: Browser > + New repository)','new create make repo github gh empty start','#n6-1','gh repo create  --public'],
     ['git remote add origin <url>','Connect your repo to one on GitHub','connect remote origin link github url add','#n6-1','git remote add origin '],
+    ['git remote set-url origin <url>','Change the GitHub address (fix a wrong link, or move to another repo)','change fix wrong link remote url address set','#n6-1','git remote set-url origin '],
     ['git remote -v','Show which GitHub address your repo is connected to','remote address url origin show connected','#n6-1','git remote -v'],
     ['git push -u origin main','Upload your commits to GitHub the first time (and remember where)','upload push send share github online first','#t2-4','git push -u origin main'],
     ['git push','Upload your new commits to GitHub','upload push send share github online','#t2-4','git push'],

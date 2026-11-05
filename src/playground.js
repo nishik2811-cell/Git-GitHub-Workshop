@@ -261,7 +261,8 @@
         var f1={'README.md':'# website\nRoli\'s first website.\n'},f2={'README.md':'# website\nRoli\'s first website.\n','index.html':'<h1>Hello</h1>\n'};
         var c1={id:rid(),msg:'first commit',p:[],files:f1,br:'main',n:++S.n,who:'Roli'},c2={id:rid(),msg:'add index page',p:[c1.id],files:f2,br:'main',n:++S.n,who:'Roli'};
         [c1,c2].forEach(function(c){nr2.cm[c.id]=c;nr2.list.push(c)});nr2.remote.br.main=c2.id}
-      else{perr("remote: Repository not found.\nfatal: repository '"+url.replace(/\/+$/,'')+"/' not found");pl('On this Mini laptop, GitHub only has the repos you pushed to, plus public samples: git clone https://github.com/octocat/Hello-World','y');return}
+      else if(S.ghMade&&S.ghMade[ghKey(url)]){nr2=made()}
+      else{perr("remote: Repository not found.\nfatal: repository '"+url.replace(/\/+$/,'')+"/' not found");pl('On this Mini laptop, GitHub only has the repos you made (gh repo create, or Browser > New repository) or pushed to, plus public samples: git clone https://github.com/octocat/Hello-World','y');return}
       var cnt=nr2.list.length;if(cnt)pl('remote: Enumerating objects: '+cnt+', done.\nremote: Counting objects: 100% ('+cnt+'/'+cnt+'), done.\nReceiving objects: 100% ('+cnt+'/'+cnt+'), done.');
       checkout(nr2,nr2.remote.br.main?'main':keys(nr2.remote.br)[0]);return}
     if(!needRepo())return;r=R();
@@ -490,6 +491,11 @@
         if(n===r.head){perr("error: Cannot delete branch '"+n+"' checked out");return}
         var tip=r.br[n];if(tip&&a.indexOf('-D')<0&&!anc(headId())[tip]){perr("error: the branch '"+n+"' is not fully merged.\nIf you are sure, use 'git branch -D "+n+"'.");return}
         delete r.br[n];pl("Deleted branch "+n+" (was "+tip+").");return}
+      var mv=a.indexOf('-m')>=0||a.indexOf('-M')>=0;
+      if(mv){var from=names.length>1?names[0]:r.head,to=names.length>1?names[1]:names[0];
+        if(!to){perr('fatal: branch name required');return}if(!(from in r.br)){perr("error: refname refs/heads/"+from+" not found\nfatal: Branch rename failed");return}
+        if(from===to)return;if((to in r.br)&&a.indexOf('-M')<0){perr("fatal: a branch named '"+to+"' already exists");return}
+        r.br[to]=r.br[from];delete r.br[from];if(r.head===from)r.head=to;return}
       if(names.length){var nb=names[0];if(nb in r.br){perr("fatal: a branch named '"+nb+"' already exists");return}
         if(!headId()){perr("fatal: not a valid object name: '"+r.head+"'.");return}r.br[nb]=headId();return}
       keys(r.br).sort().forEach(function(b){pr(b===r.head?'<span class="g">* '+esc(b)+'</span>':'  '+esc(b))});
@@ -520,9 +526,17 @@
       if(a[1]==='add'){if(!a[3]){perr('usage: git remote add <name> <url>');return}if(r.remote){perr("error: remote origin already exists.");return}
         r.remote={url:a[3],br:{},ids:{}};var src0=!RL.on&&ghSource(a[3],r);if(src0)ghCopy(src0,r);return}
       if(a[1]==='-v'||!a[1]){if(r.remote){if(a[1])pl('origin\t'+r.remote.url+' (fetch)\norigin\t'+r.remote.url+' (push)');else pl('origin')}return}
+      /* change the link (git remote set-url origin <url>), take it away (git remote remove origin), or print it */
+      if(a[1]==='set-url'){if(!a[3]){perr('usage: git remote set-url <name> <newurl>');return}if(a[2]!=='origin'||!r.remote){perr("error: No such remote '"+a[2]+"'");return}
+        var keepBr=r.remote.br,was=realTarget(r);r.remote={url:a[3],br:{},ids:{}};var src1=!RL.on&&ghSource(a[3],r);if(src1)ghCopy(src1,r);else if(RL.on)r.remote.br=keepBr;
+        /* Real GitHub mode, now pointing at a different GitHub repo: this folder starts fresh with it */
+        var now2=realTarget(r);if(RL.on&&String(was).toLowerCase()!==String(now2).toLowerCase()){r.rlknown={};r.rlmap={};r.remote.br={}}return}
+      if(a[1]==='remove'||a[1]==='rm'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote: '"+(a[2]||'')+"'");return}r.remote=null;r.rbr={};return}
+      if(a[1]==='get-url'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote '"+(a[2]||'')+"'");return}pl(r.remote.url);return}
       perr('error: unsupported remote command');return}
     if(sub==='push'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
+      if(RL.on&&!realOk(r)){realRoute(r,'push',function(){git(a)});return}
       var pw=a.slice(1).filter(function(x){return x[0]!=='-'}),allTags=a.indexOf('--tags')>=0;
       if(pw[0]&&pw[0]!=='origin'){perr("fatal: '"+pw[0]+"' does not appear to be a git repository\nfatal: Could not read from remote repository.");return}
       var ref=pw[1],br=r.head;r.tags=r.tags||{};
@@ -544,6 +558,7 @@
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;ghShare(r);return}
     if(sub==='fetch'||sub==='pull'){
       if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
+      if(RL.on&&!realOk(r)){realRoute(r,'fetch',function(){git(a)});return}
       var allowU=a.indexOf('--allow-unrelated-histories')>=0,reb=a.indexOf('--rebase')>=0||a.indexOf('-r')>=0;
       if(r.rebase){perr('error: Pulling is not possible because you are in the middle of a rebase.\nhint: Use "git rebase --continue", "--skip" or "--abort".');return}
       if(sub==='pull'&&mergeBlocked('Pulling'))return;
@@ -619,6 +634,7 @@
       var txt=t.slice(1,ri).join(' ')+'\n';S.files[p]=t[ri]==='>>'?(S.files[p]||'')+txt:txt;return}
     if(t[0]==='echo'){pl(t.slice(1).join(' '));return}
     if(t[0]==='git'){git(t.slice(1));return}
+    if(t[0]==='gh'){ghCmd(t.slice(1));return}
     shell(t);
   }
   /* ---------- prompt + render ---------- */
@@ -726,7 +742,7 @@
     var side='<div class="vsside"><div class="vssh"><span>EXPLORER</span><span class="vstools"><button class="vsnew" data-new="1" title="New File" aria-label="New File">'+VI.nf+'</button><button class="vsnew" data-newdir="1" title="New Folder" aria-label="New Folder">'+VI.nd+'</button></span></div><div class="vsfold" data-root="1">&#8964; '+esc(folder.toUpperCase())+'</div>'+vsTreeHtml+'</div>';
     var scm=S.vsView==='scm';if(scm)side=scmSide();
     var act='<div class="vsact"><i'+(scm?'':' class="on"')+' title="Explorer" data-view="files">'+VI.files+'</i><i title="Search">'+VI.search+'</i><i'+(scm?' class="on"':'')+' title="Source Control" data-view="scm">'+VI.scm+(dirty?'<em>'+dirty+'</em>':'')+'</i><i title="Extensions">'+VI.ext+'</i></div>';
-    var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(base(x[0]))+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+vsCrumb(cur)+'</div>':'';
+    var tabs=cur?'<div class="vstabs">'+list.filter(function(x){return x[0]===cur||x[1]==='C'}).concat(list.filter(function(x){return x[0]!==cur&&x[1]!=='C'})).slice(0,3).map(function(x){return '<span class="vstab'+(x[0]===cur?' on':'')+(x[1]==='C'?' cf':'')+'" data-f="'+esc(x[0])+'">'+ficon(x[0])+esc(base(x[0]))+(x[1]==='C'?' &#9888;':'')+'<u>&times;</u></span>'}).join('')+vsUrBtns()+'</div><div class="vscrumb">'+esc(folder)+' &rsaquo; '+vsCrumb(cur)+'</div>':'';
     var stat='<div class="vsstat'+(branch?'':' nof')+'"><span>'+(branch?'<a class="vsbr" data-brpick="1" title="Switch branch">'+VI.br+esc(branch)+'</a>'+(state?' &middot; '+state:''):'no Git repo here')+'</span><span>&#8855; 0 &#9888; 0</span><span class="vsr">'+(cur?'Ln 1, Col 1 &nbsp; UTF-8 &nbsp; '+flang(cur):'')+'</span></div>';
     return '<div class="vsmain'+(scm?' scm':'')+'">'+act+side+'<div class="vsed">'+tabs+'<div class="vscode">'+editor+'</div></div></div>'+stat}
   function vsEdit(t){if(isBin(t))return isPic(t)?'<div class="vsimg"><img src="'+binUrl(t)+'" alt="'+esc(base(S.fvf||'picture'))+'"><small>'+esc(base(S.fvf||''))+' &middot; '+binSize(t)+' bytes &middot; a picture, so there is nothing to type here</small></div>':'<div class="vsempty">This is a binary file ('+binSize(t)+' bytes). VS Code cannot show it as text.</div>';
@@ -933,6 +949,14 @@
     el.addEventListener('contextmenu',function(e){if(!test(e.target))return;e.preventDefault();e.stopPropagation();if(el._lp&&Date.now()-el._lp<900)return;fn(e)});
     el.addEventListener('click',function(e){if(el._lp&&Date.now()-el._lp<900){e.preventDefault();e.stopPropagation();el._lp=0}},true)}
   function vsPath(){return vsAbs(S.fvf)}
+  /* undo / redo in the VS Code editor: each file keeps its own history; typing in one go is one step */
+  function vsHist(p){S.vsUndo=S.vsUndo||{};return S.vsUndo[p]||(S.vsUndo[p]={u:[],r:[],t:0,last:null})}
+  function vsCan(redo){if(!S.fvf)return false;var p=vsPath();if(!(p in S.files)||isBin(S.files[p]))return false;var h=vsHist(p);if(h.last!==null&&h.last!==S.files[p])return false;return (redo?h.r:h.u).length>0}
+  function vsUrBtns(){return '<span class="vsur"><button type="button" data-vsu="u" title="Undo (Ctrl+Z)" aria-label="Undo"'+(vsCan(false)?'':' disabled')+'>&#8630;</button><button type="button" data-vsu="r" title="Redo (Ctrl+Y)" aria-label="Redo"'+(vsCan(true)?'':' disabled')+'>&#8631;</button></span>'}
+  function vsUndoDo(redo){if(!vsCan(redo))return;var p=vsPath(),h=vsHist(p),cur=S.files[p],from=redo?h.r:h.u,to=redo?h.u:h.r,v=from.pop();to.push(cur);S.files[p]=v;h.last=v;h.t=0;
+    /* the cursor goes to the end of the part that changed back */
+    var i=0,k=0;while(i<v.length&&i<cur.length&&v[i]===cur[i])i++;while(k<v.length-i&&k<cur.length-i&&v[v.length-1-k]===cur[cur.length-1-k])k++;var at=Math.max(i,v.length-k);
+    var sc=document.querySelector('#fvB .vscode');vsSel={f:S.fvf,s:at,e:at,t:sc?sc.scrollTop:0,l:sc?sc.scrollLeft:0};render()}
   var vsSel=null;
   /* the line between the file list and the editor can be dragged to make the list wider or narrower (a little ⋮ grip on phones) */
   var vsGripD=null;
@@ -947,12 +971,20 @@
   addEventListener('resize',function(){if(np.classList.contains('show'))vsGrip()});
   function vsKeep(){vsGrip();var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l}}vsSel=null}
   $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
-    S.files[vsPath()]=v===''||/\n$/.test(v)?v:v+'\n';
+    var hp=vsPath(),h=vsHist(hp),was=S.files[hp]===undefined?'':S.files[hp],now=Date.now();
+    if(h.last!==null&&h.last!==was){h.u=[];h.r=[]} /* the file was changed outside the editor (git restore, merge...): start a fresh history */
+    if(!h.u.length||now-h.t>800||/Paste|Drop|Cut|LineBreak|Paragraph/.test(e.inputType||''))h.u.push(was);if(h.u.length>200)h.u.shift();h.t=now;h.r=[];
+    S.files[hp]=v===''||/\n$/.test(v)?v:v+'\n';h.last=S.files[hp];
     var sc=ta.closest('.vscode');vsSel={f:S.fvf,s:ta.selectionStart,e:ta.selectionEnd,t:sc?sc.scrollTop:0,l:sc?sc.scrollLeft:0};render()});
   $('fvB').addEventListener('input',function(e){if(e.target.id==='scmMsg')S.scmMsg=e.target.value});
+  $('fvB').addEventListener('mousedown',function(e){if(e.target.closest&&e.target.closest('[data-vsu]'))e.preventDefault()}); /* keep typing focus in the file */
+  $('fvB').addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-vsu]');if(b&&!b.disabled)vsUndoDo(b.getAttribute('data-vsu')==='r')});
   $('fvB').addEventListener('focusin',function(e){S.scmFocus=e.target.id==='scmMsg'});
   $('fvB').addEventListener('keydown',function(e){
     if(e.target.id==='scmMsg'&&e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();scmAct('commit');return}
+    if(e.target.id==='vsTa'&&(e.ctrlKey||e.metaKey)&&!e.altKey){var uk=(e.key||'').toLowerCase();
+      if(uk==='z'&&!e.shiftKey){e.preventDefault();vsUndoDo(false);return}
+      if(uk==='y'||(uk==='z'&&e.shiftKey)){e.preventDefault();vsUndoDo(true);return}}
     if(e.target.id==='vsTa'&&e.key==='Tab'){e.preventDefault();var ta=e.target,s=ta.selectionStart;ta.setRangeText('  ',s,ta.selectionEnd,'end');ta.dispatchEvent(new Event('input',{bubbles:true}))}
     if(e.target.id!=='vsName')return;
     if(e.key==='Escape'){S.vsNaming=0;fvDraw();return}
@@ -1487,24 +1519,44 @@
   function b64(t){return btoa(unescape(encodeURIComponent(t)))}
   function ago(d){var s=Math.max(0,(Date.now()-new Date(d))/1000);return s<60?'just now':s<3600?Math.floor(s/60)+' min ago':Math.floor(s/3600)+' h ago'}
   function setupForm(msg){
-    rbody.innerHTML='<ol class="rsteps"><li><b>Make a new empty repo.</b> <a href="https://github.com/new" target="_blank" rel="noopener">Open github.com/new</a>. Give it a name and click <b>Create repository</b>. Then copy its address from the browser bar.</li>'
-     +'<li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, scroll down, click <b>Generate token</b>, and copy it.</li><li><b>Paste both below.</b></li></ol>'
-     +'<label class="rf">Repo link<input id="rfRepo" placeholder="https://github.com/your-name/your-repo" value="'+esc(RL.repo)+'"></label>'
+    rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
+     +'<li><b>Pick the repo.</b> Already have an empty repo? Paste its link. No repo yet? Make one right here, below.</li></ol>'
      +'<label class="rf">Token (starts with ghp_ or github_pat_)<input id="rfTok" type="password" placeholder="paste the token here" autocomplete="off"></label>'
+     +'<label class="rf">Repo link<input id="rfRepo" placeholder="https://github.com/your-name/your-repo" value="'+esc(RL.repo)+'"></label>'
      +'<p class="empty" style="margin:4px 0 0">The token stays in this tab only. It is never saved.</p>'
      +(msg?'<p class="rerr">'+esc(msg)+'</p>':'')
-     +'<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button class="greenbtn" id="rfGo">Connect</button><button id="rfOff">Back to Mini laptop only</button></div>';
-    $('rfGo').onclick=connect;$('rfOff').onclick=realOff;
+     +'<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button class="greenbtn" id="rfGo">Connect</button><button id="rfOff">Back to Mini laptop only</button></div>'
+     +'<div class="rfnew"><b>No repo yet? Make one</b><span class="rfnewrow"><input id="rfNewName" placeholder="my-first-repo" aria-label="New repo name" autocomplete="off" spellcheck="false">'
+     +'<label><input type="radio" name="rfVis" value="public" checked> Public</label><label><input type="radio" name="rfVis" value="private"> Private</label></span>'
+     +'<div class="btns" style="justify-content:flex-start;margin:6px 0 0"><button id="rfNew">Create it and connect</button></div><small>Your token makes an empty repo on your GitHub account (like github.com/new), then connects to it.</small></div>';
+    $('rfGo').onclick=connect;$('rfOff').onclick=realOff;$('rfNew').onclick=connectNew;
+    $('rfNewName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();connectNew()}});
   }
   function parseRepo(v){v=v.trim();var m=v.match(/github\.com[\/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[\/?#].*)?$/);if(m)return m[1]+'/'+m[2];m=v.match(/^([\w.-]+)\/([\w.-]+)$/);return m?m[1]+'/'+m[2].replace(/\.git$/,''):''}
   function connect(){
     var rp=parseRepo($('rfRepo').value),tk=$('rfTok').value.trim();
-    if(!rp||!tk){RL.repo=rp;setupForm('Paste the repo link (like https://github.com/you/your-repo) and the token.');return}
+    if(!rp||!tk){RL.repo=rp;setupForm(!tk?'Paste the token first.':'Paste the repo link (like https://github.com/you/your-repo), or make a new repo below.');if(tk)$('rfTok').value=tk;return}
+    connectTo(rp,tk)}
+  /* no repo yet: make it with the token (POST /user/repos), then connect to it */
+  function connectNew(){var tk=$('rfTok').value.trim(),nm=ghFixName($('rfNewName').value),priv=!!document.querySelector('input[name="rfVis"][value="private"]:checked');
+    function again(m){setupForm(m);$('rfTok').value=tk;$('rfNewName').value=nm;if(priv)document.querySelector('input[name="rfVis"][value="private"]').checked=true}
+    if(!tk){again('Paste the token first: it is what makes the repo on your account.');return}
+    if(!nm||nm==='.'||nm==='..'){again('Type a name for the new repo, like my-first-repo.');return}
+    RL.tok=tk;rbody.innerHTML='<p class="empty">Making github.com/&hellip;/'+esc(nm)+' ...</p>';
+    gh('POST','/user/repos',{name:nm,description:'Made with the Git & GitHub Workshop Mini laptop',private:priv,auto_init:false}).then(function(x){
+      if(x.s===201||x.s===200){var full=x.j.full_name;pl('✓ Created repository '+full+' on GitHub\n  https://github.com/'+full,'g');connectTo(full,tk);return}
+      var msg=(x.j&&x.j.message)||'',det=(x.j&&x.j.errors&&x.j.errors[0]&&(x.j.errors[0].message||x.j.errors[0].code))||'';RL.tok='';
+      if(x.s===422&&/exist/i.test(msg+' '+det)){again('You already have a repo called '+nm+'. Pick another name, or paste its link above and press Connect.');return}
+      if(x.s===401){again('GitHub said 401: the token is wrong or expired. Make a new one.');return}
+      if(x.s===403||x.s===404){again('GitHub said '+x.s+': this token cannot make repos. Use a classic token with the repo box ticked (a fine-grained token also needs Administration: Read and write). Or make the repo at github.com/new and paste its link.');return}
+      again('GitHub said '+x.s+': '+(msg||'could not make the repo')+(det?' ('+det+')':''))
+    }).catch(function(e){RL.tok='';again('Could not reach GitHub ('+((e&&e.message)||'blocked')+'). Check your internet and open the file directly in Chrome or Edge.')})}
+  function connectTo(rp,tk){
     RL.repo=rp;RL.tok=tk;rbody.innerHTML='<p class="empty">Connecting...</p>';
     gh('GET','/repos/'+rp).then(function(x){
       if(x.s!==200){RL.tok='';setupForm('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
       if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
-      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};
+      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};RL.login='';
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
       pl('Connected to github.com/'+rp+' for real. Add it as origin and push!','y');
       pl('git remote add origin https://github.com/'+rp+'.git','c');
@@ -1546,6 +1598,97 @@
     seq(tl,function(t){return gh('POST','/repos/'+repo+'/git/refs',{ref:'refs/tags/'+t,sha:sha[r.tags[t].id]}).then(function(x){if(x.s>=300)throw new Error(x.s+' '+((x.j&&x.j.message)||''));r.remote.tags=r.remote.tags||{};r.remote.tags[t]=r.tags[t].id})})
     .then(function(){pl('To https://github.com/'+repo+'.git');tl.forEach(function(t){pl(' * [new tag]         '+t+' -> '+t,'g')})},function(e){perr('error: GitHub refused the tag: '+e.message)})
     .then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()})}
+  /* ---------- making a new repo ON GITHUB: gh repo create, or the Browser's New repository page ----------
+     Normal mode: a pretend repo on the Mini laptop's GitHub. Real GitHub mode: a real repo on your account,
+     and Real GitHub mode switches to it, ready to push. */
+  function ghFixName(n){return String(n||'').trim().replace(/\.git$/i,'').replace(/[^A-Za-z0-9._-]+/g,'-')}
+  function ghHas(full){var k='https://github.com/'+full.toLowerCase();if(S.ghMade&&S.ghMade[k])return true;
+    if(k==='https://github.com/octocat/hello-world'||k==='https://github.com/roli/website')return true;
+    return keys(S.repos).some(function(rt){var q=S.repos[rt];return q.remote&&ghKey(q.remote.url)===k&&keys(q.remote.br).some(function(b){return q.remote.br[b]})})}
+  /* who you are on GitHub: "you" on the pretend GitHub, your real user name in Real GitHub mode */
+  function ghOwner(cb){if(!RL.on){cb('you');return}if(RL.login){cb(RL.login);return}
+    gh('GET','/user').then(function(x){RL.login=(x.s===200&&x.j&&x.j.login)||RL.repo.split('/')[0];cb(RL.login)},function(){cb(RL.repo.split('/')[0])})}
+  /* which commits are already on GitHub is remembered per folder (RL.known / RL.map read the repo you are in),
+     so switching the GitHub repo shown leaves each folder's memory alone */
+  function realSwitch(full,def){RL.repo=full;RL.def=def||'main';RL.view=RL.def;RL.seen={};refreshLive(true)}
+  /* o = {name, owner, desc, priv}; cb({ok,full,url}) or cb({err,kind}) where kind is name / exists / perm / net */
+  function ghCreate(o,cb){var name=ghFixName(o.name);
+    if(!name||name==='.'||name==='..'){cb({err:'Repository name is required.',kind:'name'});return}
+    if(name.length>100){cb({err:'Name is too long (at most 100 characters).',kind:'name'});return}
+    ghOwner(function(me){var owner=o.owner||me,full=owner+'/'+name;
+      if(!RL.on){
+        if(owner.toLowerCase()!=='you'){cb({err:"GraphQL: you can only make repos for your own account (you) on this Mini laptop",kind:'perm'});return}
+        if(ghHas(full)){cb({err:'GraphQL: Name already exists on this account (createRepository)',kind:'exists',full:full});return}
+        S.ghMade=S.ghMade||{};S.ghMade['https://github.com/'+full.toLowerCase()]={full:full,priv:!!o.priv,desc:o.desc||'',def:'main'};
+        cb({ok:true,full:full,url:'https://github.com/'+full,name:name});return}
+      var path=owner.toLowerCase()===me.toLowerCase()?'/user/repos':'/orgs/'+encodeURIComponent(owner)+'/repos';
+      gh('POST',path,{name:name,description:o.desc||'',private:!!o.priv,auto_init:false}).then(function(x){
+        if(x.s===201||x.s===200){var f2=(x.j&&x.j.full_name)||full;realSwitch(f2,(x.j&&x.j.default_branch)||'main');cb({ok:true,full:f2,url:'https://github.com/'+f2,name:name,real:true});return}
+        var msg=(x.j&&x.j.message)||'',det=(x.j&&x.j.errors&&x.j.errors[0]&&(x.j.errors[0].message||x.j.errors[0].code))||'';
+        if(x.s===422&&/exist/i.test(msg+' '+det)){cb({err:'GraphQL: Name already exists on this account (createRepository)',kind:'exists',full:full});return}
+        if(x.s===401){cb({err:'HTTP 401: Bad credentials (https://api.github.com'+path+')',kind:'perm'});return}
+        if(x.s===403||x.s===404){cb({err:'HTTP '+x.s+': '+(msg||'Resource not accessible by personal access token')+' (https://api.github.com'+path+')',kind:'perm'});return}
+        cb({err:'HTTP '+x.s+': '+(msg||'GitHub refused')+(det?' ('+det+')':''),kind:'net'})
+      }).catch(function(e){cb({err:'could not reach GitHub ('+((e&&e.message)||'network error')+')',kind:'net'})})})}
+  function permHint(){pl('Your token cannot make repos. A classic token with the "repo" box ticked can. A fine-grained token also needs "Administration: Read and write". Or make the repo at github.com/new and connect it.','y')}
+  /* gh: GitHub's own command-line tool (only the parts the workshop teaches) */
+  function ghCmd(a){
+    if(a[0]==='--version'||a[0]==='version'){pl('gh version 2.63.2 (2024-12-05)\nhttps://github.com/cli/cli/releases/tag/v2.63.2');return}
+    if(!a.length||a[0]==='help'||a[0]==='--help'){pl('Work seamlessly with GitHub from the command line.\n\nUSAGE\n  gh <command> <subcommand> [flags]\n\nON THIS MINI LAPTOP\n  gh repo create <name> --public     make a new repo on GitHub\n  gh repo create <name> --public --source=. --remote=origin --push\n                                     ...and connect this folder to it and push\n  gh auth status                     who you are logged in as');return}
+    if(a[0]==='auth'){if(a[1]!=='status'){perr('unknown command "'+(a[1]||'')+'" for "gh auth"\nOn this Mini laptop you are already logged in. Try: gh auth status');return}
+      var wait=RL.on;if(wait){pend=true;busy=true;inp.disabled=true}
+      ghOwner(function(me){pl('github.com\n  ✓ Logged in to github.com account '+me+' ('+(RL.on?'your token':'keyring')+')\n  - Active account: true\n  - Git operations protocol: https'+(RL.on?'':'\n  (the Mini laptop\'s pretend GitHub: switch on Real GitHub mode to use your real account)'));if(wait)ghDone()});return}
+    if(a[0]!=='repo'){perr('unknown command "'+a[0]+'" for "gh"\n\nUsage:  gh <command> <subcommand> [flags]\n\nOn this Mini laptop:  gh repo create <name> --public');return}
+    if(a[1]!=='create'){perr('unknown command "'+(a[1]||'')+'" for "gh repo"\n\nOn this Mini laptop:  gh repo create <name> --public');return}
+    var o={},name=null,bad=null;
+    for(var i=2;i<a.length;i++){var x=a[i],m=x.match(/^(--[a-z-]+)=(.*)$/),k=m?m[1]:x,v=m?m[2]:null;
+      function val(){if(v!==null)return v;i++;return a[i]}
+      if(k==='--public')o.vis='public';else if(k==='--private')o.vis='private';else if(k==='--internal')o.vis='internal';
+      else if(k==='--source'||k==='-s')o.src=val();else if(k==='--remote'||k==='-r')o.rem=val();
+      else if(k==='--description'||k==='-d')o.desc=val();else if(k==='--push')o.push=true;else if(k==='--clone'||k==='-c')o.clone=true;
+      else if(k==='--add-readme'||k==='--gitignore'||k==='-g'||k==='--license'||k==='-l'||k==='--template'||k==='-p'){bad=k;if(k!=='--add-readme')val()}
+      else if(x[0]==='-'){perr('unknown flag: '+x+'\n\nUsage:  gh repo create [<name>] [flags]');return}
+      else if(name===null)name=x;else{perr('accepts at most 1 arg(s), received 2');return}}
+    if(name===null&&o.src){var sp=norm(o.src);name=sp===HOME?null:base(sp)}
+    if(name===null){perr('error: give the new repo a name, like:  gh repo create my-project --public\n(real gh would ask you questions instead; on this Mini laptop, type the flags)');return}
+    if(!o.vis){perr('`--public`, `--private`, or `--internal` required when not running interactively');return}
+    if(o.vis==='internal'){perr('error: --internal is only for repos in an organization. Use --public or --private.');return}
+    if(bad){perr(bad+': not on this Mini laptop. It makes empty repos, so your first git push just works.');return}
+    if(o.push&&!o.src){perr('`--push` enabled but no `--source` specified');return}
+    if(o.rem&&!o.src){perr('the `--remote` option can only be used with `--source`');return}
+    if(o.clone&&o.src){perr('the `--source` option is not supported with `--clone`');return}
+    var owner=null;if(name.indexOf('/')>0){owner=name.split('/')[0];name=name.split('/').slice(1).join('/')}
+    var srcRepo=null,rem=o.rem||'origin';
+    if(o.src){var sd=norm(o.src);if(!S.dirs[sd]){perr(o.src+': no such directory');return}
+      srcRepo=S.repos[sd]||null;if(!srcRepo){perr('current directory is not a git repository. Run `git -C "'+o.src+'" init` to initialize it');return}
+      if(rem!=='origin'){perr('error: this Mini laptop knows one remote per repo, called origin. Leave out --remote, or use --remote=origin');return}
+      if(srcRepo.remote){perr('X Unable to add remote "origin"\nerror: remote origin already exists.\nTip: git remote remove origin   (then try again)');return}}
+    var wait2=RL.on;if(wait2){pend=true;busy=true;inp.disabled=true;pl('Creating the repo on github.com (this one is real)...','y')}
+    ghCreate({name:name,owner:owner,desc:o.desc,priv:o.vis==='private'},function(res){
+      if(res.err){perr(res.err);if(res.kind==='perm')permHint();if(wait2)ghDone();return}
+      pl('✓ Created repository '+res.full+' on GitHub\n  '+res.url,'g');
+      if(res.real)pl('Real GitHub mode now shows github.com/'+res.full+'.','y');
+      var git2=res.url+'.git';
+      if(o.clone){if(wait2)ghDone();git(['clone',git2]);render();return}
+      if(!srcRepo){if(!o.src)pl('Next: connect a folder to it:  git remote add origin '+git2,'y');if(wait2)ghDone();return}
+      srcRepo.remote={url:git2,br:{},ids:{}};pl('✓ Added remote '+git2,'g');
+      if(!o.push){if(wait2)ghDone();return}
+      if(wait2)ghDone();
+      var keep=S.forceRepo;S.forceRepo=srcRepo;var hb=srcRepo.head;
+      if(RL.on){RL.onPushed=function(){pl('✓ Pushed commits to '+git2,'g');setPrompt();render()};git(['push','-u','origin',hb]);S.forceRepo=keep;render();return}
+      git(['push','-u','origin',hb]);S.forceRepo=keep;if(srcRepo.br[hb]&&srcRepo.remote.br[hb]===srcRepo.br[hb])pl('✓ Pushed commits to '+git2,'g');render()})}
+  function ghDone(){pend=false;if(!scripting){busy=false;inp.disabled=false;try{inp.focus({preventScroll:true})}catch(z){}}setPrompt();render()}
+  /* Real GitHub mode: push, fetch and pull go to the repo in the origin link, like real Git.
+     A link to a repo that does not exist fails like real Git; a link to another repo you can use switches to it. */
+  function realTarget(r){var m=asHttps((r&&r.remote&&r.remote.url)||'').match(/^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);return m?m[1]+'/'+m[2]:null}
+  function realOk(r){var t=realTarget(r);if(!t)return true;return t.toLowerCase()===String(ghRepo(r)||'').toLowerCase()}
+  function realRoute(r,kind,again){var t=realTarget(r),url='https://github.com/'+t+'.git';pend=true;busy=true;inp.disabled=true;
+    gh('GET','/repos/'+t).then(function(x){
+      if(x.s===200&&!(kind==='push'&&x.j.permissions&&x.j.permissions.push===false)){var full=x.j.full_name||t;realSwitch(full,x.j.default_branch);pl('Real GitHub mode now shows github.com/'+full+': the repo your origin link points to.','y');ghDone();again();return}
+      if(x.s===200){perr("remote: Permission to "+t+".git denied.\nfatal: unable to access '"+url+"/': The requested URL returned error: 403");ghDone();return}
+      perr("remote: Repository not found.\nfatal: repository '"+url+"/' not found");
+      pl('In Real GitHub mode the link must point to a repo that really exists. Your connected repo is github.com/'+RL.repo+':\n  git remote set-url origin https://github.com/'+RL.repo+'.git\nOr make this one first:  gh repo create '+t.split('/')[1]+' --public','y');ghDone()
+    }).catch(function(e){perr("fatal: unable to access '"+url+"/': "+((e&&e.message)||'network error'));ghDone()})}
   /* git push, for real. Each commit on your Mini laptop becomes ONE commit on GitHub, the way real Git does it:
      upload each changed file (a blob), make the folder listing (a tree, built on the parent's tree), make the commit
      (tree + parents + message), and only at the end move the branch to it. A merge keeps both parents.
@@ -1599,8 +1742,8 @@
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;
       if(!r.ghRepo&&(!r.remote.url||ghKey(r.remote.url).indexOf(RL.repo.toLowerCase())<0))r.remote.url='https://github.com/'+repo+'.git';
       window.gitPop&&window.gitPop('warn','PUSHED FOR REAL','Look at the GitHub panel. Your commit is now on github.com/'+esc(repo)+'.');
-      refreshLive();
-    }).catch(function(e){
+      refreshLive();if(RL.onPushed){var after=RL.onPushed;RL.onPushed=null;after()}
+    }).catch(function(e){RL.onPushed=null;
       if(e&&e.rejected){pushRejected('https://github.com/'+repo+'.git',br,false);return}
       S.pushFail=true;
       if(r.ghRepo&&e&&(e.code===403||e.code===404)){perr('remote: Permission to '+repo+'.git denied.\nfatal: unable to access \'https://github.com/'+repo+'.git/\': The requested URL returned error: 403');pl('You cloned someone else\'s repo: you can change it on your laptop, but only its owners can push. On GitHub you would fork it first.','y');return}
@@ -1612,7 +1755,7 @@
   }
   $('pgReal').onclick=function(){if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
   window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
-    fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,
+    fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,ghCreate:ghCreate,ghOwner:ghOwner,ghFixName:ghFixName,realOn:function(){return RL.on},run:function(c){run(c)},
     ctxMenu:ctxMenu,ctxClose:ctxClose,longPress:longPress,ficon:ficon,openInVS:vsOpenPath,showVS:vsShowWin};
   reset();
 })();
