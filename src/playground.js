@@ -1694,7 +1694,7 @@
       if(res.real&&tvCur==='lab')pl('Real GitHub mode now shows github.com/'+res.full+'.','y');
       var git2=res.url+'.git';
       if(o.clone){if(wait2)ghDone();git(['clone',git2]);render();return}
-      if(!srcRepo){if(!o.src)pl('Next: connect a folder to it:  git remote add origin '+git2,'y');if(wait2)ghDone();return}
+      if(!srcRepo){if(!o.src){pl('Next: in your project folder, connect it with this command:','y');pl('  git remote add origin '+git2,'c')}if(wait2)ghDone();return}
       srcRepo.remote={url:git2,br:{},ids:{}};pl('✓ Added remote '+git2,'g');
       if(!o.push){if(wait2)ghDone();return}
       if(wait2)ghDone();

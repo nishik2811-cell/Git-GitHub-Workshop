@@ -4551,7 +4551,7 @@ git log --oneline           short history          git push / git pull   sync wi
       if(res.real&&tvCur==='lab')pl('Real GitHub mode now shows github.com/'+res.full+'.','y');
       var git2=res.url+'.git';
       if(o.clone){if(wait2)ghDone();git(['clone',git2]);render();return}
-      if(!srcRepo){if(!o.src)pl('Next: connect a folder to it:  git remote add origin '+git2,'y');if(wait2)ghDone();return}
+      if(!srcRepo){if(!o.src){pl('Next: in your project folder, connect it with this command:','y');pl('  git remote add origin '+git2,'c')}if(wait2)ghDone();return}
       srcRepo.remote={url:git2,br:{},ids:{}};pl('✓ Added remote '+git2,'g');
       if(!o.push){if(wait2)ghDone();return}
       if(wait2)ghDone();
@@ -5400,7 +5400,8 @@ git log --oneline           short history          git push / git pull   sync wi
     ['git-out-alive.jpg','In case of fire: 1. git commit, 2. git push, 3. git out!'],
     ['star-forks.jpg','A fork held up in front of the GitHub logo: May the fork be with you.'],
     ['bathroom-tile-commit-streak.jpg','Your GitHub contribution graph with a few green squares, versus a whole wall of green tiles.']];
-  var HHTASK='TASK: upload this folder to a new GitHub repo called workshop-demo, without uploading the secret key\n'
+  var HHTASK='TASK: put this folder on GitHub, in a new repo called workshop-demo, without the secret key.\n'
+    +'Then make a new folder with a note in it, and upload it as a second commit.\n'
     +'Type each command on its own: copy one line at a time.\n\n'
     +'1. Open Git Bash / Terminal (its icon is on the desktop) and log in with your GitHub token.\n   (No token? Press "Use without GitHub" to practise on the Mini laptop\'s pretend GitHub.)\n\n'
     +'2. Go into this folder:\n     cd ~/hehehe\n\n'
@@ -5411,9 +5412,13 @@ git log --oneline           short history          git push / git pull   sync wi
     +'7. Make Git ignore it: a .gitignore file with .env in it:\n     echo ".env" > .gitignore\n\n'
     +'8. Ask again:\n     git status\n   .env is gone from the list, and .gitignore is new.\n\n'
     +'9. Stage everything and save it (your first commit):\n     git add .\n     git commit -m "Add memes"\n\n'
-    +'10. Make the new repo workshop-demo on GitHub, connect this folder to it, and upload, all in one go:\n     gh repo create workshop-demo --public --source=. --remote=origin --push\n\n'
-    +'11. Check where it is connected:\n     git remote -v\n   It prints your workshop-demo link twice (fetch and push), with your GitHub name in it.\n\n'
-    +'12. Now add something new: make a folder with bash, and put a note in it:\n     mkdir notes\n     echo "my favourite meme is star-forks" > notes/fav.txt\n     ls notes\n   (Git only uploads folders that have a file inside. An empty folder never reaches GitHub.)\n\n'
+    +'10. Make the new repo workshop-demo on GitHub, connect this folder to it, and upload. Pick one way:\n'
+    +'   All in one go:\n     gh repo create workshop-demo --public --source=. --remote=origin --push\n'
+    +'   Or the long way, one step at a time (same result):\n     gh repo create workshop-demo --public\n'
+    +'   then type the  git remote add origin ...  line it shows you (it has your GitHub name in it), and then:\n     git push -u origin main\n\n'
+    +'11. Check where it is connected:\n     git remote -v\n'
+    +'   You see your repo\'s link (with your GitHub name in it) twice:\n   (fetch) is where git fetch and git pull download from, (push) is where git push uploads to.\n\n'
+    +'12. Now make a new folder with bash, and put a note in it:\n     mkdir notes\n     echo "my favourite meme is star-forks" > notes/fav.txt\n     ls notes\n   (Git only uploads folders that have a file inside. An empty folder never reaches GitHub.)\n\n'
     +'13. Save it as a second commit and upload it:\n     git add notes\n     git commit -m "Add my favourite meme"\n     git push\n\n'
     +'Done when workshop-demo on GitHub has 2 commits, the 5 memes, README.md, task.txt, .gitignore and notes/fav.txt, and NOT .env.\n';
   var HHREADME='# hehehe\n\nA folder of Git memes from the Git & GitHub Workshop.\n\n'
