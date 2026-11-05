@@ -30,14 +30,15 @@ Read a little, try it straight away, and break things on purpose.
 | App | What it's for |
 |---|---|
 | **Workshop** | The lessons: nine modules from "what is Git?" to working in a team |
-| **Practice Lab** | A Git terminal with a live picture of your files, commits and GitHub |
-| **VS Code** | A look-alike of the real editor, with Source Control and merge conflict buttons |
+| **Practice Lab** | A Git terminal with a live picture of your files, commits and GitHub, plus guided stories |
+| **Git Bash / Terminal** | A plain terminal, like on a real computer: log in with a GitHub token once, then `gh repo create`, `git clone`, `git push` |
+| **VS Code** | A look-alike of the real editor, with Source Control, merge conflict buttons and undo / redo |
 | **Cheat Sheet** | Every command the lab understands, with search, *Try it* and *Copy* |
 | **File Explorer and Bin** | Folders, drag and drop, and restoring things you deleted |
-| **Browser** | The project's GitHub page and the setup guide website |
+| **Browser** | The project's GitHub page, the setup guide website, and a **New repository** page like github.com/new |
 | **Setup-Guide.pdf** | Installing Git, Git Bash and VS Code on your own computer |
-| **hehehe** | A folder of memes to push to GitHub, without leaking the secret key inside |
-| **Notepad** | A drawing app, for sketching branches and merges |
+| **hehehe** | A folder of memes. Its `task.txt` walks you through putting it on GitHub in a new repo, `workshop-demo`, in Git Bash, without leaking the secret key inside |
+| **Notepad** | A drawing app, for sketching branches and merges. Save a drawing to your device, or as a file on the Mini laptop to commit and push |
 
 It behaves like a real desktop: windows move, resize, minimise and pin on phones as well as laptops, and the Start menu search finds lessons, files and commands. Try typing *undo*.
 
@@ -75,12 +76,25 @@ After each story there are missions to try alone, with a *Type it for me* button
 
 ## Real GitHub mode
 
-When you're ready, the same commands can work on real GitHub:
+When you're ready, the same commands can work on your real GitHub account. All you need is a token:
+make one at **github.com/settings/tokens/new**, tick **repo**, and copy it.
 
-1. Make a new, empty repo at **github.com/new**.
-2. Make a token at **github.com/settings/tokens/new**, tick **repo**, and copy it.
-3. In the Practice Lab, press **Real GitHub mode**, paste the repo link and the token, and press **Connect**.
-4. Now `git push`, `git pull`, `git fetch` and `git clone` talk to GitHub for real.
+**In Git Bash / Terminal** (the simplest way): open it, paste the token, press **Log in**. Then use Git like on a real computer:
+
+```bash
+gh repo create my-project --public --source=. --remote=origin --push
+```
+
+or `git clone https://github.com/your-name/a-repo.git` for a repo you already have.
+
+**In the Practice Lab:** press **Real GitHub mode**, paste the token, and either paste a repo link or type a name under **No repo yet? Make one**. The stories and the four boxes then use your real repo.
+
+What happens on GitHub is what real Git does:
+
+- **One commit on your laptop is one commit on GitHub**, however many files it has. Merges keep both parents.
+- **The first push of a branch needs `-u`** (`git push -u origin main`). After that, plain `git push` and `git pull` work.
+- **If someone pushed first, your push is rejected** with Git's own message, until you `git pull`.
+- **A link to a repo that doesn't exist** gives Git's real "Repository not found".
 
 The token stays in your browser tab and is never saved. Use a throwaway repo, and delete the token after the workshop.
 
@@ -92,11 +106,11 @@ The token stays in your browser tab and is never saved. Use a throwaway repo, an
 | Save | `status`, `add`, `commit`, `diff`, `show`, `log`, `ls-files` |
 | Undo | `restore`, `reset`, `revert`, `stash` |
 | Files | `rm`, `mv`, `.gitignore` |
-| Branches | `branch`, `switch`, `checkout`, `merge`, `rebase`, `tag` |
-| GitHub | `remote`, `push`, `fetch`, `pull` |
+| Branches | `branch` (also `-M` to rename and `--set-upstream-to`), `switch`, `checkout`, `merge`, `rebase`, `tag` |
+| GitHub | `remote` (`add`, `set-url`, `remove`, `-v`), `push`, `fetch`, `pull`, `gh repo create`, `gh auth` |
 | Terminal | `ls`, `cd`, `pwd`, `mkdir`, `touch`, `echo`, `cat`, `mv`, `cp`, `rm` |
 
-Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`.
+Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`. The Cheat Sheet lists all 99 commands, each with *Try it* and *Copy*.
 
 ## Why this one
 
@@ -104,7 +118,7 @@ Tools like *Learn Git Branching* draw the commit graph as you type. This worksho
 
 - **All four places at once:** your folder, the staging area, your history and GitHub.
 - **Fetch vs pull you can see:** watch `origin/main` move after `git fetch`.
-- **The tools you'll really use:** a VS Code look-alike and a real GitHub mode.
+- **The tools you'll really use:** a VS Code look-alike, Git Bash, and your real GitHub account.
 - **A whole course, not just a sandbox:** lessons, stories, missions and quizzes.
 
 ## Running a workshop with it
@@ -112,6 +126,7 @@ Tools like *Learn Git Branching* draw the commit graph as you type. This worksho
 - **One link for everyone.** It works on any laptop, tablet or phone.
 - **Works offline.** It's a single HTML file, so you can hand it out on a USB stick if the Wi-Fi gives up.
 - **Nothing is saved.** Work lives in the browser tab only. The page asks before you close it if you'd lose something.
+- **A ready-made exercise.** The hehehe folder's `task.txt` takes everyone from `git init` to a public `workshop-demo` repo with two commits.
 - **Going further.** The Setup-Guide.pdf on the desktop gets people set up on their own computer, on Windows or Linux.
 
 ## How the project is built
@@ -119,7 +134,7 @@ Tools like *Learn Git Branching* draw the commit graph as you type. This worksho
 | File | What's in it |
 |---|---|
 | `index.html` | The whole site. Open it in a browser and it runs. The lesson text lives here. |
-| `src/playground.js` | The Practice Lab and VS Code |
+| `src/playground.js` | The Git engine: the Practice Lab, Git Bash / Terminal and VS Code |
 | `src/desktop.js`, `src/desktop.css` | The Mini laptop desktop and its apps |
 | `src/sync.py` | Copies the `src/` files, the PDF and the memes into `index.html` |
 | `docs/` | The setup guide PDF, screenshots and the link preview picture |
