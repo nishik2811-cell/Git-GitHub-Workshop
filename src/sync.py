@@ -1,8 +1,10 @@
-"""Copy src/playground.js, src/desktop.js and src/desktop.css into index.html,
-together with docs/setup-guide.pdf and the images in memes/.
+"""Copy src/playground.js, src/desktop.js, src/desktop.css, src/viz.js and src/viz.css
+into index.html, together with docs/setup-guide.pdf and the images in memes/.
 Run from the repo root:  python3 src/sync.py
 
 Lesson text and layout live in index.html itself: edit it directly.
+The exception is the "See it happen" pictures in Aryan's lessons: their steps live
+in src/viz.js, so edit them there and run this script.
 The other files in src/ (gen4.py, build4.py, pixart.py and friends) built the very
 first version of the page and are out of date. Do not run them: they would
 overwrite index.html and lose the desktop."""
@@ -31,6 +33,18 @@ h=h[:i].rstrip('\n')+'\n\n'+dc.strip()+'\n/* ---------- end Mini laptop desktop 
 h=re.sub(r'<script id="deskjs">.*?</script>\n?','',h,flags=re.S)
 i=h.rindex('</body>')
 h=h[:i]+'<script id="deskjs">\n'+dj.strip()+'\n</script>\n'+h[i:]
+
+# "See it happen" pictures (Aryan's lessons): css at the end of the main <style>, js just before the desktop's
+tc=open('src/viz.css',encoding='utf-8').read().strip()
+TS,TE='/* ---------- See it happen:','/* ---------- end See it happen css ---------- */'
+if TS in h:
+    a=h.index(TS);b=h.index(TE,a)+len(TE);h=h[:a].rstrip('\n')+'\n'+h[b:].lstrip('\n')
+i=h.index('</style>')
+h=h[:i].rstrip('\n')+'\n\n'+tc+'\n'+h[i:]
+h=re.sub(r'<script id="vizjs">.*?</script>\n?','',h,flags=re.S)
+tj=open('src/viz.js',encoding='utf-8').read().strip()
+i=h.index('<script id="deskjs">')
+h=h[:i]+'<script id="vizjs">\n'+tj+'\n</script>\n'+h[i:]
 # the setup guide PDF, packed in as base64 so the page still works as one file
 import base64,os
 h=re.sub(r'<script type="text/plain" id="guidePdf">.*?</script>\n?','',h,flags=re.S)
