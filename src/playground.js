@@ -308,6 +308,15 @@
       if(o!=null&&n!=null&&o!==''&&n!==''){if(!/\n$/.test(o)||!/\n$/.test(n)){}}}
     function diffTrees(o,n,only){var all={};keys(o).concat(keys(n)).forEach(function(f){all[f]=1});
       keys(all).sort().forEach(function(f){if(only&&only.indexOf(f)<0)return;if(o[f]!==n[f])diffOne(f,f in o?o[f]:null,f in n?n[f]:null)})}
+    function lcsLen(A,B){var prev=new Array(B.length+1).fill(0);for(var i=1;i<=A.length;i++){var cur=[0];for(var j=1;j<=B.length;j++)cur[j]=A[i-1]===B[j-1]?prev[j-1]+1:Math.max(prev[j],cur[j-1]);prev=cur}return prev[B.length]}
+    function statTrees(o,n){var all={},rows=[],ins=0,del=0;keys(o).concat(keys(n)).forEach(function(f){all[f]=1});
+      keys(all).sort().forEach(function(f){var a0=f in o?o[f]:null,b0=f in n?n[f]:null;if(a0===b0)return;
+        if(isBin(a0)||isBin(b0)){rows.push([f,'Bin']);return}
+        var A=a0==null||a0===''?[]:a0.replace(/\n$/,'').split('\n'),B=b0==null||b0===''?[]:b0.replace(/\n$/,'').split('\n'),l=lcsLen(A,B),pl1=B.length-l,mi=A.length-l;ins+=pl1;del+=mi;rows.push([f,pl1,mi])});
+      if(!rows.length)return;var w=Math.max.apply(null,rows.map(function(x){return x[0].length})),nw=Math.max.apply(null,rows.map(function(x){return x[1]==='Bin'?3:String(x[1]+x[2]).length})),big=Math.max.apply(null,rows.map(function(x){return x[1]==='Bin'?0:x[1]+x[2]})),sc=big>40?40/big:1;
+      rows.forEach(function(x){var nm=' '+esc(x[0])+new Array(w-x[0].length+1).join(' ')+' | ';if(x[1]==='Bin'){pr(nm+'Bin');return}
+        var t=String(x[1]+x[2]);pr(nm+new Array(nw-t.length+1).join(' ')+t+' <span class="g">'+new Array(Math.round(x[1]*sc)+1).join('+')+'</span><span class="r">'+new Array(Math.round(x[2]*sc)+1).join('-')+'</span>')});
+      pl(' '+rows.length+' file'+(rows.length>1?'s':'')+' changed'+(ins||!del?', '+ins+' insertion'+(ins===1?'':'s')+'(+)':'')+(del?', '+del+' deletion'+(del===1?'':'s')+'(-)':''))}
     function showCommit(c){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'';
       pr('<span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
       if(c.p.length>1)pl('Merge: '+c.p.join(' '));
@@ -349,7 +358,7 @@
     if(sub==='show'){var sref=a.slice(1).filter(function(x){return x[0]!=='-'})[0]||'HEAD',sid=rev(sref);
       if(!sid){if(!headId()&&sref==='HEAD'){perr("fatal: your current branch '"+r.head+"' does not have any commits yet");return}badRev(sref);return}
       var tg=r.tags&&r.tags[sref];if(tg&&tg.msg){pl('tag '+sref+'\nTagger: '+tg.who+'\nDate:   Sun Nov 1 23:00:00 2026\n\n'+tg.msg+'\n')}
-      var sc=C(sid);showCommit(sc);if(sc.p.length<2)diffTrees(sc.p.length?C(sc.p[0]).files:{},sc.files);S.ran.show=1;return}
+      var sc=C(sid);showCommit(sc);if(sc.p.length<2){if(a.indexOf('--stat')>=0)statTrees(sc.p.length?C(sc.p[0]).files:{},sc.files);else diffTrees(sc.p.length?C(sc.p[0]).files:{},sc.files)}S.ran.show=1;return}
     if(sub==='reset'){
       var mode=a.indexOf('--hard')>=0?'hard':a.indexOf('--soft')>=0?'soft':a.indexOf('--mixed')>=0?'mixed':'',rw=a.slice(1).filter(function(x){return x[0]!=='-'}),tgt=null,rpaths=[];
       rw.forEach(function(x,i){var id=i===0?rev(x):null;if(id)tgt=id;else rpaths.push(x)});
@@ -446,10 +455,15 @@
       return}
     if(sub==='rm'){
       var tg=a.slice(1).filter(function(x){return x[0]!=='-'});if(!tg.length){perr('usage: git rm [-r] <file>');return}
-      var all=tg.indexOf('.')>=0||tg.indexOf('*')>=0,done=0;
+      var all=tg.indexOf('.')>=0||tg.indexOf('*')>=0,done=0,cached=a.indexOf('--cached')>=0,recur=a.some(function(x){return /^-[a-z]*r[a-z]*$/.test(x)});
+      /* a folder needs -r, like real Git */
+      var dirArg=tg.filter(function(x){var q=rel(norm(x));return q!==null&&q!==''&&!(q in r.index)&&keys(r.index).some(function(f){return f.indexOf(q+'/')===0})})[0];
+      if((dirArg||tg.indexOf('.')>=0)&&!recur){perr("fatal: not removing '"+(dirArg||'.')+"' recursively without -r");return}
       keys(r.index).slice().forEach(function(f){var hit=all||tg.some(function(x){var q=rel(norm(x));return q===f||(q!==null&&f.indexOf(q+'/')===0)});
-        if(hit){delete r.index[f];delete S.files[r.root+'/'+f];delete r.conf[f];pl("rm '"+f+"'");done++}});
-      if(!done)perr("fatal: pathspec '"+tg[0]+"' did not match any files");else pl('Now run: git commit -m "Remove files"  then  git push','y');return}
+        if(hit){delete r.index[f];if(!cached)delete S.files[r.root+'/'+f];delete r.conf[f];pl("rm '"+f+"'");done++}});
+      if(!done)perr("fatal: pathspec '"+tg[0]+"' did not match any files");
+      else if(cached)pl('Git stopped tracking '+(done===1?'it':'them')+', but the file'+(done===1?' is':'s are')+' still on your laptop (now untracked).\nAdd '+(done===1?'it':'them')+' to .gitignore so git add . does not pick '+(done===1?'it':'them')+' up again, then commit and push.','y');
+      else pl('Now run: git commit -m "Remove files"  then  git push','y');return}
     function hardTo0(files){keys(headTree()).concat(keys(r.index)).forEach(function(f){if(!(f in files))delete S.files[r.root+'/'+f]});keys(files).forEach(function(f){S.files[r.root+'/'+f]=files[f]});r.index=copy(files);r.conf={};r.merge=null}
     if(sub==='revert'){
       if(a[1]==='--continue'){if(!r.merge||!r.merge.revert){perr('error: no cherry-pick or revert in progress');return}git(['commit']);return}
@@ -499,11 +513,32 @@
       pl('['+r.head+(first?' (root-commit) ':' ')+c.id+'] '+m,'g');pl(statLine(ds));ds.created.forEach(function(f){pl(' create mode 100644 '+f)});(ds.deleted||[]).forEach(function(f){pl(' delete mode 100644 '+f)});return}
     if(sub==='log'){
       S.ran.log=1;if(!headId()){perr("fatal: your current branch '"+r.head+"' does not have any commits yet");return}
-      var one=a.indexOf('--oneline')>=0,list=reach(headId());
-      list.forEach(function(c,i){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'';
-        if(one){pr('<span class="y">'+c.id+'</span><span class="c">'+esc(rs)+'</span> '+esc(c.msg))}
-        else{pr('<span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
-          pl('Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   Sun Nov 1 22:'+(10+c.n%50)+':00 2026\n\n    '+c.msg+(i<list.length-1?'\n':''))}});return}
+      var one=a.indexOf('--oneline')>=0,patch=a.indexOf('-p')>=0||a.indexOf('--patch')>=0||a.indexOf('-u')>=0,stat=a.indexOf('--stat')>=0,graph=a.indexOf('--graph')>=0,lim=Infinity,tips=[],la=a.slice(1);
+      for(var li=0;li<la.length;li++){var o1=la[li],mm;
+        if((mm=o1.match(/^-(\d+)$/))||(mm=o1.match(/^-n(\d+)$/))||(mm=o1.match(/^--max-count=(\d+)$/)))lim=+mm[1];
+        else if(o1==='-n'||o1==='--max-count'){if(!/^\d+$/.test(la[li+1]||'')){perr("fatal: '"+(la[li+1]||'')+"': not an integer");return}lim=+la[++li]}
+        else if(o1==='--all'){keys(r.br).forEach(function(b){if(r.br[b])tips.push(r.br[b])});keys(r.rbr||{}).forEach(function(b){tips.push(r.rbr[b])});if(headId())tips.push(headId())}
+        else if(o1[0]!=='-'){var tid=rev(o1);if(!tid){perr("fatal: ambiguous argument '"+o1+"': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'");return}tips.push(tid)}}
+      if(!tips.length)tips.push(headId());
+      var seenL={},list=[];tips.forEach(function(t){reach(t).forEach(function(c){if(!seenL[c.id]){seenL[c.id]=1;list.push(c)}})});
+      list.sort(function(x,y){return y.n-x.n});if(lim<list.length)list=list.slice(0,lim);
+      /* --graph: the lines on the left, like real Git (one column per line of history) */
+      var cols=[],inL={};list.forEach(function(c){inL[c.id]=1});
+      function gl(t){pr('<span class="c">'+t+'</span>')}
+      list.forEach(function(c,i){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'',gp='',ci=0;
+        if(graph){ci=cols.indexOf(c.id);if(ci<0){cols.push(c.id);ci=cols.length-1}gp=cols.map(function(x,k){return k===ci?'*':'|'}).join(' ')+(c.p.length>1?'   ':' ')}
+        var cont=graph?cols.map(function(x,k){return '|'}).join(' ')+' ':'';
+        if(one){pr('<span class="c">'+gp+'</span><span class="y">'+c.id+'</span><span class="c">'+esc(rs)+'</span> '+esc(c.msg))}
+        else{pr('<span class="c">'+gp+'</span><span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
+          if(c.p.length>1)pl(cont+'Merge: '+c.p.join(' '));
+          pl((cont+'Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   Sun Nov 1 22:'+(10+c.n%50)+':00 2026\n\n    '+c.msg).split('\n').join('\n'+cont))}
+        if((patch||stat)&&c.p.length<2){if(!one)pl(cont);if(stat)statTrees(c.p.length?C(c.p[0]).files:{},c.files);else diffTrees(c.p.length?C(c.p[0]).files:{},c.files)}
+        if(graph){var ps=c.p.filter(function(x){return inL[x]});
+          if(!ps.length)cols.splice(ci,1);else{cols[ci]=ps[0];
+            if(ps.length>1&&cols.indexOf(ps[1])<0){cols.splice(ci+1,0,ps[1]);gl(cols.map(function(x,k){return k<ci?'|':k===ci?'|\\':k===ci+1?null:'\\'}).filter(function(x){return x!==null}).join(' '))}}
+          /* two lines that reach the same commit join up: |/ */
+          for(var k=cols.length-1;k>0;k--){var j=cols.indexOf(cols[k]);if(j<k){gl(cols.slice(0,k).map(function(){return '|'}).join(' ')+'/'+cols.slice(k+1).map(function(){return ' /'}).join(''));cols.splice(k,1)}}}
+        if(!one&&i<list.length-1)pl(graph?cols.map(function(){return '|'}).join(' '):'')});return}
     if(sub==='branch'){
       var da=a.indexOf('-d')>=0||a.indexOf('-D')>=0,names=a.slice(1).filter(function(x){return x[0]!=='-'});
       if(da){var n=names[0];if(!(n in r.br)){perr("error: branch '"+n+"' not found.");return}

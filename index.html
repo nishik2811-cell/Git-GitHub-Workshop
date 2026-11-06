@@ -1551,6 +1551,7 @@ section.phase .szterm .e{color:#ff9db0}
 section.phase .szsay{text-align:center;margin:10px 0 0;font-size:14.5px;color:var(--ink2);min-height:22px}
 section.phase .szgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media(max-width:700px){section.phase .szgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:380px){section.phase .szgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}section.phase .sz{padding:8px 3px}section.phase .sz b{font-size:12px;overflow-wrap:anywhere}section.phase .sz small{font-size:11px;overflow-wrap:anywhere}}
 section.phase .sz{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:118px;padding:10px 6px;border:2.5px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink);font:13px 'Nunito',sans-serif;cursor:pointer;text-align:center;box-shadow:none}
 section.phase .sz b{font-size:13.5px}
 section.phase .sz small{color:var(--ink2);font-size:12px}
@@ -2352,7 +2353,7 @@ $ git pull
 </div>
 <div class="card wide" id="q8"><div class="tbar t-d"><span>M8_QUIZ_KNOWLEDGE-CHECK.EXE</span><i class="sp sp-sparkle"></i><span class="dots"><i></i><i></i><i></i></span></div>
 <div class="topic"><h3>Knowledge check: module 8</h3></div>
-<div class="body"><p class="lead">Quick check. <mark>Click an answer.</mark></p><div class="play quizbox"><div class="ph">KNOWLEDGE CHECK</div><div class="pb"><div class="quiz" data-why="You fork on github.com, then clone your fork to your laptop."><p class="qq"><b>1.</b> Fork vs clone:</p><div class="qo"><button type="button" data-ok="1">Fork = copy on GitHub, clone = copy on your laptop</button><button type="button">They are the same</button><button type="button">Clone = copy on GitHub</button></div><p class="qf" role="status" aria-live="polite"></p></div><div class="quiz" data-why="Squash combines all the PR&#x27;s commits into one."><p class="qq"><b>2.</b> Which merge method turns a whole PR into ONE commit on main?</p><div class="qo"><button type="button">Create a merge commit</button><button type="button" data-ok="1">Squash and merge</button><button type="button">Rebase and merge</button></div><p class="qf" role="status" aria-live="polite"></p></div><div class="quiz" data-why="Protected branches only accept changes through reviewed pull requests."><p class="qq"><b>3.</b> Branch protection on main is on. You run <code>git push origin main</code> directly. Result?</p><div class="qo"><button type="button">It works</button><button type="button" data-ok="1">GitHub rejects it: changes must come through a pull request</button></div><p class="qf" role="status" aria-live="polite"></p></div><p class="qscore" aria-live="polite"></p></div></div><div class="sticky " style="--r:-1deg"><i class="tape"></i>Got one wrong? Read the explanation, then try again. Nobody is counting.</div></div>
+<div class="body"><p class="lead">Quick check. <mark>Click an answer.</mark></p><div class="play quizbox"><div class="ph">KNOWLEDGE CHECK</div><div class="pb"><div class="quiz" data-why="You fork on github.com, then clone your fork to your laptop."><p class="qq"><b>1.</b> Fork vs clone:</p><div class="qo"><button type="button" data-ok="1">Fork = copy on GitHub, clone = copy on your laptop</button><button type="button">They are the same</button><button type="button">Clone = copy on GitHub</button></div><p class="qf" role="status" aria-live="polite"></p></div><div class="quiz" data-why="Squash combines all the PR&#x27;s commits into one."><p class="qq"><b>2.</b> Which merge method turns a whole PR into ONE commit on main?</p><div class="qo"><button type="button">Create a merge commit</button><button type="button" data-ok="1">Squash and merge</button><button type="button">Rebase and merge</button></div><p class="qf" role="status" aria-live="polite"></p></div><div class="quiz" data-why="Protected branches only accept changes through reviewed pull requests."><p class="qq"><b>3.</b> Branch protection on main requires a pull request. You run <code>git push origin main</code> directly. Result?</p><div class="qo"><button type="button">It works</button><button type="button" data-ok="1">GitHub rejects it: changes must come through a pull request</button></div><p class="qf" role="status" aria-live="polite"></p></div><p class="qscore" aria-live="polite"></p></div></div><div class="sticky " style="--r:-1deg"><i class="tape"></i>Got one wrong? Read the explanation, then try again. Nobody is counting.</div></div>
 </div>
 </div></section>
 
@@ -2528,7 +2529,7 @@ git log --oneline           short history          git push / git pull   sync wi
       d+='<g opacity="'+(down?.45:1)+'"><path d="M118 62h84a18 18 0 0 0 0-36 24 24 0 0 0-44-6 20 20 0 0 0-40 12 15 15 0 0 0 0 30z" fill="'+(down?'#ffe3a0':'#eaf1ff')+'" stroke="#16327a" stroke-width="3" stroke-dasharray="6 4"/><text x="160" y="46" text-anchor="middle" font-size="10.5" font-weight="800" fill="#16327a">'+(down?'GitHub offline':'GitHub (optional)')+'</text></g>';
       for(var r=0;r<3;r++)d+=lap('d',r,'full history',false,(3+own[r])+' saves here');
       host.querySelector('#vcsD').innerHTML=d+'</svg>';
-      $('vcsMsg').innerHTML=down?'<b>Centralized:</b> nobody can save or see history. <b>Distributed:</b> Nishita, Abhinav and Aryan each still hold the whole history. Click their laptops, saving still works.':'Click any laptop to <b>save a change</b>, then press <b>Crash the server</b>.';
+      $('vcsMsg').innerHTML=down?'<b>Centralized:</b> nobody can save or see history. <b>Distributed:</b> '+names[0]+', '+names[1]+' and '+names[2]+' each still hold the whole history. Click their laptops, saving still works.':'Click any laptop to <b>save a change</b>, then press <b>Crash the server</b>.';
       Array.prototype.forEach.call(host.querySelectorAll('.vlap'),function(g){
         function act(){var k=g.getAttribute('data-k'),i=+g.getAttribute('data-i');
           if(k==='c'){if(down){pop('err','ERROR','Cannot reach the server.<br><b>'+names[i]+'</b> cannot save, and cannot see old versions.<br>The only full history was on that server.');return}srv++;draw();var s=host.querySelector('#vcsC .vlap[data-i="'+i+'"] rect');}
@@ -2579,7 +2580,7 @@ git log --oneline           short history          git push / git pull   sync wi
     {z:0,cmd:'$ echo "Pasta" > pasta.txt',cap:'You created <code>pasta.txt</code>. It sits in your working folder. Git sees it but is not tracking it yet.'},
     {z:1,cmd:'$ git add pasta.txt',cap:'<code>git add</code> moves it to the staging area: picked for the next snapshot.'},
     {z:2,cmd:'$ git commit -m "Add pasta recipe"',cap:'<code>git commit</code> saves the snapshot into your local repo. You can see it with <code>git log</code>.'},
-    {z:3,cmd:'$ git push origin main',cap:'<code>git push</code> uploads the commit. GitHub has it too, and teammates can pull it.'}
+    {z:3,cmd:'$ git push -u origin main',cap:'<code>git push</code> uploads the commit. GitHub has it too, and teammates can pull it. (The folder was linked to GitHub once with <code>git remote add origin</code> and the repo link; <code>-u</code> on the first push lets plain <code>git push</code> work after that.)'}
   ];
   var si=0,zs=document.querySelectorAll('#zones .zn');
   function drawStep(){
@@ -2625,7 +2626,7 @@ git log --oneline           short history          git push / git pull   sync wi
     document.getElementById('bBranch').disabled=st.feature;
     document.getElementById('bFeat').disabled=!st.feature||st.merged||full;
     document.getElementById('bMain').disabled=full||st.merged&&false;
-    document.getElementById('bMerge').disabled=!st.feature||st.merged||full;
+    document.getElementById('bMerge').disabled=!st.feature||st.heads.feature===undefined||st.merged||full;
   }
   var fc=0;
   document.getElementById('bBranch').onclick=function(){st.feature=true;st.msg='You made a branch: <code>git switch -c feature/login</code>. Nothing moved yet. Now commit on it.';drawBr()};
@@ -3179,6 +3180,15 @@ git log --oneline           short history          git push / git pull   sync wi
       if(o!=null&&n!=null&&o!==''&&n!==''){if(!/\n$/.test(o)||!/\n$/.test(n)){}}}
     function diffTrees(o,n,only){var all={};keys(o).concat(keys(n)).forEach(function(f){all[f]=1});
       keys(all).sort().forEach(function(f){if(only&&only.indexOf(f)<0)return;if(o[f]!==n[f])diffOne(f,f in o?o[f]:null,f in n?n[f]:null)})}
+    function lcsLen(A,B){var prev=new Array(B.length+1).fill(0);for(var i=1;i<=A.length;i++){var cur=[0];for(var j=1;j<=B.length;j++)cur[j]=A[i-1]===B[j-1]?prev[j-1]+1:Math.max(prev[j],cur[j-1]);prev=cur}return prev[B.length]}
+    function statTrees(o,n){var all={},rows=[],ins=0,del=0;keys(o).concat(keys(n)).forEach(function(f){all[f]=1});
+      keys(all).sort().forEach(function(f){var a0=f in o?o[f]:null,b0=f in n?n[f]:null;if(a0===b0)return;
+        if(isBin(a0)||isBin(b0)){rows.push([f,'Bin']);return}
+        var A=a0==null||a0===''?[]:a0.replace(/\n$/,'').split('\n'),B=b0==null||b0===''?[]:b0.replace(/\n$/,'').split('\n'),l=lcsLen(A,B),pl1=B.length-l,mi=A.length-l;ins+=pl1;del+=mi;rows.push([f,pl1,mi])});
+      if(!rows.length)return;var w=Math.max.apply(null,rows.map(function(x){return x[0].length})),nw=Math.max.apply(null,rows.map(function(x){return x[1]==='Bin'?3:String(x[1]+x[2]).length})),big=Math.max.apply(null,rows.map(function(x){return x[1]==='Bin'?0:x[1]+x[2]})),sc=big>40?40/big:1;
+      rows.forEach(function(x){var nm=' '+esc(x[0])+new Array(w-x[0].length+1).join(' ')+' | ';if(x[1]==='Bin'){pr(nm+'Bin');return}
+        var t=String(x[1]+x[2]);pr(nm+new Array(nw-t.length+1).join(' ')+t+' <span class="g">'+new Array(Math.round(x[1]*sc)+1).join('+')+'</span><span class="r">'+new Array(Math.round(x[2]*sc)+1).join('-')+'</span>')});
+      pl(' '+rows.length+' file'+(rows.length>1?'s':'')+' changed'+(ins||!del?', '+ins+' insertion'+(ins===1?'':'s')+'(+)':'')+(del?', '+del+' deletion'+(del===1?'':'s')+'(-)':''))}
     function showCommit(c){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'';
       pr('<span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
       if(c.p.length>1)pl('Merge: '+c.p.join(' '));
@@ -3220,7 +3230,7 @@ git log --oneline           short history          git push / git pull   sync wi
     if(sub==='show'){var sref=a.slice(1).filter(function(x){return x[0]!=='-'})[0]||'HEAD',sid=rev(sref);
       if(!sid){if(!headId()&&sref==='HEAD'){perr("fatal: your current branch '"+r.head+"' does not have any commits yet");return}badRev(sref);return}
       var tg=r.tags&&r.tags[sref];if(tg&&tg.msg){pl('tag '+sref+'\nTagger: '+tg.who+'\nDate:   Sun Nov 1 23:00:00 2026\n\n'+tg.msg+'\n')}
-      var sc=C(sid);showCommit(sc);if(sc.p.length<2)diffTrees(sc.p.length?C(sc.p[0]).files:{},sc.files);S.ran.show=1;return}
+      var sc=C(sid);showCommit(sc);if(sc.p.length<2){if(a.indexOf('--stat')>=0)statTrees(sc.p.length?C(sc.p[0]).files:{},sc.files);else diffTrees(sc.p.length?C(sc.p[0]).files:{},sc.files)}S.ran.show=1;return}
     if(sub==='reset'){
       var mode=a.indexOf('--hard')>=0?'hard':a.indexOf('--soft')>=0?'soft':a.indexOf('--mixed')>=0?'mixed':'',rw=a.slice(1).filter(function(x){return x[0]!=='-'}),tgt=null,rpaths=[];
       rw.forEach(function(x,i){var id=i===0?rev(x):null;if(id)tgt=id;else rpaths.push(x)});
@@ -3317,10 +3327,15 @@ git log --oneline           short history          git push / git pull   sync wi
       return}
     if(sub==='rm'){
       var tg=a.slice(1).filter(function(x){return x[0]!=='-'});if(!tg.length){perr('usage: git rm [-r] <file>');return}
-      var all=tg.indexOf('.')>=0||tg.indexOf('*')>=0,done=0;
+      var all=tg.indexOf('.')>=0||tg.indexOf('*')>=0,done=0,cached=a.indexOf('--cached')>=0,recur=a.some(function(x){return /^-[a-z]*r[a-z]*$/.test(x)});
+      /* a folder needs -r, like real Git */
+      var dirArg=tg.filter(function(x){var q=rel(norm(x));return q!==null&&q!==''&&!(q in r.index)&&keys(r.index).some(function(f){return f.indexOf(q+'/')===0})})[0];
+      if((dirArg||tg.indexOf('.')>=0)&&!recur){perr("fatal: not removing '"+(dirArg||'.')+"' recursively without -r");return}
       keys(r.index).slice().forEach(function(f){var hit=all||tg.some(function(x){var q=rel(norm(x));return q===f||(q!==null&&f.indexOf(q+'/')===0)});
-        if(hit){delete r.index[f];delete S.files[r.root+'/'+f];delete r.conf[f];pl("rm '"+f+"'");done++}});
-      if(!done)perr("fatal: pathspec '"+tg[0]+"' did not match any files");else pl('Now run: git commit -m "Remove files"  then  git push','y');return}
+        if(hit){delete r.index[f];if(!cached)delete S.files[r.root+'/'+f];delete r.conf[f];pl("rm '"+f+"'");done++}});
+      if(!done)perr("fatal: pathspec '"+tg[0]+"' did not match any files");
+      else if(cached)pl('Git stopped tracking '+(done===1?'it':'them')+', but the file'+(done===1?' is':'s are')+' still on your laptop (now untracked).\nAdd '+(done===1?'it':'them')+' to .gitignore so git add . does not pick '+(done===1?'it':'them')+' up again, then commit and push.','y');
+      else pl('Now run: git commit -m "Remove files"  then  git push','y');return}
     function hardTo0(files){keys(headTree()).concat(keys(r.index)).forEach(function(f){if(!(f in files))delete S.files[r.root+'/'+f]});keys(files).forEach(function(f){S.files[r.root+'/'+f]=files[f]});r.index=copy(files);r.conf={};r.merge=null}
     if(sub==='revert'){
       if(a[1]==='--continue'){if(!r.merge||!r.merge.revert){perr('error: no cherry-pick or revert in progress');return}git(['commit']);return}
@@ -3370,11 +3385,32 @@ git log --oneline           short history          git push / git pull   sync wi
       pl('['+r.head+(first?' (root-commit) ':' ')+c.id+'] '+m,'g');pl(statLine(ds));ds.created.forEach(function(f){pl(' create mode 100644 '+f)});(ds.deleted||[]).forEach(function(f){pl(' delete mode 100644 '+f)});return}
     if(sub==='log'){
       S.ran.log=1;if(!headId()){perr("fatal: your current branch '"+r.head+"' does not have any commits yet");return}
-      var one=a.indexOf('--oneline')>=0,list=reach(headId());
-      list.forEach(function(c,i){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'';
-        if(one){pr('<span class="y">'+c.id+'</span><span class="c">'+esc(rs)+'</span> '+esc(c.msg))}
-        else{pr('<span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
-          pl('Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   Sun Nov 1 22:'+(10+c.n%50)+':00 2026\n\n    '+c.msg+(i<list.length-1?'\n':''))}});return}
+      var one=a.indexOf('--oneline')>=0,patch=a.indexOf('-p')>=0||a.indexOf('--patch')>=0||a.indexOf('-u')>=0,stat=a.indexOf('--stat')>=0,graph=a.indexOf('--graph')>=0,lim=Infinity,tips=[],la=a.slice(1);
+      for(var li=0;li<la.length;li++){var o1=la[li],mm;
+        if((mm=o1.match(/^-(\d+)$/))||(mm=o1.match(/^-n(\d+)$/))||(mm=o1.match(/^--max-count=(\d+)$/)))lim=+mm[1];
+        else if(o1==='-n'||o1==='--max-count'){if(!/^\d+$/.test(la[li+1]||'')){perr("fatal: '"+(la[li+1]||'')+"': not an integer");return}lim=+la[++li]}
+        else if(o1==='--all'){keys(r.br).forEach(function(b){if(r.br[b])tips.push(r.br[b])});keys(r.rbr||{}).forEach(function(b){tips.push(r.rbr[b])});if(headId())tips.push(headId())}
+        else if(o1[0]!=='-'){var tid=rev(o1);if(!tid){perr("fatal: ambiguous argument '"+o1+"': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'");return}tips.push(tid)}}
+      if(!tips.length)tips.push(headId());
+      var seenL={},list=[];tips.forEach(function(t){reach(t).forEach(function(c){if(!seenL[c.id]){seenL[c.id]=1;list.push(c)}})});
+      list.sort(function(x,y){return y.n-x.n});if(lim<list.length)list=list.slice(0,lim);
+      /* --graph: the lines on the left, like real Git (one column per line of history) */
+      var cols=[],inL={};list.forEach(function(c){inL[c.id]=1});
+      function gl(t){pr('<span class="c">'+t+'</span>')}
+      list.forEach(function(c,i){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'',gp='',ci=0;
+        if(graph){ci=cols.indexOf(c.id);if(ci<0){cols.push(c.id);ci=cols.length-1}gp=cols.map(function(x,k){return k===ci?'*':'|'}).join(' ')+(c.p.length>1?'   ':' ')}
+        var cont=graph?cols.map(function(x,k){return '|'}).join(' ')+' ':'';
+        if(one){pr('<span class="c">'+gp+'</span><span class="y">'+c.id+'</span><span class="c">'+esc(rs)+'</span> '+esc(c.msg))}
+        else{pr('<span class="c">'+gp+'</span><span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
+          if(c.p.length>1)pl(cont+'Merge: '+c.p.join(' '));
+          pl((cont+'Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   Sun Nov 1 22:'+(10+c.n%50)+':00 2026\n\n    '+c.msg).split('\n').join('\n'+cont))}
+        if((patch||stat)&&c.p.length<2){if(!one)pl(cont);if(stat)statTrees(c.p.length?C(c.p[0]).files:{},c.files);else diffTrees(c.p.length?C(c.p[0]).files:{},c.files)}
+        if(graph){var ps=c.p.filter(function(x){return inL[x]});
+          if(!ps.length)cols.splice(ci,1);else{cols[ci]=ps[0];
+            if(ps.length>1&&cols.indexOf(ps[1])<0){cols.splice(ci+1,0,ps[1]);gl(cols.map(function(x,k){return k<ci?'|':k===ci?'|\\':k===ci+1?null:'\\'}).filter(function(x){return x!==null}).join(' '))}}
+          /* two lines that reach the same commit join up: |/ */
+          for(var k=cols.length-1;k>0;k--){var j=cols.indexOf(cols[k]);if(j<k){gl(cols.slice(0,k).map(function(){return '|'}).join(' ')+'/'+cols.slice(k+1).map(function(){return ' /'}).join(''));cols.splice(k,1)}}}
+        if(!one&&i<list.length-1)pl(graph?cols.map(function(){return '|'}).join(' '):'')});return}
     if(sub==='branch'){
       var da=a.indexOf('-d')>=0||a.indexOf('-D')>=0,names=a.slice(1).filter(function(x){return x[0]!=='-'});
       if(da){var n=names[0];if(!(n in r.br)){perr("error: branch '"+n+"' not found.");return}
@@ -4786,17 +4822,18 @@ git log --oneline           short history          git push / git pull   sync wi
   function termOut(w,lines){var t=w.querySelector('.szterm');t.innerHTML=lines.map(function(l){return l[0]==='$'?'<b>'+esc(l)+'</b>':l[0]==='!'?'<span class="e">'+esc(l.slice(1))+'</span>':'<span class="o">'+esc(l)+'</span>'}).join('\n');wrapAt(t);t.scrollTop=t.scrollHeight}
 
   /* the 4 states */
-  $$(document,'[data-w="states"]').forEach(function(w){var at=-1,say=w.querySelector('.szsay'),zs=$$(w,'.sz'),cm=0,ahead=0;
+  $$(document,'[data-w="states"]').forEach(function(w){var at=-1,say=w.querySelector('.szsay'),zs=$$(w,'.sz'),cm=0,ahead=0,pushed=0,last='3f2a1b0';function cid(){return (0x3a91c20+cm*79193).toString(16).slice(0,7)}
     var DEF=['<b>Working Directory:</b> files currently being added, deleted, or edited on disk.','<b>Staging Area (Index):</b> a draft inside .git/ that collects the changes you picked for the next snapshot.','<b>Local Repository:</b> the .git folder on your laptop, holding every commit (blob objects, commit trees, reference pointers).','<b>Remote Repository:</b> the server (GitHub) where the team shares the repository.'];
-    function draw(){zs.forEach(function(z,i){var s=z.querySelector('.slot');s.innerHTML='';if(i===at)s.innerHTML='<span class="chipf '+['m','st','cm','up'][i]+'">index.html</span>';if(i===2&&ahead&&at!==2)s.innerHTML+='<span class="chipf cm">'+ahead+' commit'+(ahead>1?'s':'')+' to push</span>'})}
+    function draw(){zs.forEach(function(z,i){var s=z.querySelector('.slot');s.innerHTML='';if(i===at)s.innerHTML='<span class="chipf '+['m','st','cm','up'][i]+'">index.html</span>';if(i===2&&ahead&&at!==2)s.innerHTML+='<span class="chipf cm">'+ahead+' commit'+(ahead>1?'s':'')+' to push</span>';if(i===3&&pushed&&at!==3)s.innerHTML+='<span class="chipf up">'+pushed+' commit'+(pushed>1?'s':'')+' on GitHub</span>'})}
     function go(c){var out=[];
       if(c==='edit'){at=0;out=['$ git status',' modified:   index.html'];say.innerHTML='You changed <b>index.html</b>. The change is only in your <b>working directory</b>.'}
       else if(c==='add'){if(at!==0){out=['$ git add index.html'];say.innerHTML=at===1?'Already staged.':'Nothing new to add. Press <b>Edit a file</b> first.'}else{at=1;out=['$ git add index.html','$ git status',' Changes to be committed:','   modified:   index.html'];say.innerHTML='Staged! The change waits in the <b>staging area</b> for the next commit.'}}
       else if(c==='unstage'){if(at!==1){out=['$ git restore --staged index.html'];say.innerHTML='Nothing is staged right now.'}else{at=0;out=['$ git restore --staged index.html'];say.innerHTML='Unstaged. Your edit is still there, back in the <b>working directory</b>.'}}
       else if(c==='discard'){if(at!==0){out=['$ git restore index.html'];say.innerHTML='No unstaged edits to throw away.'}else{at=-1;out=['$ git restore index.html'];say.innerHTML='Your unsaved edit is <b>thrown away</b>. The file is back to the last commit.'}}
-      else if(c==='commit'){if(at!==1){out=['$ git commit -m "update home page"','On branch main','nothing to commit, working tree clean'];if(at===0)out=['$ git commit -m "update home page"','!no changes added to commit (use "git add")'];say.innerHTML=at===0?'Git only commits what is <b>staged</b>. Run git add first.':'Nothing to commit.'}else{at=2;ahead++;cm++;var id=(0x3a91c2+cm*7919).toString(16).slice(0,7);out=['$ git commit -m "update home page"','[main '+id+'] update home page',' 1 file changed, 2 insertions(+)'];say.innerHTML='Saved as a commit in your <b>local repository</b>. GitHub does not have it yet.'}}
-      else if(c==='push'){if(!ahead){out=['$ git push','Everything up-to-date'];say.innerHTML='Nothing new to upload.'}else{at=3;out=['$ git push','To https://github.com/you/my-site.git','   3f2a1b0..'+(0x3a91c2+cm*7919).toString(16).slice(0,7)+'  main -> main'];ahead=0;say.innerHTML='Uploaded! The commit is now on the <b>remote repository</b> (GitHub).'}}
-      else if(c==='reset'){at=-1;ahead=0;cm=0;out=[];say.innerHTML='Press <b>Edit a file</b> to begin, or click a box to read what it is.'}
+      else if(c==='commit'){if(at!==1){out=['$ git commit -m "update home page"','On branch main','nothing to commit, working tree clean'];if(at===0)out=['$ git commit -m "update home page"','!no changes added to commit (use "git add")'];say.innerHTML=at===0?'Git only commits what is <b>staged</b>. Run git add first.':'Nothing to commit.'}else{at=2;ahead++;cm++;var id=cid();out=['$ git commit -m "update home page"','[main '+id+'] update home page',' 1 file changed, 2 insertions(+)'];say.innerHTML='Saved as a commit in your <b>local repository</b>. GitHub does not have it yet.'}}
+      else if(c==='push'){if(!ahead){out=['$ git push','Everything up-to-date'];say.innerHTML='Nothing new to upload.'}else{var nw=cid();out=['$ git push','To https://github.com/you/my-site.git','   '+last+'..'+nw+'  main -> main'];last=nw;pushed+=ahead;ahead=0;
+          if(at===2){at=3;say.innerHTML='Uploaded! The commit is now on the <b>remote repository</b> (GitHub).'}else say.innerHTML='Uploaded your commits to the <b>remote repository</b> (GitHub). Your newer edit was not committed, so it stays in the <b>'+(at===1?'staging area':'working directory')+'</b>: push only sends commits.'}}
+      else if(c==='reset'){at=-1;ahead=0;cm=0;pushed=0;last='3f2a1b0';out=[];say.innerHTML='Press <b>Edit a file</b> to begin, or click a box to read what it is.'}
       termOut(w,out);draw()}
     $$(w,'.szcmds button').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-c'))}});
     zs.forEach(function(z,i){z.onclick=function(){zs.forEach(function(x){x.classList.toggle('sel',x===z)});say.innerHTML=DEF[i]}});draw()});
@@ -4810,7 +4847,7 @@ git log --oneline           short history          git push / git pull   sync wi
       if(c==='edit'){var f=WORK[n%WORK.length];n++;dirty=(dirty||[]).concat(f[0]).filter(function(x,i,a){return a.indexOf(x)===i});o=['$ git status',' modified:   '+dirty.join('\n modified:   ')]}
       else if(c==='stash'||c==='save'){if(!dirty){o=['$ git stash','No local changes to save']}else{var msg=c==='save'?'On main: wip: shopping cart checkout logic':'WIP on main: 9f2c1ab add navbar styles';stack.unshift({msg:msg,files:dirty});dirty=null;o=[c==='save'?'$ git stash push -m "wip: shopping cart checkout logic"':'$ git stash','Saved working directory and index state '+msg]}}
       else if(c==='list'){o=['$ git stash list'].concat(stack.length?stack.map(function(s,i){return 'stash@{'+i+'}: '+s.msg}):[])}
-      else if(c==='pop'){if(!stack.length)o=['$ git stash pop','!No stash entries found.'];else{var s=stack.shift();dirty=(dirty||[]).concat(s.files);o=['$ git stash pop',' modified:   '+s.files.join('\n modified:   '),'Dropped refs/stash@{0}']}}
+      else if(c==='pop'){if(!stack.length)o=['$ git stash pop','!No stash entries found.'];else{var s=stack.shift();dirty=(dirty||[]).concat(s.files).filter(function(x,i,a){return a.indexOf(x)===i});o=['$ git stash pop',' modified:   '+s.files.join('\n modified:   '),'Dropped refs/stash@{0}']}}
       else if(c==='apply1'){if(stack.length<2)o=['$ git stash apply stash@{1}','!error: stash@{1} is not a valid reference (stash twice first)'];else{dirty=(dirty||[]).concat(stack[1].files).filter(function(x,i,a){return a.indexOf(x)===i});o=['$ git stash apply stash@{1}',' modified:   '+stack[1].files.join('\n modified:   '),'(stash@{1} stays on the stack)']}}
       else if(c==='reset'){dirty=null;stack=[];n=0}
       termOut(w,o);draw()}
@@ -5868,6 +5905,7 @@ git log --oneline           short history          git push / git pull   sync wi
     ['git diff HEAD~1 HEAD','Compare two commits: here, the one before last with the last one','diff compare commits two versions','#t2-3','git diff HEAD~1 HEAD'],
     ['git log','See every commit: who, when and why','history log list commits past see author','#n3-2','git log'],
     ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#n3-2','git log --oneline'],
+    ['git log --oneline --graph --all','See every branch at once, drawn with lines','history graph branches tree all picture lines','#n3-2','git log --oneline --graph --all'],
     ['git show','See the last commit and the lines it changed','show last commit details lines changed','#t2-3','git show'],
     ['git show HEAD~1','See the commit before the last one (HEAD~2 goes two back, and so on)','show older commit previous details','#t2-3','git show HEAD~1'],
     ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#t2-3','git ls-files']]},
@@ -5893,6 +5931,7 @@ git log --oneline           short history          git push / git pull   sync wi
     ['git stash drop','Throw away the newest stash','stash drop delete remove','#n5-3','git stash drop']]},
    {g:'Files in Git',l:[
     ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
+    ['git rm --cached <file>','Stop tracking a file but keep it on your laptop (then add it to .gitignore)','untrack stop tracking keep file gitignore cached secret env','#n4-1','git rm --cached '],
     ['git mv <old> <new>','Rename or move a file, and stage the rename','rename move mv file','#t2-3','git mv '],
     ['.gitignore','A file listing what Git should never save, like passwords: one name (or *.log) per line','ignore secret password private hide gitignore keep out','#t4-1','echo "secret.txt" > .gitignore']]},
    {g:'Branches',l:[

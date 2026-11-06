@@ -65,7 +65,7 @@
       d+='<g opacity="'+(down?.45:1)+'"><path d="M118 62h84a18 18 0 0 0 0-36 24 24 0 0 0-44-6 20 20 0 0 0-40 12 15 15 0 0 0 0 30z" fill="'+(down?'#ffe3a0':'#eaf1ff')+'" stroke="#16327a" stroke-width="3" stroke-dasharray="6 4"/><text x="160" y="46" text-anchor="middle" font-size="10.5" font-weight="800" fill="#16327a">'+(down?'GitHub offline':'GitHub (optional)')+'</text></g>';
       for(var r=0;r<3;r++)d+=lap('d',r,'full history',false,(3+own[r])+' saves here');
       host.querySelector('#vcsD').innerHTML=d+'</svg>';
-      $('vcsMsg').innerHTML=down?'<b>Centralized:</b> nobody can save or see history. <b>Distributed:</b> Nishita, Abhinav and Aryan each still hold the whole history. Click their laptops, saving still works.':'Click any laptop to <b>save a change</b>, then press <b>Crash the server</b>.';
+      $('vcsMsg').innerHTML=down?'<b>Centralized:</b> nobody can save or see history. <b>Distributed:</b> '+names[0]+', '+names[1]+' and '+names[2]+' each still hold the whole history. Click their laptops, saving still works.':'Click any laptop to <b>save a change</b>, then press <b>Crash the server</b>.';
       Array.prototype.forEach.call(host.querySelectorAll('.vlap'),function(g){
         function act(){var k=g.getAttribute('data-k'),i=+g.getAttribute('data-i');
           if(k==='c'){if(down){pop('err','ERROR','Cannot reach the server.<br><b>'+names[i]+'</b> cannot save, and cannot see old versions.<br>The only full history was on that server.');return}srv++;draw();var s=host.querySelector('#vcsC .vlap[data-i="'+i+'"] rect');}
@@ -116,7 +116,7 @@
     {z:0,cmd:'$ echo "Pasta" > pasta.txt',cap:'You created <code>pasta.txt</code>. It sits in your working folder. Git sees it but is not tracking it yet.'},
     {z:1,cmd:'$ git add pasta.txt',cap:'<code>git add</code> moves it to the staging area: picked for the next snapshot.'},
     {z:2,cmd:'$ git commit -m "Add pasta recipe"',cap:'<code>git commit</code> saves the snapshot into your local repo. You can see it with <code>git log</code>.'},
-    {z:3,cmd:'$ git push origin main',cap:'<code>git push</code> uploads the commit. GitHub has it too, and teammates can pull it.'}
+    {z:3,cmd:'$ git push -u origin main',cap:'<code>git push</code> uploads the commit. GitHub has it too, and teammates can pull it. (The folder was linked to GitHub once with <code>git remote add origin</code> and the repo link; <code>-u</code> on the first push lets plain <code>git push</code> work after that.)'}
   ];
   var si=0,zs=document.querySelectorAll('#zones .zn');
   function drawStep(){
@@ -162,7 +162,7 @@
     document.getElementById('bBranch').disabled=st.feature;
     document.getElementById('bFeat').disabled=!st.feature||st.merged||full;
     document.getElementById('bMain').disabled=full||st.merged&&false;
-    document.getElementById('bMerge').disabled=!st.feature||st.merged||full;
+    document.getElementById('bMerge').disabled=!st.feature||st.heads.feature===undefined||st.merged||full;
   }
   var fc=0;
   document.getElementById('bBranch').onclick=function(){st.feature=true;st.msg='You made a branch: <code>git switch -c feature/login</code>. Nothing moved yet. Now commit on it.';drawBr()};

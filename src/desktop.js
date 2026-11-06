@@ -920,6 +920,7 @@
     ['git diff HEAD~1 HEAD','Compare two commits: here, the one before last with the last one','diff compare commits two versions','#t2-3','git diff HEAD~1 HEAD'],
     ['git log','See every commit: who, when and why','history log list commits past see author','#n3-2','git log'],
     ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#n3-2','git log --oneline'],
+    ['git log --oneline --graph --all','See every branch at once, drawn with lines','history graph branches tree all picture lines','#n3-2','git log --oneline --graph --all'],
     ['git show','See the last commit and the lines it changed','show last commit details lines changed','#t2-3','git show'],
     ['git show HEAD~1','See the commit before the last one (HEAD~2 goes two back, and so on)','show older commit previous details','#t2-3','git show HEAD~1'],
     ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#t2-3','git ls-files']]},
@@ -945,6 +946,7 @@
     ['git stash drop','Throw away the newest stash','stash drop delete remove','#n5-3','git stash drop']]},
    {g:'Files in Git',l:[
     ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#t2-3','git rm '],
+    ['git rm --cached <file>','Stop tracking a file but keep it on your laptop (then add it to .gitignore)','untrack stop tracking keep file gitignore cached secret env','#n4-1','git rm --cached '],
     ['git mv <old> <new>','Rename or move a file, and stage the rename','rename move mv file','#t2-3','git mv '],
     ['.gitignore','A file listing what Git should never save, like passwords: one name (or *.log) per line','ignore secret password private hide gitignore keep out','#t4-1','echo "secret.txt" > .gitignore']]},
    {g:'Branches',l:[

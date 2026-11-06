@@ -110,7 +110,7 @@ The token stays in your browser tab and is never saved. Use a throwaway repo, an
 | GitHub | `remote` (`add`, `set-url`, `remove`, `-v`), `push` (also `--delete` a branch), `fetch`, `pull`, `gh repo create`, `gh auth` |
 | Terminal | `ls`, `cd`, `pwd`, `mkdir`, `touch`, `echo`, `cat`, `mv`, `cp`, `rm` |
 
-Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`. The Cheat Sheet lists all 100 commands, each with *Try it* and *Copy*.
+Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`. The Cheat Sheet lists all 102 commands, each with *Try it* and *Copy*.
 
 ## Why this one
 
