@@ -156,4 +156,7 @@
   .tp-zn .tp-chip{font-size:9.5px;padding-left:3px;padding-right:3px;letter-spacing:-.2px;max-width:100%;overflow-wrap:anywhere;white-space:normal}
   .tp-ghrow{flex-direction:column;gap:6px}.tp-ghside{width:auto;align-self:stretch}}
 @media(max-width:360px){.tp-zn b{font-size:10.5px;letter-spacing:-.2px}}
+.tp-st{margin:0;background:#0f1730;color:#e8ecff;font:12.5px/1.55 "Fira Code",monospace;padding:8px 10px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4;font-variant-ligatures:none}
+.tp-st .g{color:#5cf08a}.tp-st .r{color:#ff8a96}
+.tp:fullscreen .tp-st,.tp.tp-fs .tp-st{font-size:16px}
 /* ---------- end See it happen css ---------- */

@@ -179,6 +179,23 @@
     return '<div class="tp-zones"><div class="tp-zn"><b>Working folder</b><small>your edits</small>'+(W.join('')||'<small>clean</small>')+'</div>'
       +'<div class="tp-zn"><b>Staging area</b><small>git add puts it here</small>'+(St.join('')||'<small>empty</small>')+'</div>'
       +'<div class="tp-zn"><b>Repository</b><small>'+(G?live.length+' commit'+(live.length===1?'':'s'):'no .git yet')+'</small>'+R.join('')+'</div></div>'}
+  /* what git status prints at this step, worked out from the files, the way real Git words it */
+  function statusHtml(S){var G=S.g;if(!G)return '<pre class="tp-st"><span class="r">fatal: not a git repository (or any of the parent directories): .git</span></pre>';
+    var t=parseTree(S.tree),fp=fullPaths(t),stg=[],mod=[],unt=[],conf=[],skip=null;
+    fp.forEach(function(x){var e=x.e;if(!x.p)return;if(skip&&x.p.indexOf(skip)===0)return;skip=null;if(e.st==='I'||e.st==='G')return;
+      if(e.dir){if(e.st==='U'){skip=x.p+'/';unt.push(x.p+'/')}return}
+      if(e.st==='U')unt.push(x.p);else if(e.st==='A')stg.push('new file:   '+x.p);else if(e.st==='S')stg.push('modified:   '+x.p);else if(e.st==='M')mod.push('modified:   '+x.p);else if(e.st==='X')conf.push('both modified:   '+x.p)});
+    unt.sort(function(a,b){return a<b?-1:a>b?1:0});
+    var L=['On branch '+G.head],n=G.c.length,f=function(c,l){return '<span class="'+c+'">\t'+esc(l)+'</span>'};
+    if(!n)L.push('','No commits yet');
+    if(conf.length)L.push('You have unmerged paths.','  (fix conflicts and run "git commit")','  (use "git merge --abort" to abort the merge)','','Unmerged paths:','  (use "git add <file>..." to mark resolution)');
+    var o=L.map(esc);if(conf.length)conf.forEach(function(l){o.push(f('r',l))});
+    if(stg.length){o.push('','Changes to be committed:',esc(n?'  (use "git restore --staged <file>..." to unstage)':'  (use "git rm --cached <file>..." to unstage)'));stg.forEach(function(l){o.push(f('g',l))})}
+    if(mod.length){o.push('','Changes not staged for commit:',esc('  (use "git add <file>..." to update what will be committed)'),esc('  (use "git restore <file>..." to discard changes in working directory)'));mod.forEach(function(l){o.push(f('r',l))})}
+    if(unt.length){o.push('','Untracked files:',esc('  (use "git add <file>..." to include in what will be committed)'));unt.forEach(function(l){o.push(f('r',l))})}
+    if(!stg.length&&!mod.length&&!unt.length&&!conf.length)o.push(esc(n?'nothing to commit, working tree clean':'nothing to commit (create/copy files and use "git add" to track)'));
+    else if(!stg.length)o.push('',esc(mod.length||conf.length?'no changes added to commit (use "git add" and/or "git commit -a")':'nothing added to commit but untracked files present (use "git add" to track)'));
+    return '<pre class="tp-st">'+o.join('\n')+'</pre>'}
   function seesHtml(S){var t=parseTree(S.tree),fp=fullPaths(t),h='',skip=null;
     fp.forEach(function(x,i){var e=x.e;if(!x.p)return;if(skip&&x.p.indexOf(skip)===0)return;skip=null;if(e.st==='I'||e.st==='G')return;
       /* a new folder Git has never seen is listed as one line, like git status does */
@@ -276,7 +293,7 @@
         if(k==='graph')p=box('COMMIT GRAPH','newest on top &middot; ring = HEAD','<div class="tp-graph">'+gSvg(St.g)+'</div>','wide');
         else if(k==='zones')p=box('THE THREE ZONES','',zonesHtml(St),'wide');
         else if(k==='tree')p=box('FILES','',treeHtml(St.tree));
-        else if(k==='sees')p=box('WHAT GIT CAN SEE','git status lists the coloured ones',seesHtml(St));
+        else if(k==='sees')p=box('GIT STATUS','what git status prints right now',statusHtml(St));
         if(/ wide/.test(p))(seenHalf?rest:lead).push(p);else{half.push(p);seenHalf=true}});
       if(st&&st.d)half.push(box('git diff redesign','- in redesign &middot; + in main',diffHtml(st.d)));
       else if(St.edit)half.push(box(esc(St.edit.f),St.edit.l.some(function(l){return /^<{7}/.test(l)})?'conflict!':'',fileHtml(St.edit),'file'));
