@@ -87,7 +87,7 @@ gh repo create my-project --public --source=. --remote=origin --push
 
 or `git clone https://github.com/your-name/a-repo.git` for a repo you already have.
 
-**In the Practice Lab:** press **Real GitHub mode**, paste the token, and either paste a repo link or type a name under **No repo yet? Make one**. The stories and the four boxes then use your real repo.
+**In the Practice Lab:** press **Real GitHub mode**, paste the token, and either paste a repo link or type a name under **No repo yet? Make one**. The stories and the four boxes then use your real repo, and **Switch repo** moves to another one without logging out.
 
 What happens on GitHub is what real Git does:
 
@@ -107,10 +107,10 @@ The token stays in your browser tab and is never saved. Use a throwaway repo, an
 | Undo | `restore`, `reset`, `revert`, `stash` |
 | Files | `rm`, `mv`, `.gitignore` |
 | Branches | `branch` (also `-M` to rename and `--set-upstream-to`), `switch`, `checkout`, `merge`, `rebase`, `tag` |
-| GitHub | `remote` (`add`, `set-url`, `remove`, `-v`), `push`, `fetch`, `pull`, `gh repo create`, `gh auth` |
+| GitHub | `remote` (`add`, `set-url`, `remove`, `-v`), `push` (also `--delete` a branch), `fetch`, `pull`, `gh repo create`, `gh auth` |
 | Terminal | `ls`, `cd`, `pwd`, `mkdir`, `touch`, `echo`, `cat`, `mv`, `cp`, `rm` |
 
-Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`. The Cheat Sheet lists all 99 commands, each with *Try it* and *Copy*.
+Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`. The Cheat Sheet lists all 100 commands, each with *Try it* and *Copy*.
 
 ## Why this one
 

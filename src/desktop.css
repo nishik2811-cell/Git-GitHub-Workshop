@@ -628,3 +628,5 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .tmbtns .tmgo{background:#2f9a5a;color:#fff}
 .tmbtns button:disabled{opacity:.6;cursor:default}
 .tmcard small{display:block;opacity:.85;line-height:1.4}
+/* Practice Lab: Switch repo note */
+.rswitch{margin:0 0 8px;font-size:13.5px;line-height:1.45}

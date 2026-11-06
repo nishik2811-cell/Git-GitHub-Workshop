@@ -1440,6 +1440,8 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .tmbtns .tmgo{background:#2f9a5a;color:#fff}
 .tmbtns button:disabled{opacity:.6;cursor:default}
 .tmcard small{display:block;opacity:.85;line-height:1.4}
+/* Practice Lab: Switch repo note */
+.rswitch{margin:0 0 8px;font-size:13.5px;line-height:1.45}
 /* ---------- end Mini laptop desktop css ---------- */
 </style>
 <style id="lesson9css">
@@ -2953,8 +2955,10 @@ git log --oneline           short history          git push / git pull   sync wi
   function applyTree(nt){var r=R(),old=headTree();
     keys(old).forEach(function(f){if(!(f in nt))delete S.files[r.root+'/'+f]});
     keys(nt).forEach(function(f){S.files[r.root+'/'+f]=nt[f]});r.index=copy(nt)}
-  function needRepo(){if(!S.repo){perr('fatal: not a git repository (or any of the parent directories): .git');return false}
-    var r=R();if(!(S.cwd===r.root||S.cwd.indexOf(r.root+'/')===0)){perr('fatal: not a git repository (or any of the parent directories): .git');return false}return true}
+  function notRepo(){perr('fatal: not a git repository (or any of the parent directories): .git');
+    pl('You are not inside a repo folder ('+(S.cwd===HOME?'~':S.cwd.replace(HOME,'~'))+'). cd into your project folder, or run  git init  there first.','y')}
+  function needRepo(){if(!S.repo){notRepo();return false}
+    var r=R();if(!(S.cwd===r.root||S.cwd.indexOf(r.root+'/')===0)){notRepo();return false}return true}
   function newCommit(msg,parents,files,author){var r=R(),c={id:rid(),msg:msg,p:parents,files:files,br:r.head,n:++S.n,who:author||S.cfg.name||'you'};r.cm[c.id]=c;r.list.push(c);return c}
   function lines(s){return s?s.replace(/\n$/,'').split('\n').length:0}
   /* lines added and removed between two versions of a file, counted like real Git (longest common subsequence) */
@@ -3423,6 +3427,14 @@ git log --oneline           short history          git push / git pull   sync wi
       var pw=a.slice(1).filter(function(x){return x[0]!=='-'}),allTags=a.indexOf('--tags')>=0;
       if(pw[0]&&pw[0]!=='origin'){perr("fatal: '"+pw[0]+"' does not appear to be a git repository\nfatal: Could not read from remote repository.");return}
       var ref=pw[1],br=r.head;r.tags=r.tags||{};
+      if(a.indexOf('--delete')>=0||a.indexOf('-d')>=0){var db=ref;
+        if(!db){perr("fatal: --delete doesn't make sense without any refs");return}
+        if(db===(RL.on?ghDef(r):'main')){pl('To '+r.remote.url);perr(" ! [remote rejected] "+db+" (refusing to delete the current branch: refs/heads/"+db+")\nerror: failed to push some refs to '"+r.remote.url+"'");return}
+        if(RL.on){realDelBranch(db);return}
+        if(!r.remote.br[db]){perr("error: unable to delete '"+db+"': remote ref does not exist\nerror: failed to push some refs to '"+r.remote.url+"'");return}
+        delete r.remote.br[db];if(r.rbr)delete r.rbr[db];if(r.up)delete r.up[db];
+        keys(S.repos).forEach(function(rt){var q=S.repos[rt];if(q!==r&&q.remote&&ghKey(q.remote.url)===ghKey(r.remote.url))delete q.remote.br[db]});
+        pl('To '+r.remote.url);pl(' - [deleted]         '+db,'g');return}
       /* tags: git push origin v1.0, or git push --tags */
       if(allTags||(ref&&r.tags[ref]&&!(ref in r.br))){var tl=allTags?keys(r.tags).sort():[ref];r.remote.tags=r.remote.tags||{};tl=tl.filter(function(t){return r.remote.tags[t]!==r.tags[t].id});
         if(!tl.length){pl('Everything up-to-date');return}
@@ -3973,7 +3985,7 @@ git log --oneline           short history          git push / git pull   sync wi
     if(!S.repo||!S.fvf)return;var f=S.fvf,t=work()[f]||'',m=t.match(/<<<<<<<[^\n]*\n([\s\S]*?)=======\n([\s\S]*?)>>>>>>>[^\n]*\n?/);if(!m)return;
     var rpl=act==='cur'?m[1]:act==='inc'?m[2]:m[1]+m[2];S.files[R().root+'/'+f]=t.replace(m[0],rpl);
     pr('<span class="y">[VS Code] '+(act==='cur'?'Accepted Current Change':act==='inc'?'Accepted Incoming Change':'Accepted Both Changes')+' in '+esc(f)+'. File saved. Next: git add '+esc(f)+', then git commit.</span>');render()}
-  var TT1=['Make a folder called recipes and go inside it','Turn it into a Git repo and set your name and email','Create a file called pasta.txt','Save it as your first commit','Connect GitHub and push it','Make a branch called feature','Change the file and commit it on the branch','Push the branch to GitHub','Go back to main','Change the same line on main and commit it','Merge feature into main (a conflict will appear)','Read the conflict markers in the file','Fix the file by writing the final line yourself','Mark it fixed and finish the merge','Push the result to GitHub','Add a README file','Look at the history'];
+  var TT1=['Make a folder called recipes and go inside it','Turn it into a Git repo and set your name and email','Create a file called pasta.txt','Save it as your first commit','Connect GitHub and push it','Make a branch called feature','Change the file and commit it on the branch','Push the branch to GitHub','Go back to main','Change the same line on main and commit it','Merge feature into main (a conflict will appear)','Read the conflict markers in the file','Fix the file by writing the final line yourself','Mark it fixed and finish the merge','Push the result to GitHub','Delete the merged feature branch, here and on GitHub','Add a README file','Look at the history'];
   function hasC(f){return S.repo&&visible().some(function(c){return f in c.files})}
   var PR1=[
    function(){return !!S.dirs[HOME+'/recipes']&&(S.cwd===HOME+'/recipes'||S.cwd.indexOf(HOME+'/recipes/')===0||!!S.repo)},
@@ -3991,6 +4003,7 @@ git log --oneline           short history          git push / git pull   sync wi
    function(){return !!(S.merged||(S.repo&&S.repo.merge&&!/^<<<<<<</m.test(work()['pasta.txt']||'')&&!/<<<<<<</.test(work()['pasta.txt']||'')))},
    function(){return !!S.merged&&!!S.repo&&!S.repo.merge},
    function(){return !!(S.merged&&S.repo.remote&&S.repo.remote.br.main===S.repo.br.main)},
+   function(){return !!(S.merged&&S.repo&&!('feature' in S.repo.br)&&S.repo.remote&&!S.repo.remote.br.feature)},
    function(){return !!(S.repo&&'README.md' in headTree())},
    function(){return !!S.ran.log}
   ];
@@ -4139,6 +4152,7 @@ git log --oneline           short history          git push / git pull   sync wi
    {say:'<b>You</b> decide which line survives: the red sauce (Current), the white sauce (Incoming), or both. In VS Code you would click <b>Accept Current Change</b>, <b>Accept Incoming Change</b> or <b>Accept Both Changes</b>. Try those buttons in the VS Code window, or press Next step to pick here.',cmds:['@FIX@'],choose:true},
    {say:'Tell Git the conflict is fixed with <b>git add</b>, then <b>commit</b> to finish the merge.',cmds:['git add pasta.txt','git commit -m "Resolve conflict: @CH@"']},
    {say:'Push the finished merge to GitHub.',cmds:['git push']},
+   {say:'The feature work is part of main now, so the <b>feature</b> branch is done. <b>git branch -d</b> deletes it on your laptop (it only deletes branches that are merged), and <b>git push origin --delete</b> deletes it on GitHub.',cmds:['git branch -d feature','git push origin --delete feature']},
    {say:'Last touch: add a <b>README.md</b>. It is the front page of the project, GitHub shows it under your files. The # makes a big heading.',cmds:['echo "# Recipes" > README.md','echo "My pasta recipes. Made at the Git workshop." >> README.md','git add README.md','git commit -m "Add README"','git push']},
    {say:'<b>git log</b> shows the whole story. The graph on the right shows the branch splitting off and joining back. You just resolved a merge conflict!',cmds:['git log --oneline']}
   ];
@@ -4408,7 +4422,7 @@ git log --oneline           short history          git push / git pull   sync wi
   }
   function b64(t){return btoa(unescape(encodeURIComponent(t)))}
   function ago(d){var s=Math.max(0,(Date.now()-new Date(d))/1000);return s<60?'just now':s<3600?Math.floor(s/60)+' min ago':Math.floor(s/3600)+' h ago'}
-  function setupForm(msg){
+  function setupForm(msg,sw){
     rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
      +'<li><b>Pick the repo.</b> Already have an empty repo? Paste its link. No repo yet? Make one right here, below.</li></ol>'
      +'<label class="rf">Token (starts with ghp_ or github_pat_)<input id="rfTok" type="password" placeholder="paste the token here" autocomplete="off"></label>'
@@ -4420,6 +4434,9 @@ git log --oneline           short history          git push / git pull   sync wi
      +'<label><input type="radio" name="rfVis" value="public" checked> Public</label><label><input type="radio" name="rfVis" value="private"> Private</label></span>'
      +'<div class="btns" style="justify-content:flex-start;margin:6px 0 0"><button id="rfNew">Create it and connect</button></div><small>Your token makes an empty repo on your GitHub account (like github.com/new), then connects to it.</small></div>';
     $('rfGo').onclick=connect;$('rfOff').onclick=realOff;$('rfNew').onclick=connectNew;
+    /* switching repos: you stay logged in (the token is kept), and Cancel goes back to the repo you were on */
+    if(sw&&RL.on){$('rfTok').value=RL.tok;var st=rbody.querySelector('.rsteps');if(st)st.outerHTML='<p class="rswitch"><b>Switch repo.</b> You stay logged in. Paste another repo\'s link and press <b>Connect</b>, or make a new repo below. Now on: <b>'+esc(RL.repo)+'</b></p>';
+      $('rfRepo').value='';var c=$('rfOff');c.textContent='Cancel';c.onclick=function(){refreshLive(true)}}
     $('rfNewName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();connectNew()}});
   }
   function parseRepo(v){v=v.trim();var m=v.match(/github\.com[\/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[\/?#].*)?$/);if(m)return m[1]+'/'+m[2];m=v.match(/^([\w.-]+)\/([\w.-]+)$/);return m?m[1]+'/'+m[2].replace(/\.git$/,''):''}
@@ -4441,15 +4458,19 @@ git log --oneline           short history          git push / git pull   sync wi
       if(x.s===403||x.s===404){again('GitHub said '+x.s+': this token cannot make repos. Use a classic token with the repo box ticked (a fine-grained token also needs Administration: Read and write). Or make the repo at github.com/new and paste its link.');return}
       again('GitHub said '+x.s+': '+(msg||'could not make the repo')+(det?' ('+det+')':''))
     }).catch(function(e){RL.tok='';again('Could not reach GitHub ('+((e&&e.message)||'blocked')+'). Check your internet and open the file directly in Chrome or Edge.')})}
-  function connectTo(rp,tk){
+  function connectTo(rp,tk){var prev=RL.on?{repo:RL.repo,tok:RL.tok,def:RL.def}:null;
+    function fail(m){if(prev){RL.repo=prev.repo;RL.tok=prev.tok;RL.def=prev.def;setupForm(m,true)}else{RL.tok='';setupForm(m)}}
     RL.repo=rp;RL.tok=tk;rbody.innerHTML='<p class="empty">Connecting...</p>';
     gh('GET','/repos/'+rp).then(function(x){
-      if(x.s!==200){RL.tok='';setupForm('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
-      if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
+      if(x.s!==200){fail('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
+      if(x.j.permissions&&!x.j.permissions.push){fail('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
       RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};RL.login='';
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
-      pl('Connected to github.com/'+rp+' for real. Add it as origin and push!','y');
-      pl('git remote add origin https://github.com/'+rp+'.git','c');
+      pl('Connected to github.com/'+rp+' for real.','y');
+      var inRepo=S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0);
+      if(inRepo){pl('Connect this repo to it, then upload (once you have a commit):','y');pl('  git remote add origin https://github.com/'+rp+'.git\n  git push -u origin main','c')}
+      else{pl('Next: press Start the story (it uses this repo), or make your own project first:','y');
+        pl('  mkdir my-project\n  cd my-project\n  git init\n  echo "hello" > hello.txt\n  git add .\n  git commit -m "First commit"\n  git remote add origin https://github.com/'+rp+'.git\n  git push -u origin main','c')}
       refreshLive(true);clearInterval(RL.timer);RL.timer=setInterval(function(){refreshLive()},8000);
     }).catch(function(e){var keep=tk;var inFrame=false;try{inFrame=window.top!==window}catch(z){inFrame=true}
       setupForm('Could not reach GitHub ('+(e&&e.message||'blocked')+'). '+(inFrame?'This page is inside a preview that blocks outside connections. Download the file and open it in Chrome or Edge.':'Check your internet, turn off ad blockers, and open the file directly in Chrome or Edge instead of a preview.'));
@@ -4470,9 +4491,9 @@ git log --oneline           short history          git push / git pull   sync wi
           h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+c.html_url+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
         h+='</div>';
       }else h+='<p class="empty">This repo has no commits on <b>'+esc(v)+'</b> yet. Make a commit and push.</p>';
-      h+='<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button id="rfWipe" class="redbtn">Delete everything in this repo</button><button id="rfOff2">Switch off real mode</button></div>';
+      h+='<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button id="rfWipe" class="redbtn">Delete everything in this repo</button><button id="rfSwitch">Switch repo</button><button id="rfOff2">Switch off real mode</button></div>';
       rbody.innerHTML=h;rb.hidden=false;
-      var b=$('rfRef');if(b)b.onclick=function(){refreshLive()};$('rfOff2').onclick=realOff;$('rfWipe').onclick=function(){if(busy)return;window.gitPop('err','DELETE EVERYTHING?','This deletes <b>every file and every extra branch</b> in <b>github.com/'+esc(RL.repo)+'</b> and clears the Mini laptop too. Use it to reset the repo for the next demo.',[{t:'Yes, delete everything',fn:wipeReal},{t:'Cancel'}])};
+      var b=$('rfRef');if(b)b.onclick=function(){refreshLive()};$('rfOff2').onclick=realOff;$('rfSwitch').onclick=function(){if(busy||pend)return;setupForm(null,true)};$('rfWipe').onclick=function(){if(busy)return;window.gitPop('err','DELETE EVERYTHING?','This deletes <b>every file and every extra branch</b> in <b>github.com/'+esc(RL.repo)+'</b> and clears the Mini laptop too. Use it to reset the repo for the next demo.',[{t:'Yes, delete everything',fn:wipeReal},{t:'Cancel'}])};
     });
   }
   rbody.addEventListener('click',function(e){var el=e.target.closest&&e.target.closest('.lvfile');if(!el||el.getAttribute('data-t')!=='file')return;
@@ -4609,6 +4630,13 @@ git log --oneline           short history          git push / git pull   sync wi
       perr("remote: Repository not found.\nfatal: repository '"+url+"/' not found");
       pl('The link must point to a repo that really exists on GitHub.'+(RL.repo?' Your connected repo is github.com/'+RL.repo+':\n  git remote set-url origin https://github.com/'+RL.repo+'.git\nOr':'')+' Make this one first:  gh repo create '+t.split('/')[1]+' --public\n(check the spelling too: the link shows on the repo\'s page on github.com, under Code)','y');ghDone()
     }).catch(function(e){perr("fatal: unable to access '"+url+"/': "+((e&&e.message)||'network error'));ghDone()})}
+  /* git push origin --delete <branch>, for real */
+  function realDelBranch(db){var r=R(),repo=ghRepo(r),url='https://github.com/'+repo+'.git';pend=true;busy=true;inp.disabled=true;
+    gh('DELETE','/repos/'+repo+'/git/refs/heads/'+encodeURIComponent(db)).then(function(x){
+      if(x.s===204||x.s===200){delete r.remote.br[db];if(r.rbr)delete r.rbr[db];if(r.up)delete r.up[db];delete RL.known[db];pl('To '+url);pl(' - [deleted]         '+db,'g');refreshLive();return}
+      if(x.s===422||x.s===404)perr("error: unable to delete '"+db+"': remote ref does not exist\nerror: failed to push some refs to '"+url+"'");
+      else perr('error: GitHub refused: '+x.s+' '+((x.j&&x.j.message)||''))
+    }).catch(function(e){perr("fatal: unable to access '"+url+"/': "+((e&&e.message)||'network error'))}).then(function(){ghDone()})}
   /* git push, for real. Each commit on your Mini laptop becomes ONE commit on GitHub, the way real Git does it:
      upload each changed file (a blob), make the folder listing (a tree, built on the parent's tree), make the commit
      (tree + parents + message), and only at the end move the branch to it. A merge keeps both parents.
@@ -5883,6 +5911,7 @@ git log --oneline           short history          git push / git pull   sync wi
     ['git push -u origin main','The first upload of a branch: it also links the branch to GitHub (-u is short for --set-upstream). After this, plain git push and git pull work','upload push send share github online first upstream set-upstream link track','#t2-4','git push -u origin main'],
     ['git push','Upload your new commits to GitHub. Works once the branch is linked (pushed with -u, or cloned); before that Git says "no upstream branch"','upload push send share github online upstream','#t2-4','git push'],
     ['git push origin <branch>','Upload one branch by name, even if you are on another. It does not link the branch: add -u for that','push branch upload','#t2-4','git push origin '],
+    ['git push origin --delete <branch>','Delete a branch on GitHub, for example once it is merged (git branch -d deletes it on your laptop)','delete remove branch github remote cleanup merged','#t2-4','git push origin --delete '],
     ['git branch --set-upstream-to=origin/main','Link the branch you are on to GitHub\'s main without pushing (then plain git push and git pull work)','upstream link track set-upstream-to no upstream tracking information','#t2-4','git branch --set-upstream-to=origin/main'],
     ['git fetch','Download new commits from GitHub without changing your files (origin/main moves)','download fetch check update look remote teammate','#n6-2','git fetch'],
     ['git pull','Download new commits from GitHub and merge them into your branch. Like git push, it needs the branch linked first (pushed with -u, or cloned)','download pull get update latest sync teammate upstream','#n6-2','git pull'],
