@@ -184,7 +184,7 @@
       /* a new folder Git has never seen is listed as one line, like git status does */
       if(e.dir&&e.st==='U'){skip=x.p+'/';h+='<span>'+esc(x.p)+'/ <em class="U">(untracked folder)</em></span>';return}
       if(e.dir){var kids=t[i+1]&&t[i+1].d>e.d;if(!kids)h+='<span class="none">'+esc(x.p)+'/ is empty, so Git cannot see it</span>';return}
-      h+='<span>'+esc(x.p)+(e.st?' <em class="'+e.st+'">('+STT[e.st]+')</em>':'')+'</span>'});
+      h+='<span>'+esc(x.p)+(e.st?' <em class="'+e.st+'">('+STT[e.st]+')</em>':' <em class="T">(tracked, unchanged)</em>')+'</span>'});
     return '<div class="tp-sees">'+(h||'<span class="none">nothing</span>')+'</div>'}
 
   /* ---------------- a file's contents ---------------- */
@@ -276,7 +276,7 @@
         if(k==='graph')p=box('COMMIT GRAPH','newest on top &middot; ring = HEAD','<div class="tp-graph">'+gSvg(St.g)+'</div>','wide');
         else if(k==='zones')p=box('THE THREE ZONES','',zonesHtml(St),'wide');
         else if(k==='tree')p=box('FILES','',treeHtml(St.tree));
-        else if(k==='sees')p=box('WHAT GIT CAN SEE','git status lists these',seesHtml(St));
+        else if(k==='sees')p=box('WHAT GIT CAN SEE','git status lists the coloured ones',seesHtml(St));
         if(/ wide/.test(p))(seenHalf?rest:lead).push(p);else{half.push(p);seenHalf=true}});
       if(st&&st.d)half.push(box('git diff redesign','- in redesign &middot; + in main',diffHtml(st.d)));
       else if(St.edit)half.push(box(esc(St.edit.f),St.edit.l.some(function(l){return /^<{7}/.test(l)})?'conflict!':'',fileHtml(St.edit),'file'));

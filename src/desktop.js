@@ -539,13 +539,17 @@
   var HHENV='# a secret: never upload this file\nMEME_API_KEY=sk-fake-4f9a2c7e1b3d-not-a-real-key\n';
   /* hehehe is a real folder on the Mini laptop: the pictures are files you can open, move, copy, delete, git add and git push */
   var HH=HOME+'/hehehe',memeKeys={};
-  window.mlSeed=function(st){var names=MEMES.map(function(m){return m[0]}).filter(function(n){return memeKeys[n]}).concat(Object.keys(memeKeys).filter(function(n){return !MEMES.some(function(m){return m[0]===n})}));
+  /* resources: the workshop's slide decks, as a normal folder (open, copy, move, git add, commit, push) */
+  var RD=HOME+'/resources',DECKS=[],PPTX='application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  function decksRead(){if(DECKS.length)return;var j=document.getElementById('resPack');if(!j)return;try{DECKS=JSON.parse(j.textContent)||[]}catch(e){DECKS=[]}}
+  function resSeed(st){decksRead();if(!DECKS.length||st.dirs[RD])return;st.dirs[RD]=1;DECKS.forEach(function(d){st.files[RD+'/'+d.name]=ML.binLazy('res:'+d.name,'resources/'+d.name,PPTX,d.name,d.size)})}
+  window.mlSeed=function(st){resSeed(st);var names=MEMES.map(function(m){return m[0]}).filter(function(n){return memeKeys[n]}).concat(Object.keys(memeKeys).filter(function(n){return !MEMES.some(function(m){return m[0]===n})}));
     if(!names.length)return;st.dirs[HH]=1;names.forEach(function(n){st.files[HH+'/'+n]=memeKeys[n]});
     /* a small task to practise on: upload this folder to GitHub, without leaking the (fake) key */
     st.files[HH+'/task.txt']=HHTASK;st.files[HH+'/README.md']=HHREADME;st.files[HH+'/.env']=HHENV};
   /* the pictures are packed into the page after this script, so read them once the page has loaded */
   function memesLoad(){document.querySelectorAll('script.memePack').forEach(function(sc){var n=sc.getAttribute('data-name');if(!memeKeys[n])memeKeys[n]=ML.binReg('meme:'+n,sc.textContent,'image/jpeg',n)});
-    var st=S();if(!st.dirs[HH]){window.mlSeed(st);ML.render()}}
+    var st=S();if(!st.dirs[HH]){window.mlSeed(st);ML.render()}else if(!st.dirs[RD]){resSeed(st);ML.render()}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',memesLoad);else memesLoad();
   function escA(t){return esc(t).replace(/"/g,'&quot;')}
   function altOf(abs){var m=MEMES.filter(function(x){return x[0]===base(abs)})[0];return m?m[1]:base(abs)}
@@ -561,7 +565,31 @@
   function picOpen(k){picAt=k;activate(MW.el,true);picDraw();var f=MW.body.querySelector('[data-mm="next"]');if(f)f.focus({preventScroll:true})}
   function picStep(d){var l=picList();if(l.length<2)return;picAt=l[(l.indexOf(picAt)+d+l.length)%l.length];picDraw()}
   /* open a file the way a desktop would: pictures in Photos, everything else in VS Code */
-  function openFile(k){if(S().dirs[k]){openFolder(k);return}if(isPicFile(k))picOpen(k);else openVS(k)}
+  function openFile(k){if(S().dirs[k]){openFolder(k);return}if(isPicFile(k))picOpen(k);else if(/\.pptx?$/i.test(k)&&ML.isBin(S().files[k]))deckOpen(k);else openVS(k)}
+  /* a slide deck opens in Slides: the real slides as pictures (made from the .pptx), one at a time, with Download for the file itself */
+  var tkDeck=tkBtn('tkDeck','Slides',I.pic);tkDeck.hidden=true;tbar.insertBefore(tkDeck,tray);
+  var SW=makeWin('deckWin','Slides',I.pic,tkDeck,820,560,{max:true}),deckAt=null,deckI=0;
+  function deckOf(k){decksRead();var t=S().files[k];if(!t||!ML.isBin(t))return null;var key=t.slice(5);return DECKS.filter(function(x){return 'res:'+x.name===key})[0]||null}
+  function deckSrc(d,i){return 'resources/slides/'+encodeURIComponent(d.name.replace(/\.pptx?$/i,''))+'/'+d.slides[i]}
+  function deckDraw(){var st=S();if(!deckAt||!(deckAt in st.files)){SW.body.innerHTML='<div class="mmempty">This deck is not there any more.</div>';return}
+    var d=deckOf(deckAt),n=d&&d.slides?d.slides.length:0,t=st.files[deckAt],kb=Math.round(ML.binSize(t)/1024),size=kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';
+    SW.el.querySelector('.dwh span').textContent=base(deckAt);tkDeck.querySelector('span').textContent=base(deckAt);
+    if(deckI>=n)deckI=Math.max(0,n-1);
+    SW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-dk="back">&#9664; Open folder</button><span>'+esc(base(deckAt))+' <small>'+(n?'(slide '+(deckI+1)+' of '+n+') &middot; ':'')+size+'</small></span>'
+      +'<button type="button" class="mmbtn" data-dk="prev" aria-label="Previous slide"'+(deckI<1?' disabled':'')+'>&larr;</button><button type="button" class="mmbtn" data-dk="next" aria-label="Next slide"'+(deckI>=n-1?' disabled':'')+'>&rarr;</button><button type="button" class="mmbtn" data-dk="dl">Download</button></div>'
+      +(n?'<div class="dkview"><img class="dkimg" src="'+deckSrc(d,deckI)+'" alt="Slide '+(deckI+1)+': '+escA(d.titles[deckI]||'')+'"></div><div class="dkcap"><b>'+(deckI+1)+'.</b> '+esc(d.titles[deckI]||'')+'</div>'
+        :'<div class="mmempty">This deck has no slide pictures on the Mini laptop. Download it to open it in PowerPoint, Keynote or Google Slides.</div>');
+    if(n&&deckI+1<n){var pre=new Image();pre.src=deckSrc(d,deckI+1)}}
+  function deckOpen(k){if(deckAt!==k)deckI=0;deckAt=k;activate(SW.el,true);deckDraw();var f=SW.body.querySelector('[data-dk="next"]');if(f&&!f.disabled)f.focus({preventScroll:true})}
+  function deckStep(dl){var d=deckOf(deckAt);if(!d||!d.slides)return;var j=deckI+dl;if(j<0||j>=d.slides.length)return;var had=SW.el.contains(document.activeElement);deckI=j;deckDraw();
+    /* the bar is drawn again, so keep the keyboard focus in the window: the arrow keys keep working */
+    if(had){var f=SW.body.querySelector('[data-dk="'+(dl>0?'next':'prev')+'"]');if(!f||f.disabled)f=SW.body.querySelector('[data-dk="'+(dl>0?'prev':'next')+'"]');if(f&&!f.disabled)f.focus({preventScroll:true})}}
+  function deckDl(){var t=S().files[deckAt];if(!t)return;var a=document.createElement('a');a.href=ML.binUrl(t);a.download=base(deckAt);a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
+  SW.body.addEventListener('click',function(e){var b=e.target.closest('[data-dk]');if(!b)return;var a=b.getAttribute('data-dk');if(a==='back'){if(deckAt)openFolder(dirname(deckAt))}else if(a==='dl')deckDl();else deckStep(a==='next'?1:-1)});
+  SW.el.addEventListener('keydown',function(e){if(!deckAt)return;if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();deckStep(1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();deckStep(-1)}});
+  /* swipe on a phone */
+  var dkX=null;SW.body.addEventListener('touchstart',function(e){if(e.target.closest('.dkview'))dkX=e.touches[0].clientX},{passive:true});
+  SW.body.addEventListener('touchend',function(e){if(dkX==null)return;var dx=e.changedTouches[0].clientX-dkX;dkX=null;if(Math.abs(dx)>40)deckStep(dx<0?1:-1)},{passive:true});
   MW.body.addEventListener('click',function(e){var b=e.target.closest('[data-mm]');if(!b)return;var a=b.getAttribute('data-mm');if(a==='back'){if(picAt)openFolder(dirname(picAt))}else picStep(a==='next'?1:-1)});
   MW.el.addEventListener('keydown',function(e){if(!picAt)return;if(e.key==='ArrowRight'){e.preventDefault();picStep(1)}else if(e.key==='ArrowLeft'){e.preventDefault();picStep(-1)}else if(e.key==='Backspace'){e.preventDefault();openFolder(dirname(picAt))}});
 

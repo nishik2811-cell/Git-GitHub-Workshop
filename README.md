@@ -37,6 +37,7 @@ Read a little, try it straight away, and break things on purpose.
 | **File Explorer and Bin** | Folders, drag and drop, and restoring things you deleted |
 | **Browser** | The project's GitHub page, the setup guide website, and a **New repository** page like github.com/new |
 | **Setup-Guide.pdf** | Installing Git, Git Bash and VS Code on your own computer |
+| **resources** | The workshop's slide decks (.pptx). Open one to flip through its slides, or download it. It is a normal folder, so you can `git add`, commit and push it too |
 | **hehehe** | A folder of memes. Its `task.txt` walks you through putting it on GitHub in a new repo, `workshop-demo`, in Git Bash, without leaking the secret key inside |
 | **Notepad** | A drawing app, for sketching branches and merges. Save a drawing to your device, or as a file on the Mini laptop to commit and push |
 
@@ -61,6 +62,17 @@ It behaves like a real desktop: windows move, resize, minimise and pin on phones
 Seven lessons have a step-by-step picture for presenting: you type the real commands in your own terminal, press **Next** (or a clicker), and the picture shows what that command changed. The commit graph with HEAD and every branch, the files with their U / A / M letters, the three zones, the file's contents (conflict markers included), or the GitHub page with the button to click. **Big view** (or F) fills the projector.
 
 The steps live in `src/viz.js`. Change them there, then run `python3 src/sync.py`.
+
+## Workshop slides
+
+The decks from the sessions are in [`resources/`](resources), and in the Mini laptop's **resources** folder, where you can flip through them in Slides:
+
+| Deck | What it covers |
+|---|---|
+| [Session 1: Intro to hands-on Git](resources/git_session1_intro_hands_on_1.pptx) | Why Git and GitHub, version control, centralised vs distributed, installing Git, `init`, `status`, `add`, `commit`, `log`, the first push |
+| [Part 2: Single user setup](resources/git_single_user_setup.pptx) | Why we ignore files, `.gitignore`, an already committed `.env`, empty folders and `.gitkeep` |
+| [Part 3: Branches, undo and teamwork](resources/git_branches_undo_teamwork.pptx) | Branches, merging, merge conflicts, undoing with `git reset`, issues, assignees and pull requests |
+| [Session 2: Stashing to GitHub](resources/git_session2_stash_to_github.pptx) | `stash`, tags, signing up and making a repo on GitHub, `clone`, private repos and SSH keys, pushing, fetch vs pull |
 
 Every module has something to click: diagrams you can play with, drawn GitHub screens where you tap a part to learn what it does, code with a *Copy* button, and a short quiz at the end.
 
@@ -146,8 +158,12 @@ Tools like *Learn Git Branching* draw the commit graph as you type. This worksho
 | `src/sync.py` | Copies the `src/` files, the PDF and the memes into `index.html` |
 | `docs/` | The setup guide PDF, screenshots and the link preview picture |
 | `memes/` | The pictures for the hehehe folder |
+| `resources/` | The slide decks for the resources folder, and `resources/slides/`, a picture of every slide |
+| `src/slides.py` | Makes those slide pictures from the decks (needs LibreOffice) |
 
-After changing `src/playground.js`, `src/desktop.*`, `src/viz.*`, `docs/` or `memes/`, rebuild the page from the project folder:
+Added or changed a deck in `resources/`? Run `python3 src/slides.py` first to make its slide pictures.
+
+After changing `src/playground.js`, `src/desktop.*`, `src/viz.*`, `docs/`, `memes/` or `resources/`, rebuild the page from the project folder:
 
 ```bash
 python3 src/sync.py

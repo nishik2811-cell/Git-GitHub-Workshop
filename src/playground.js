@@ -49,8 +49,13 @@
   function isBin(t){return typeof t==='string'&&t.indexOf('\u0000BIN:')===0}
   function binInfo(t){return isBin(t)?BIN[t.slice(5)]:null}
   function binReg(key,b64,mime,name){if(!BIN[key])BIN[key]={b64:b64.replace(/\s+/g,''),mime:mime||'application/octet-stream',name:name||key,url:null};return '\u0000BIN:'+key}
-  function binUrl(t){var b=binInfo(t);if(!b)return '';if(!b.url){try{var s2=atob(b.b64),a=new Uint8Array(s2.length);for(var i=0;i<s2.length;i++)a[i]=s2.charCodeAt(i);b.url=URL.createObjectURL(new Blob([a],{type:b.mime}))}catch(e){b.url=''}}return b.url}
-  function binSize(t){var b=binInfo(t);return b?Math.floor(b.b64.length*3/4)-(/==$/.test(b.b64)?2:/=$/.test(b.b64)?1:0):0}
+  /* a big file (like a presentation in resources/) that is not packed into the page: the bytes are fetched from src when needed */
+  function binLazy(key,src,mime,name,size){if(!BIN[key])BIN[key]={b64:null,src:src,size:size||0,mime:mime||'application/octet-stream',name:name||key,url:null};return '\u0000BIN:'+key}
+  function binLoad(t){var b=binInfo(t);if(!b)return Promise.reject(new Error('not a binary file'));if(b.b64!=null)return Promise.resolve(b.b64);
+    return fetch(b.src).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(function(buf){var u=new Uint8Array(buf),s3='';for(var i=0;i<u.length;i+=32768)s3+=String.fromCharCode.apply(null,u.subarray(i,i+32768));b.b64=btoa(s3);return b.b64})
+      .catch(function(){throw new Error('could not read '+b.name+'. Open the workshop from its website (not as a file on your computer) to upload it.')})}
+  function binUrl(t){var b=binInfo(t);if(!b)return '';if(b.b64==null)return b.src||'';if(!b.url){try{var s2=atob(b.b64),a=new Uint8Array(s2.length);for(var i=0;i<s2.length;i++)a[i]=s2.charCodeAt(i);b.url=URL.createObjectURL(new Blob([a],{type:b.mime}))}catch(e){b.url=''}}return b.url}
+  function binSize(t){var b=binInfo(t);if(b&&b.b64==null)return b.size||0;return b?Math.floor(b.b64.length*3/4)-(/==$/.test(b.b64)?2:/=$/.test(b.b64)?1:0):0}
   function isPic(t){var b=binInfo(t);return !!b&&/^image\//.test(b.mime)}
   function repoOf(path){var best=null;keys(S.repos||{}).forEach(function(rt){if(under(path,rt)&&(!best||rt.length>best.length))best=rt});return best?S.repos[best]:null}
   /* makes text safe to put in the page. Quotes too: a file name from GitHub like  a" onmouseover="...  must not break out of data-f="..." */
@@ -1950,7 +1955,7 @@
       return gh('GET','/repos/'+repo+'/git/commits/'+sha).then(chk).then(function(x){treeOf[sha]=x.j.tree.sha;return treeOf[sha]})}
     /* upload one file's contents, once per different contents */
     function blobFor(t){if(up[t])return Promise.resolve(up[t]);
-      return gh('POST','/repos/'+repo+'/git/blobs',{content:isBin(t)?binInfo(t).b64:b64(t),encoding:'base64'}).then(chk).then(function(x){up[t]=x.j.sha;return x.j.sha})}
+      return (isBin(t)?binLoad(t):Promise.resolve(b64(t))).then(function(c){return gh('POST','/repos/'+repo+'/git/blobs',{content:c,encoding:'base64'})}).then(chk).then(function(x){up[t]=x.j.sha;return x.j.sha})}
     function oneCommit(c){if(shaOf[c.id])return Promise.resolve();
       var parents=c.p.map(function(id){return shaOf[id]});
       if(parents.some(function(s){return !s})){var er=new Error('GitHub does not have the commit before '+c.id+' yet. Type git push again.');return Promise.reject(er)}
@@ -1992,7 +1997,7 @@
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(busy||pend)return;tvUse('lab');if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
-  window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
+  window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binLazy:binLazy,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
     fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,ghCreate:ghCreate,ghOwner:ghOwner,ghFixName:ghFixName,realOn:function(){return RL.on},termAttach:termAttach,termLogin:termLogin,termSkip:termSkip,termInfo:function(){var r=tvCur==='term'?RL:(TV.term&&TV.term.rl)||{};return {on:!!r.on,login:r.login||''}},run:function(c){run(c)},
     ctxMenu:ctxMenu,ctxClose:ctxClose,longPress:longPress,ficon:ficon,openInVS:vsOpenPath,showVS:vsShowWin};
   reset();

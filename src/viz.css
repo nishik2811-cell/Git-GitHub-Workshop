@@ -54,7 +54,7 @@
 .tp-graph svg{display:block;width:100%;height:auto;margin:0 auto 0 0}
 .tp-sees{font:13px/1.8 "Fira Code",monospace;margin:0}
 .tp-sees span{display:block}
-.tp-sees em{font-style:normal}.tp-sees em.U{color:#2a8a3e}.tp-sees em.M{color:#b8860b}
+.tp-sees em{font-style:normal}.tp-sees em.U{color:#2a8a3e}.tp-sees em.M{color:#b8860b}.tp-sees em.T{color:var(--ink3)}.tp-sees em.A,.tp-sees em.S{color:#2a8a3e}.tp-sees em.X{color:#c62f4e}
 .tp-sees .none{color:var(--ink3);font-style:italic;font-family:Nunito,sans-serif}
 .tp-lines{font:13.5px/1.7 "Fira Code",monospace;font-variant-ligatures:none;background:#1e1e1e;color:#d4d4d4;border-radius:6px;padding:6px 0;overflow:auto}
 .tp-lines div{padding:0 10px 0 0;white-space:pre-wrap;word-break:break-word;display:flex}
