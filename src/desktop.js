@@ -586,6 +586,7 @@
   /* open a file the way a desktop would: pictures in Photos, everything else in VS Code */
   /* a file inside .git (HEAD, config, refs/heads/main ...): plain text, read-only, like opening it in Notepad */
   function gitFileOpen(k){var t=S().files[k];if(t==null)return;var rel=k.replace(/^.*?\/\.git\//,'.git/');
+    if(ML.isBin(t)){var om=rel.match(/objects\/([0-9a-f]{2})\/([0-9a-f]{38})$/);window.gitPop&&window.gitPop('warn',rel,'<p class="gitfnote">This is a <b>binary</b> file ('+ML.binSize(t)+' bytes): '+(om?'Git keeps every file, folder and commit like this, compressed with zlib and named by its SHA-1.':'Git\'s staging area (the index), in Git\'s own binary format.')+'</p><p class="gitfnote">Read it in Git Bash with: <code>'+(om?'git cat-file -p '+om[1]+om[2]:'git ls-files --stage')+'</code></p>',[{t:'Close'}]);return}
     window.gitPop&&window.gitPop('warn',rel,'<pre class="gitfile">'+esc(t.replace(/\n$/,''))+'</pre><small class="gitfnote">Git writes this file itself and keeps it up to date, so you can look but should not change it. In Git Bash: <code>cat '+esc(rel)+'</code></small>',[{t:'Close'}])}
   function openFile(k){if(S().dirs[k]){openFolder(k);return}if(/\/\.git\//.test(k)){gitFileOpen(k);return}if(isPicFile(k))picOpen(k);else if(/\.pptx?$/i.test(k)&&ML.isBin(S().files[k]))deckOpen(k);else openVS(k)}
   /* a slide deck opens in Slides: the real slides as pictures (made from the .pptx), one at a time, with Download for the file itself */
@@ -991,7 +992,10 @@
     ['git log --oneline --graph --all','See every branch at once, drawn with lines','history graph branches tree all picture lines','#n3-2','git log --oneline --graph --all'],
     ['git show','See the last commit and the lines it changed','show last commit details lines changed','#ar1','git show'],
     ['git show HEAD~1','See the commit before the last one (HEAD~2 goes two back, and so on)','show older commit previous details','#ar1','git show HEAD~1'],
-    ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#ar1','git ls-files']]},
+    ['git show <commit>','See any commit by its id from git log --oneline (the first 7 characters are enough)','show commit id hash sha details','#ar1','git show '],
+    ['git cat-file -p <id>','Look inside one of Git\'s objects in .git/objects: a commit, a folder (tree) or a file (blob)','cat-file object inside commit tree blob sha hash .git','#n3-2','git cat-file -p '],
+    ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#ar1','git ls-files'],
+    ['git ls-files --stage','The staging area (.git/index): each file with the id of its saved contents','ls-files stage index staging blob id sha','#n3-2','git ls-files --stage']]},
    {g:'Undo things',l:[
     ['git restore <file>','Throw away changes to a file you have not staged yet','undo discard throw away changes reset file restore go back','#ar1','git restore '],
     ['git restore --staged <file>','Take a file back out of the staging area (keeps your changes)','unstage undo add remove staging restore','#ar1','git restore --staged '],
@@ -999,7 +1003,7 @@
     ['git reset --soft HEAD~1','Undo the last commit but keep its changes staged','undo last commit reset soft uncommit keep','#ar1','git reset --soft HEAD~1'],
     ['git reset --hard HEAD~1','Throw away the last commit and its changes (careful: they are gone)','undo delete last commit reset hard throw away dangerous','#ar1','git reset --hard HEAD~1'],
     ['git revert HEAD','Undo the last commit safely, by adding a new commit that reverses it','undo last commit head revert mistake','#ar1','git revert HEAD'],
-    ['git revert <commit>','Undo any older commit (use its id from git log), only that one','undo revert reverse commit go back mistake older','#ar1','git revert '],
+    ['git revert <commit>','Undo any older commit, only that one: use its id from git log --oneline, like git revert a1b2c3d','undo revert reverse commit go back mistake older id','#ar1','git revert '],
     ['git revert -m 1 <merge>','Undo a merge: keep your branch (parent 1), take out what the merge brought in','undo merge revert mainline','#ar4','git revert -m 1 '],
     ['git revert --continue','Finish a revert after you fixed its conflict and used git add','revert continue conflict finish','#ar5','git revert --continue'],
     ['git revert --abort','Give up on a revert that hit a conflict','revert abort cancel conflict','#ar5','git revert --abort']]},
