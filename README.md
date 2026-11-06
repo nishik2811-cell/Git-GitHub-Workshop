@@ -77,7 +77,7 @@ After each story there are missions to try alone, with a *Type it for me* button
 ## Real GitHub mode
 
 When you're ready, the same commands can work on your real GitHub account. All you need is a token:
-make one at **github.com/settings/tokens/new**, tick **repo**, and copy it.
+make one at **github.com/settings/tokens/new**, tick **repo**, set **Expiration** to **7 days**, and copy it.
 
 **In Git Bash / Terminal** (the simplest way): open it, paste the token, press **Log in**. Then use Git like on a real computer:
 

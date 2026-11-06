@@ -352,12 +352,12 @@
       ['Now delete .git. What survives?',function(){return R.deleted}]
     ];
     var drafts=['first draft','added a menu','fixed the colours','new photo','typo fix','bigger title'];
-    function reset(){R={git:false,edits:0,dirty:{},snaps:[],cloud:[],deleted:false,n:0,ver:{'index.html':1,'style.css':1}};cmd('');say('This is a normal folder with two files. Try the buttons. The goal at the top tells you what to try next.');draw()}
+    function reset(){R={git:false,edits:0,dirty:{},snaps:[],cloud:[],deleted:false,linked:false,g:0,n:0,ver:{'index.html':1,'style.css':1}};cmd('');say('This is a normal folder with two files. Try the buttons. The goal at the top tells you what to try next.');draw()}
     function cmd(t){$('rpCmd').textContent='$ '+t}
     function say(t){$('rpSay').innerHTML=t}
     function id(){R.n++;return ('0000000'+((Math.imul(R.n+7,2654435761)>>>0).toString(16))).slice(-7)}
     function draw(){
-      var g=0;while(g<goals.length&&goals[g][1]())g++;
+      var g=R.g;while(g<goals.length&&goals[g][1]())g++;R.g=g;
       $('rpGoal').innerHTML=g<goals.length?'<b>GOAL '+(g+1)+' OF '+goals.length+'</b>'+goals[g][0]:'<b>ALL DONE</b>You know what a repository is. Press Start over to play again.';
       $('rpFiles').innerHTML=Object.keys(R.ver).map(function(f){var ch=R.dirty[f];return '<div class="rp-file'+(ch?' ch':'')+'"><span>'+f+'</span><i>'+(ch?'changed, not saved':'version '+R.ver[f])+'</i></div>'}).join('');
       var gb=$('rpGit');gb.className='rp-git'+(R.git?' on':'');
@@ -388,16 +388,17 @@
       say('Snapshot saved inside <code>.git</code>. You can always come back to this exact moment.');draw();flash($('rpGit'));
     };
     $('rpPush').onclick=function(){
-      cmd('git push');
+      var first=!R.linked;
+      cmd(first?'git remote add origin https://github.com/you/my-project.git\n$ git push -u origin main':'git push');
       if(!R.git){window.gitPop('err','fatal: not a git repository','Only a repo can be pushed. Press <b>git init</b> first.');return}
       if(!R.snaps.length){say('There are no snapshots to send yet. Save one first.');return}
-      R.cloud=R.snaps.slice();
-      say('GitHub now has a copy of every snapshot. The one on your laptop is the <b>local</b> repo, the one online is the <b>remote</b> repo.');draw();flash($('rpCloud'));
+      R.cloud=R.snaps.slice();R.linked=true;
+      say('GitHub now has a copy of every snapshot. The one on your laptop is the <b>local</b> repo, the one online is the <b>remote</b> repo.'+(first?' The first push needs two steps: <code>git remote add origin</code> tells the folder where GitHub is, and <code>-u</code> links your branch to it. After that, plain <code>git push</code> is enough.':''));draw();flash($('rpCloud'));
     };
     $('rpDel').onclick=function(){
       if(!R.git){say('There is no <code>.git</code> folder to delete.');return}
       window.gitPop('warn','Delete the .git folder?','Your files stay. All the snapshots inside it are lost from this laptop.',[{t:'Delete it',fn:function(){
-        cmd('rm -rf .git');R.git=false;R.snaps=[];R.deleted=true;
+        cmd('rm -rf .git');R.git=false;R.snaps=[];R.deleted=true;R.linked=false;
         say(R.cloud.length?'Your files are still here, but the history is gone from your laptop. Good thing GitHub still has a copy: you could <code>git clone</code> it back.':'Your files are still here, but every snapshot is gone. It is just a folder again.');draw();
       }},{t:'Keep it'}]);
     };

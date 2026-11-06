@@ -53,7 +53,8 @@
   function binSize(t){var b=binInfo(t);return b?Math.floor(b.b64.length*3/4)-(/==$/.test(b.b64)?2:/=$/.test(b.b64)?1:0):0}
   function isPic(t){var b=binInfo(t);return !!b&&/^image\//.test(b.mime)}
   function repoOf(path){var best=null;keys(S.repos||{}).forEach(function(rt){if(under(path,rt)&&(!best||rt.length>best.length))best=rt});return best?S.repos[best]:null}
-  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  /* makes text safe to put in the page. Quotes too: a file name from GitHub like  a" onmouseover="...  must not break out of data-f="..." */
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
   function pr(h){var d=document.createElement('div');d.className='ln';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight}
   function pl(t,c){String(t).split('\n').forEach(function(l){pr('<span class="'+(c||'')+'">'+(esc(l)||'&nbsp;')+'</span>')})}
   function perr(t){pl(t,'r')}
@@ -1568,7 +1569,7 @@
   /* while GitHub answers, the panel greys out too, so Connect cannot be pressed twice */
   function rbBusy(t){rbody.classList.add('rbusy');rbody.querySelectorAll('button,input').forEach(function(e){e.disabled=true});var m=document.createElement('p');m.className='rbusymsg';m.textContent=t;rbody.insertBefore(m,rbody.firstChild)}
   function setupForm(msg,sw){rbody.classList.remove('rbusy');
-    rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
+    rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, set <b>Expiration</b> to <b>7 days</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
      +'<li><b>Pick the repo.</b> Already have an empty repo? Paste its link. No repo yet? Make one right here, below.</li></ol>'
      +'<label class="rf">Token (starts with ghp_ or github_pat_)<input id="rfTok" type="password" placeholder="paste the token here" autocomplete="off"></label>'
      +'<label class="rf">Repo link<input id="rfRepo" placeholder="https://github.com/your-name/your-repo" value="'+esc(RL.repo)+'"></label>'
@@ -1633,7 +1634,7 @@
         if(ct.s===200)ct.j.forEach(function(f){h+='<div class="lvfile" data-p="'+esc(f.path)+'" data-t="'+f.type+'"><span>'+(f.type==='dir'?'&#128193;':'&#128196;')+'</span> '+esc(f.name)+'</div>'});
         h+='</div><div class="lvc">';
         cm.j.forEach(function(c){var isNew=!first&&!RL.seen[c.sha]&&Object.keys(RL.seen).length>0;RL.seen[c.sha]=1;
-          h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+c.html_url+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
+          h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+esc(c.html_url)+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
         h+='</div>';
       }else h+='<p class="empty">This repo has no commits on <b>'+esc(v)+'</b> yet. Make a commit and push.</p>';
       h+='<div class="btns rbtns"><button id="rfSwitch">Switch repo</button><button id="rfOff2">Switch off real mode</button><button id="rfWipe" class="redbtn">Delete everything in this repo</button></div>';

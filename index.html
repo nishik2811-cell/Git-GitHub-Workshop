@@ -628,7 +628,7 @@ h1,h2,h3,h4,.pn,.cap2{font-synthesis:none}
 .rp-snap{font-family:'Fira Code',monospace;font-size:11.5px;background:#fff;border:2px solid var(--ink);border-radius:6px;padding:2px 7px;animation:pin .35s}
 .rp-snap b{color:#b3366a;margin-right:4px}
 .rp-empty{color:#8a96c0;font-size:14px;text-align:center;padding:36px 8px}
-.rp-cmd{margin:12px 0 4px;text-align:left;background:#0f1c4d;color:#ffe36e;border-radius:8px;padding:8px 12px;font-size:13px;white-space:pre-wrap;min-height:1.6em}
+.rp-cmd{margin:12px 0 4px;text-align:left;background:#0f1c4d;color:#ffe36e;border-radius:8px;padding:8px 12px;font-size:13px;white-space:pre-wrap;min-height:1.6em;overflow-wrap:anywhere}
 .rp-say{margin:4px 0 2px;font-size:15.5px;font-weight:600;min-height:46px}
 .rp .flash{animation:fl .7s}
 @media(prefers-reduced-motion:reduce){.rp-git.on,.rp-snap{animation:none}}
@@ -2814,12 +2814,12 @@ git log --oneline           short history          git push / git pull   sync wi
       ['Now delete .git. What survives?',function(){return R.deleted}]
     ];
     var drafts=['first draft','added a menu','fixed the colours','new photo','typo fix','bigger title'];
-    function reset(){R={git:false,edits:0,dirty:{},snaps:[],cloud:[],deleted:false,n:0,ver:{'index.html':1,'style.css':1}};cmd('');say('This is a normal folder with two files. Try the buttons. The goal at the top tells you what to try next.');draw()}
+    function reset(){R={git:false,edits:0,dirty:{},snaps:[],cloud:[],deleted:false,linked:false,g:0,n:0,ver:{'index.html':1,'style.css':1}};cmd('');say('This is a normal folder with two files. Try the buttons. The goal at the top tells you what to try next.');draw()}
     function cmd(t){$('rpCmd').textContent='$ '+t}
     function say(t){$('rpSay').innerHTML=t}
     function id(){R.n++;return ('0000000'+((Math.imul(R.n+7,2654435761)>>>0).toString(16))).slice(-7)}
     function draw(){
-      var g=0;while(g<goals.length&&goals[g][1]())g++;
+      var g=R.g;while(g<goals.length&&goals[g][1]())g++;R.g=g;
       $('rpGoal').innerHTML=g<goals.length?'<b>GOAL '+(g+1)+' OF '+goals.length+'</b>'+goals[g][0]:'<b>ALL DONE</b>You know what a repository is. Press Start over to play again.';
       $('rpFiles').innerHTML=Object.keys(R.ver).map(function(f){var ch=R.dirty[f];return '<div class="rp-file'+(ch?' ch':'')+'"><span>'+f+'</span><i>'+(ch?'changed, not saved':'version '+R.ver[f])+'</i></div>'}).join('');
       var gb=$('rpGit');gb.className='rp-git'+(R.git?' on':'');
@@ -2850,16 +2850,17 @@ git log --oneline           short history          git push / git pull   sync wi
       say('Snapshot saved inside <code>.git</code>. You can always come back to this exact moment.');draw();flash($('rpGit'));
     };
     $('rpPush').onclick=function(){
-      cmd('git push');
+      var first=!R.linked;
+      cmd(first?'git remote add origin https://github.com/you/my-project.git\n$ git push -u origin main':'git push');
       if(!R.git){window.gitPop('err','fatal: not a git repository','Only a repo can be pushed. Press <b>git init</b> first.');return}
       if(!R.snaps.length){say('There are no snapshots to send yet. Save one first.');return}
-      R.cloud=R.snaps.slice();
-      say('GitHub now has a copy of every snapshot. The one on your laptop is the <b>local</b> repo, the one online is the <b>remote</b> repo.');draw();flash($('rpCloud'));
+      R.cloud=R.snaps.slice();R.linked=true;
+      say('GitHub now has a copy of every snapshot. The one on your laptop is the <b>local</b> repo, the one online is the <b>remote</b> repo.'+(first?' The first push needs two steps: <code>git remote add origin</code> tells the folder where GitHub is, and <code>-u</code> links your branch to it. After that, plain <code>git push</code> is enough.':''));draw();flash($('rpCloud'));
     };
     $('rpDel').onclick=function(){
       if(!R.git){say('There is no <code>.git</code> folder to delete.');return}
       window.gitPop('warn','Delete the .git folder?','Your files stay. All the snapshots inside it are lost from this laptop.',[{t:'Delete it',fn:function(){
-        cmd('rm -rf .git');R.git=false;R.snaps=[];R.deleted=true;
+        cmd('rm -rf .git');R.git=false;R.snaps=[];R.deleted=true;R.linked=false;
         say(R.cloud.length?'Your files are still here, but the history is gone from your laptop. Good thing GitHub still has a copy: you could <code>git clone</code> it back.':'Your files are still here, but every snapshot is gone. It is just a folder again.');draw();
       }},{t:'Keep it'}]);
     };
@@ -2923,7 +2924,8 @@ git log --oneline           short history          git push / git pull   sync wi
   function binSize(t){var b=binInfo(t);return b?Math.floor(b.b64.length*3/4)-(/==$/.test(b.b64)?2:/=$/.test(b.b64)?1:0):0}
   function isPic(t){var b=binInfo(t);return !!b&&/^image\//.test(b.mime)}
   function repoOf(path){var best=null;keys(S.repos||{}).forEach(function(rt){if(under(path,rt)&&(!best||rt.length>best.length))best=rt});return best?S.repos[best]:null}
-  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  /* makes text safe to put in the page. Quotes too: a file name from GitHub like  a" onmouseover="...  must not break out of data-f="..." */
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
   function pr(h){var d=document.createElement('div');d.className='ln';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight}
   function pl(t,c){String(t).split('\n').forEach(function(l){pr('<span class="'+(c||'')+'">'+(esc(l)||'&nbsp;')+'</span>')})}
   function perr(t){pl(t,'r')}
@@ -4438,7 +4440,7 @@ git log --oneline           short history          git push / git pull   sync wi
   /* while GitHub answers, the panel greys out too, so Connect cannot be pressed twice */
   function rbBusy(t){rbody.classList.add('rbusy');rbody.querySelectorAll('button,input').forEach(function(e){e.disabled=true});var m=document.createElement('p');m.className='rbusymsg';m.textContent=t;rbody.insertBefore(m,rbody.firstChild)}
   function setupForm(msg,sw){rbody.classList.remove('rbusy');
-    rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
+    rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, set <b>Expiration</b> to <b>7 days</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
      +'<li><b>Pick the repo.</b> Already have an empty repo? Paste its link. No repo yet? Make one right here, below.</li></ol>'
      +'<label class="rf">Token (starts with ghp_ or github_pat_)<input id="rfTok" type="password" placeholder="paste the token here" autocomplete="off"></label>'
      +'<label class="rf">Repo link<input id="rfRepo" placeholder="https://github.com/your-name/your-repo" value="'+esc(RL.repo)+'"></label>'
@@ -4503,7 +4505,7 @@ git log --oneline           short history          git push / git pull   sync wi
         if(ct.s===200)ct.j.forEach(function(f){h+='<div class="lvfile" data-p="'+esc(f.path)+'" data-t="'+f.type+'"><span>'+(f.type==='dir'?'&#128193;':'&#128196;')+'</span> '+esc(f.name)+'</div>'});
         h+='</div><div class="lvc">';
         cm.j.forEach(function(c){var isNew=!first&&!RL.seen[c.sha]&&Object.keys(RL.seen).length>0;RL.seen[c.sha]=1;
-          h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+c.html_url+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
+          h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+esc(c.html_url)+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
         h+='</div>';
       }else h+='<p class="empty">This repo has no commits on <b>'+esc(v)+'</b> yet. Make a commit and push.</p>';
       h+='<div class="btns rbtns"><button id="rfSwitch">Switch repo</button><button id="rfOff2">Switch off real mode</button><button id="rfWipe" class="redbtn">Delete everything in this repo</button></div>';
@@ -5347,7 +5349,7 @@ git log --oneline           short history          git push / git pull   sync wi
     +'<div class="tmps" id="tmPs"></div><div class="tmline"><span class="tmd" aria-hidden="true">$</span><input id="tmIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command" enterkeyhint="send"></div></div>'
     +'<div class="tmlog" id="tmLog" hidden><div class="tmcard"><div class="tmlh">'+I.term+'<b>Log in to GitHub</b></div>'
     +'<p>Do it once, then use Git like on a real computer: <code>gh repo create</code>, <code>git clone https://…</code>, <code>git push</code>. No repo link needed.</p>'
-    +'<ol><li>Make a token: <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens/new</a>, tick <b>repo</b>, press <b>Generate token</b>, copy it.</li><li>Paste it here.</li></ol>'
+    +'<ol><li>Make a token: <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens/new</a>, tick <b>repo</b>, set <b>Expiration</b> to <b>7 days</b>, press <b>Generate token</b>, copy it.</li><li>Paste it here.</li></ol>'
     +'<label class="tmlab">GitHub token<input id="tmTok" type="password" placeholder="ghp_… or github_pat_…" autocomplete="off"></label>'
     +'<p class="tmerr" id="tmErr" role="alert" hidden></p>'
     +'<div class="tmbtns"><button type="button" class="tmgo" id="tmGo">Log in</button><button type="button" id="tmSkip">Use without GitHub</button></div>'

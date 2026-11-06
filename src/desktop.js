@@ -401,7 +401,7 @@
     +'<div class="tmps" id="tmPs"></div><div class="tmline"><span class="tmd" aria-hidden="true">$</span><input id="tmIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command" enterkeyhint="send"></div></div>'
     +'<div class="tmlog" id="tmLog" hidden><div class="tmcard"><div class="tmlh">'+I.term+'<b>Log in to GitHub</b></div>'
     +'<p>Do it once, then use Git like on a real computer: <code>gh repo create</code>, <code>git clone https://…</code>, <code>git push</code>. No repo link needed.</p>'
-    +'<ol><li>Make a token: <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens/new</a>, tick <b>repo</b>, press <b>Generate token</b>, copy it.</li><li>Paste it here.</li></ol>'
+    +'<ol><li>Make a token: <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens/new</a>, tick <b>repo</b>, set <b>Expiration</b> to <b>7 days</b>, press <b>Generate token</b>, copy it.</li><li>Paste it here.</li></ol>'
     +'<label class="tmlab">GitHub token<input id="tmTok" type="password" placeholder="ghp_… or github_pat_…" autocomplete="off"></label>'
     +'<p class="tmerr" id="tmErr" role="alert" hidden></p>'
     +'<div class="tmbtns"><button type="button" class="tmgo" id="tmGo">Log in</button><button type="button" id="tmSkip">Use without GitHub</button></div>'
