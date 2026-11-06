@@ -754,7 +754,11 @@
       if(S.mate1)S.ran.f1=1;
       if(RL.on){realFetch(r.head,function(res){syncPull(sub,allowU,res,reb)});return}
       syncPull(sub,allowU,null,reb);return}
-    perr("git: '"+sub+"' is not a git command here. Try: git help");
+    /* a typo: real Git's message, with the closest command it knows */
+    var GC=['add','branch','checkout','clone','commit','config','diff','fetch','help','init','log','ls-files','merge','mv','pull','push','rebase','remote','reset','restore','revert','rm','show','stash','status','switch','tag'];
+    function lev(x,y){var d=[],i,j;for(i=0;i<=x.length;i++){d[i]=[i]}for(j=1;j<=y.length;j++)d[0][j]=j;for(i=1;i<=x.length;i++)for(j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]===y[j-1]?0:1));return d[x.length][y.length]}
+    var best=GC.map(function(c){return [c,lev(sub,c)]}).filter(function(c){return c[1]<=2}).sort(function(a,b){return a[1]-b[1]}),near=best.filter(function(c){return c[1]===(best[0]||[])[1]}).map(function(c){return c[0]});
+    perr("git: '"+sub+"' is not a git command. See 'git --help'."+(near.length?"\n\nThe most similar command"+(near.length>1?"s are":" is")+"\n\t"+near.join('\n\t'):''));
   }
   function statusColor(l,txt){var idx=txt.indexOf(l);var sIdx=txt.indexOf('Changes to be committed'),uIdx=txt.indexOf('Changes not staged'),tIdx=txt.indexOf('Untracked files'),mIdx=txt.indexOf('Unmerged paths');
     var pos=idx;
@@ -830,7 +834,9 @@
   function promptHtml(){var d=S.cwd.replace(HOME,'~'),b='';
     if(S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0))b=' <span class="c">('+(S.repo.det?'('+S.repo.det+'...)':esc(S.repo.head))+')</span>';
     return '<span class="g">you@laptop</span> <span class="p">MINGW64</span> <span class="y">'+esc(d)+'</span>'+b+'<br>$ '}
-  function setPrompt(){ps.innerHTML=promptHtml().replace('<br>$ ','')}
+  function setPrompt(){ps.innerHTML=promptHtml().replace('<br>$ ','');if(window.mlTermBar)try{window.mlTermBar()}catch(z){}}
+  /* Git Bash's GitHub login: real (with the account) or the Mini laptop's pretend GitHub */
+  function termAuth(){var t=tvCur==='term'?RL:(TV.term&&TV.term.rl)||{};return {on:!!t.on,login:t.login||'',busy:tvCur==='term'&&(busy||pend)}}
   function run(line){
     if(scripting&&tvCur!=='lab'&&!termPaste)tvUse('lab');
     if(!scripting)holdCap=false;
@@ -1887,14 +1893,24 @@
       git(['push','-u','origin',hb]);S.forceRepo=keep;if(srcRepo.br[hb]&&srcRepo.remote.br[hb]===srcRepo.br[hb])pl('✓ Pushed commits to '+git2,'g');render()})}
   /* ---------- the Terminal app: a plain Git Bash. It asks for a GitHub token once, then works like a real terminal ---------- */
   var termPaste=false;
-  function termAttach(o,i,p){TV.term={out:o,inp:i,ps:p,cwd:HOME,hist:[],hi:0,rl:null};
+  /* Git Bash tabs, like a real terminal: each tab has its own output, folder and history; they share the
+     Mini laptop (files, repos) and the gh login. The command line and prompt are shared and show the current tab. */
+  var TT=[],tcur=0;
+  function termTabs(){var c=tvCur==='term'?S.cwd:(TV.term&&TV.term.cwd)||HOME;return {cur:tcur,busy:busy||pend,list:TT.map(function(t,i){var d=i===tcur?c:t.cwd;return d===HOME?'~':d.indexOf(HOME+'/')===0?'~'+d.slice(HOME.length):d})}}
+  function termTabGo(i){if(busy||pend||!TT[i])return false;if(tvCur!=='term')tvUse('term');if(i===tcur){setPrompt();return true}
+    var a=TT[tcur];a.cwd=S.cwd;a.hist=S.hist;a.hi=S.hi;a.out.hidden=true;
+    tcur=i;var n=TT[i];n.out.hidden=false;out=n.out;TV.term.out=n.out;S.cwd=S.dirs[n.cwd]||n.cwd===HOME?n.cwd:HOME;S.hist=n.hist;S.hi=n.hi;setPrompt();n.out.scrollTop=n.out.scrollHeight;return true}
+  function termTabNew(o){if(busy||pend)return false;o.hidden=true;TT.push({out:o,cwd:HOME,hist:[],hi:0});return termTabGo(TT.length-1)}
+  function termTabClose(i){if(busy||pend||TT.length<2||!TT[i])return false;
+    if(i===tcur)termTabGo(i>0?i-1:1);var t=TT[i];TT.splice(i,1);if(tcur>i)tcur--;t.out.remove();setPrompt();return true}
+  function termAttach(o,i,p){TV.term={out:o,inp:i,ps:p,cwd:HOME,hist:[],hi:0,rl:null};TT=[{out:o,cwd:HOME,hist:[],hi:0}];tcur=0;
     i.addEventListener('focus',function(){if(!busy&&!pend)tvUse('term')});
     i.addEventListener('keydown',function(e){
       if(tvCur!=='term'){if(busy||pend){if(e.key==='Enter')e.preventDefault();return}tvUse('term')}
       if(e.key==='Enter'){e.preventDefault();if(busy||pend)return;var v=i.value;i.value='';run(v)}
       else if(e.key==='ArrowUp'){if(S.hi>0){S.hi--;i.value=S.hist[S.hi]||'';e.preventDefault()}}
       else if(e.key==='ArrowDown'){if(S.hi<S.hist.length){S.hi++;i.value=S.hist[S.hi]||'';e.preventDefault()}}
-      else if(e.key==='l'&&e.ctrlKey){o.innerHTML='';e.preventDefault()}});
+      else if(e.key==='l'&&e.ctrlKey){(TT[tcur]?TT[tcur].out:o).innerHTML='';e.preventDefault()}});
     i.addEventListener('paste',function(e){var t=(e.clipboardData||window.clipboardData).getData('text');if(!/[\r\n]/.test(t))return;
       e.preventDefault();if(busy||pend)return;tvUse('term');var lines=(i.value+t).split(/\r?\n/).filter(function(l){return l.trim()});i.value='';
       termPaste=true;(function next(){if(pend||busy){setTimeout(next,200);return}if(!lines.length){termPaste=false;return}run(lines.shift());setTimeout(next,80)})()})}
@@ -1997,7 +2013,7 @@
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(busy||pend)return;tvUse('lab');if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
-  window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binLazy:binLazy,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
+  window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binLazy:binLazy,termAuth:termAuth,termTabs:termTabs,termTabGo:termTabGo,termTabNew:termTabNew,termTabClose:termTabClose,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
     fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,ghCreate:ghCreate,ghOwner:ghOwner,ghFixName:ghFixName,realOn:function(){return RL.on},termAttach:termAttach,termLogin:termLogin,termSkip:termSkip,termInfo:function(){var r=tvCur==='term'?RL:(TV.term&&TV.term.rl)||{};return {on:!!r.on,login:r.login||''}},run:function(c){run(c)},
     ctxMenu:ctxMenu,ctxClose:ctxClose,longPress:longPress,ficon:ficon,openInVS:vsOpenPath,showVS:vsShowWin};
   reset();

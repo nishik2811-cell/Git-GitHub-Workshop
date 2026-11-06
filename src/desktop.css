@@ -646,3 +646,32 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .dkview{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#1b2440;padding:8px;touch-action:pan-y}
 .dkimg{max-width:100%;max-height:100%;display:block;border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,.35);background:#fff}
 .dkcap{flex:none;padding:7px 12px;font:600 14px 'Nunito',sans-serif;color:var(--ink);background:#f4f7ff;border-top:2px solid var(--line);overflow-wrap:anywhere}
+/* Git Bash: the GitHub bar at the top (real or pretend, with Log out / Log in) */
+.tmbar{flex:none;display:flex;align-items:center;gap:10px;margin:-10px -12px 8px;padding:5px 10px 5px 12px;background:#161b22;border-bottom:1px solid #30363d;font:12.5px/1.3 'Nunito',sans-serif;color:#c9d1d9}
+.tmbar span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tmbar b{color:#fff}.tmbar small{color:#8b949e;font-size:11.5px}
+.tmdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#8b949e;margin-right:6px;vertical-align:1px}.tmdot.on{background:#3fb950;box-shadow:0 0 6px #3fb950}
+.tmbar button{flex:none;padding:3px 10px;font:700 12px 'Nunito',sans-serif;border-radius:6px;border:1px solid #f0f6fc33;cursor:pointer;box-shadow:none;transform:none;letter-spacing:0}
+.tmbar button.tmout1{background:#da3633;color:#fff;border-color:#f85149}.tmbar button.tmout1:hover{background:#f85149}
+.tmbar button.tmin1{background:#238636;color:#fff;border-color:#2ea043}.tmbar button.tmin1:hover{background:#2ea043}
+.tmbar button[disabled]{opacity:.5;cursor:default}
+@media(max-width:420px){.tmbar small{display:none}}
+/* Git Bash tabs */
+.tmtabs{flex:none;display:flex;align-items:flex-end;gap:2px;margin:-10px -12px 0;padding:5px 8px 0;background:#0b0e13;overflow-x:auto;scrollbar-width:none}
+.tmtabs::-webkit-scrollbar{display:none}
+.tmtab{flex:none;display:flex;align-items:center;max-width:220px;background:#11161d;border:1px solid #30363d;border-bottom:0;border-radius:7px 7px 0 0;color:#8b949e}
+.tmtab.on{background:#161b22;color:#e6edf3;box-shadow:inset 0 2px 0 #3fb950}
+.tmtab button{background:none;border:0;color:inherit;box-shadow:none;transform:none;letter-spacing:0;cursor:pointer}
+.tmtgo{padding:5px 4px 5px 10px;font:600 12px 'Fira Code',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.tmtx{padding:2px 7px 3px;font:700 14px/1 'Nunito',sans-serif;border-radius:5px}.tmtx:hover{background:#30363d;color:#fff}
+.tmtnew{flex:none;margin:0 0 3px 4px;width:28px;height:26px;padding:0;border:1px solid #30363d;border-radius:6px;background:#11161d;color:#e6edf3;font:700 17px/1 'Nunito',sans-serif;cursor:pointer;box-shadow:none;transform:none}
+.tmtnew:hover{background:#30363d}.tmtabs button[disabled]{opacity:.45;cursor:default}
+.tmtabs+.tmbar{margin-top:0}
+.tmout[hidden]{display:none}
+/* Slides: a small spinner only when a slide takes a moment (the previous slide stays visible meanwhile) */
+.dkview{position:relative}
+.dkspin{position:absolute;right:14px;bottom:14px;width:22px;height:22px;border-radius:50%;border:3px solid #ffffff55;border-top-color:#fff;opacity:0;transition:opacity .15s;animation:dkspin .8s linear infinite;pointer-events:none}
+.dkview.dkwait .dkspin{opacity:1}
+@keyframes dkspin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.dkspin{animation:none}}
+.dkimg:not([src]){visibility:hidden}

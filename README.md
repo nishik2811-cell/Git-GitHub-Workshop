@@ -31,7 +31,7 @@ Read a little, try it straight away, and break things on purpose.
 |---|---|
 | **Workshop** | The lessons: nine modules from "what is Git?" to working in a team |
 | **Practice Lab** | A Git terminal with a live picture of your files, commits and GitHub, plus guided stories |
-| **Git Bash / Terminal** | A plain terminal, like on a real computer: log in with a GitHub token once, then `gh repo create`, `git clone`, `git push` |
+| **Git Bash / Terminal** | A plain terminal, like on a real computer: log in with a GitHub token once, then `gh repo create`, `git clone`, `git push`. Open more tabs with **+** (each has its own folder and history), and **Log out** from the bar at the top |
 | **VS Code** | A look-alike of the real editor, with Source Control, merge conflict buttons and undo / redo |
 | **Cheat Sheet** | Every command the lab understands, with search, *Try it* and *Copy* |
 | **File Explorer and Bin** | Folders, drag and drop, and restoring things you deleted |

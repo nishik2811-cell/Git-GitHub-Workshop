@@ -397,7 +397,7 @@
      after that it is an ordinary terminal: no stories, no boxes, no repo link to paste. */
   var TW=makeWin('termWin','Git Bash / Terminal',I.term,tkTerm,760,480,{max:true});
   TW.body.classList.add('tmb');
-  TW.body.innerHTML='<div class="tmw" id="tmW"><div class="tmout" id="tmOut" role="log" aria-label="Terminal output"></div>'
+  TW.body.innerHTML='<div class="tmw" id="tmW"><div class="tmtabs" id="tmTabs" role="tablist" aria-label="Terminal tabs"></div><div class="tmbar" id="tmBar"><span id="tmWho"></span><button type="button" id="tmAuth"></button></div><div class="tmout" id="tmOut" role="log" aria-label="Terminal output"></div>'
     +'<div class="tmps" id="tmPs"></div><div class="tmline"><span class="tmd" aria-hidden="true">$</span><input id="tmIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command" enterkeyhint="send"></div></div>'
     +'<div class="tmlog" id="tmLog" hidden><div class="tmcard"><div class="tmlh">'+I.term+'<b>Log in to GitHub</b></div>'
     +'<p>Do it once, then use Git like on a real computer: <code>gh repo create</code>, <code>git clone https://…</code>, <code>git push</code>. No repo link needed.</p>'
@@ -415,9 +415,28 @@
   function tmLogin(){var b=$('tmGo');if(b.disabled)return;b.disabled=true;b.textContent='Logging in…';$('tmErr').hidden=true;
     ML.termLogin($('tmTok').value,function(res){b.disabled=false;b.textContent='Log in';
       if(res.err){$('tmErr').textContent=res.err;$('tmErr').hidden=false;return}
-      $('tmTok').value='';$('tmLog').hidden=true;tmFocus()})}
+      $('tmTok').value='';$('tmLog').hidden=true;tmBar();tmFocus()})}
   $('tmGo').onclick=tmLogin;$('tmTok').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tmLogin()}});
   $('tmSkip').onclick=function(){$('tmLog').hidden=true;ML.termSkip();tmFocus()};
+  /* the bar at the top: which GitHub you are on, and one button to log out (back to pretend GitHub) or log in */
+  function tmBar(){var a=ML.termAuth(),w=$('tmWho'),b=$('tmAuth');if(!w)return;
+    w.innerHTML=a.on?'<i class="tmdot on"></i>Real GitHub &middot; <b>'+esc(a.login)+'</b>':'<i class="tmdot"></i>Pretend GitHub <small>(only on this laptop)</small>';
+    b.textContent=a.on?'Log out':'Log in';b.title=a.on?'Stop using your real GitHub (runs gh auth logout)':'Use your real GitHub account';b.className=a.on?'tmout1':'tmin1';b.disabled=!!a.busy}
+  /* tabs: + opens a new one in ~, × closes one, a tab shows its folder (like MINGW64:~/resources) */
+  function tmTabs(){var T=ML.termTabs(),h='';T.list.forEach(function(lb,i){var on=i===T.cur;
+      h+='<span class="tmtab'+(on?' on':'')+'"><button type="button" class="tmtgo" role="tab" aria-selected="'+on+'" data-tt="'+i+'" title="MINGW64:'+escA(lb)+'"'+(T.busy&&!on?' disabled':'')+'>MINGW64: '+esc(lb)+'</button>'
+        +(T.list.length>1?'<button type="button" class="tmtx" data-tx="'+i+'" aria-label="Close tab '+(i+1)+'" title="Close tab"'+(T.busy?' disabled':'')+'>&times;</button>':'')+'</span>'});
+    h+='<button type="button" class="tmtnew" id="tmNew" aria-label="New tab" title="New tab"'+(T.busy||T.list.length>=6?' disabled':'')+'>+</button>';$('tmTabs').innerHTML=h;
+    var a=$('tmTabs').querySelector('.tmtab.on');if(a&&a.scrollIntoView)try{a.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}}
+  window.mlTermBar=function(){tmBar();tmTabs()};tmBar();tmTabs();
+  $('tmTabs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||b.disabled)return;
+    if(b.id==='tmNew'){var o=document.createElement('div');o.className='tmout';o.setAttribute('role','log');o.setAttribute('aria-label','Terminal output');$('tmW').insertBefore(o,$('tmPs'));ML.termTabNew(o)}
+    else if(b.hasAttribute('data-tx'))ML.termTabClose(+b.getAttribute('data-tx'));
+    else ML.termTabGo(+b.getAttribute('data-tt'));
+    tmBar();tmTabs();tmFocus()});
+  $('tmAuth').onclick=function(){var a=ML.termAuth();if(a.busy)return;
+    if(a.on){var i=$('tmIn');i.value='gh auth logout';i.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));tmFocus()}
+    else termAsk()};
   /* a tap anywhere on the black screen puts the cursor in the command line (but selecting text still works) */
   $('tmW').addEventListener('click',function(e){if(e.target.closest('a,button,input'))return;var s=window.getSelection&&window.getSelection();if(s&&String(s).length)return;tmFocus()});
   /* Start menu: Terminal, under the Practice Lab */
@@ -571,19 +590,35 @@
   var SW=makeWin('deckWin','Slides',I.pic,tkDeck,820,560,{max:true}),deckAt=null,deckI=0;
   function deckOf(k){decksRead();var t=S().files[k];if(!t||!ML.isBin(t))return null;var key=t.slice(5);return DECKS.filter(function(x){return 'res:'+x.name===key})[0]||null}
   function deckSrc(d,i){return 'resources/slides/'+encodeURIComponent(d.name.replace(/\.pptx?$/i,''))+'/'+d.slides[i]}
-  function deckDraw(){var st=S();if(!deckAt||!(deckAt in st.files)){SW.body.innerHTML='<div class="mmempty">This deck is not there any more.</div>';return}
+  /* Slides is drawn once per deck; going to another slide only swaps the picture, and the old slide stays on screen
+     until the new one is ready (no blank flash on a slow phone). The next slides are loaded ahead. */
+  var dkCache={},dkTok=0;
+  function dkImg(src,urgent){var im=dkCache[src];if(!im){im=new Image();im.decoding='async';if('fetchPriority' in im)im.fetchPriority=urgent?'high':'low';im.src=src;dkCache[src]=im}return im}
+  function dkReady(im){return im.complete&&im.naturalWidth>0}
+  /* once the slide you are on is showing: the next two and the one before, so Next and Back are instant */
+  function dkPrefetch(d){for(var k=deckI+1;k<Math.min(d.slides.length,deckI+3);k++)dkImg(deckSrc(d,k),false);if(deckI>0)dkImg(deckSrc(d,deckI-1),false)}
+  function deckDraw(){var st=S();dkTok++;if(!deckAt||!(deckAt in st.files)){SW.body.innerHTML='<div class="mmempty">This deck is not there any more.</div>';return}
     var d=deckOf(deckAt),n=d&&d.slides?d.slides.length:0,t=st.files[deckAt],kb=Math.round(ML.binSize(t)/1024),size=kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';
     SW.el.querySelector('.dwh span').textContent=base(deckAt);tkDeck.querySelector('span').textContent=base(deckAt);
     if(deckI>=n)deckI=Math.max(0,n-1);
-    SW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-dk="back">&#9664; Open folder</button><span>'+esc(base(deckAt))+' <small>'+(n?'(slide '+(deckI+1)+' of '+n+') &middot; ':'')+size+'</small></span>'
-      +'<button type="button" class="mmbtn" data-dk="prev" aria-label="Previous slide"'+(deckI<1?' disabled':'')+'>&larr;</button><button type="button" class="mmbtn" data-dk="next" aria-label="Next slide"'+(deckI>=n-1?' disabled':'')+'>&rarr;</button><button type="button" class="mmbtn" data-dk="dl">Download</button></div>'
-      +(n?'<div class="dkview"><img class="dkimg" src="'+deckSrc(d,deckI)+'" alt="Slide '+(deckI+1)+': '+escA(d.titles[deckI]||'')+'"></div><div class="dkcap"><b>'+(deckI+1)+'.</b> '+esc(d.titles[deckI]||'')+'</div>'
+    SW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-dk="back">&#9664; Open folder</button><span>'+esc(base(deckAt))+' <small class="dkpos"></small><small> &middot; '+size+'</small></span>'
+      +'<button type="button" class="mmbtn" data-dk="prev" aria-label="Previous slide">&larr;</button><button type="button" class="mmbtn" data-dk="next" aria-label="Next slide">&rarr;</button><button type="button" class="mmbtn" data-dk="dl">Download</button></div>'
+      +(n?'<div class="dkview"><img class="dkimg" alt=""><i class="dkspin" aria-hidden="true"></i></div><div class="dkcap" aria-live="polite"></div>'
         :'<div class="mmempty">This deck has no slide pictures on the Mini laptop. Download it to open it in PowerPoint, Keynote or Google Slides.</div>');
-    if(n&&deckI+1<n){var pre=new Image();pre.src=deckSrc(d,deckI+1)}}
+    deckShow()}
+  function deckShow(){var d=deckOf(deckAt),n=d&&d.slides?d.slides.length:0;
+    var pv=SW.body.querySelector('[data-dk="prev"]'),nx=SW.body.querySelector('[data-dk="next"]');if(pv)pv.disabled=deckI<1;if(nx)nx.disabled=deckI>=n-1;if(!n)return;
+    /* the number and title change at once; the picture follows as soon as it is ready */
+    SW.body.querySelector('.dkpos').textContent='(slide '+(deckI+1)+' of '+n+')';SW.body.querySelector('.dkcap').innerHTML='<b>'+(deckI+1)+'.</b> '+esc(d.titles[deckI]||'');
+    var el=SW.body.querySelector('.dkimg'),vw=SW.body.querySelector('.dkview'),src=deckSrc(d,deckI),im=dkImg(src,true),tok=++dkTok,alt='Slide '+(deckI+1)+': '+(d.titles[deckI]||'');
+    function put(){if(tok!==dkTok)return;el.src=src;el.alt=alt;vw.classList.remove('dkwait');dkPrefetch(d)}
+    if(dkReady(im))put();else{var tm=setTimeout(function(){if(tok===dkTok)vw.classList.add('dkwait')},180);
+      (im.decode?im.decode():new Promise(function(r,j){im.addEventListener('load',r);im.addEventListener('error',j)})).then(put,function(){if(tok===dkTok){el.src=src;el.alt=alt;vw.classList.remove('dkwait')}}).then(function(){clearTimeout(tm)})}
+  }
   function deckOpen(k){if(deckAt!==k)deckI=0;deckAt=k;activate(SW.el,true);deckDraw();var f=SW.body.querySelector('[data-dk="next"]');if(f&&!f.disabled)f.focus({preventScroll:true})}
-  function deckStep(dl){var d=deckOf(deckAt);if(!d||!d.slides)return;var j=deckI+dl;if(j<0||j>=d.slides.length)return;var had=SW.el.contains(document.activeElement);deckI=j;deckDraw();
-    /* the bar is drawn again, so keep the keyboard focus in the window: the arrow keys keep working */
-    if(had){var f=SW.body.querySelector('[data-dk="'+(dl>0?'next':'prev')+'"]');if(!f||f.disabled)f=SW.body.querySelector('[data-dk="'+(dl>0?'prev':'next')+'"]');if(f&&!f.disabled)f.focus({preventScroll:true})}}
+  function deckStep(dl){var d=deckOf(deckAt);if(!d||!d.slides)return;var j=deckI+dl;if(j<0||j>=d.slides.length)return;deckI=j;deckShow();
+    /* the buttons stay in place now, but at the first or last slide one of them turns off: keep the focus on one that works */
+    var f=document.activeElement;if(f&&f.disabled&&SW.el.contains(f)){var o2=SW.body.querySelector('[data-dk="'+(dl>0?'prev':'next')+'"]');if(o2&&!o2.disabled)o2.focus({preventScroll:true})}}
   function deckDl(){var t=S().files[deckAt];if(!t)return;var a=document.createElement('a');a.href=ML.binUrl(t);a.download=base(deckAt);a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
   SW.body.addEventListener('click',function(e){var b=e.target.closest('[data-dk]');if(!b)return;var a=b.getAttribute('data-dk');if(a==='back'){if(deckAt)openFolder(dirname(deckAt))}else if(a==='dl')deckDl();else deckStep(a==='next'?1:-1)});
   SW.el.addEventListener('keydown',function(e){if(!deckAt)return;if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();deckStep(1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();deckStep(-1)}});
