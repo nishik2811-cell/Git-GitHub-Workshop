@@ -675,3 +675,7 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 @keyframes dkspin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.dkspin{animation:none}}
 .dkimg:not([src]){visibility:hidden}
+/* File Explorer: Hidden items (shows .git), and hidden things look faded, like on Windows */
+.fxhid{display:inline-flex;align-items:center;gap:4px;font:600 12.5px 'Nunito',sans-serif;color:var(--ink);white-space:nowrap;cursor:pointer;padding:0 4px}
+.fxhid input{margin:0;accent-color:#1d4ba6}
+.fxt.fxhidden{opacity:.55}

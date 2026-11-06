@@ -632,8 +632,9 @@
   /* ---------- File Explorer: opening a folder shows what is inside (folders in folders too); "Open with VS Code" edits it ---------- */
   var FX=makeWin('fxWin','File Explorer',I.folder,tkFx,620,440,{max:true}),fxDir=HOME,fxSel=null,fxSels={},fxSelMode=false,fxRen=null,fxTap={k:null,t:0},fxPtr='mouse',fxMarq=null;
   FX.body.classList.add('fxb');
+  var fxHid=store('fxhid')==='1';
   function fxItems(){var st=S(),o=[];
-    Object.keys(st.dirs).filter(function(d){return d!==fxDir&&dirname(d)===fxDir}).forEach(function(d){o.push({k:d,n:base(d),dir:true,repo:!!(st.repos&&st.repos[d])})});
+    Object.keys(st.dirs).filter(function(d){return d!==fxDir&&dirname(d)===fxDir&&(fxHid||base(d)!=='.git')}).forEach(function(d){o.push({k:d,n:base(d),dir:true,repo:!!(st.repos&&st.repos[d]),hid:base(d)==='.git'})});
     Object.keys(st.files).filter(function(f){return dirname(f)===fxDir}).forEach(function(f){o.push({k:f,n:base(f),mark:ML.gitMark(f)})});
     return o.sort(function(a,b){return a.dir!==b.dir?(a.dir?-1:1):a.n.toLowerCase()<b.n.toLowerCase()?-1:1})}
   function fxDraw(){if(FX.el.hidden||fxRen)return;var st=S();while(fxDir!==HOME&&!st.dirs[fxDir])fxDir=dirname(fxDir);
@@ -642,9 +643,10 @@
     parts.forEach(function(x){acc+='/'+x;path+=' / <span class="fxcrumb" data-go="'+esc(acc)+'">'+esc(x)+'</span>'});
     FX.body.innerHTML='<div class="fxbar"><button type="button" class="mmbtn" data-fx="up"'+(fxDir===HOME?' disabled':'')+' aria-label="Up one folder" title="Up one folder">&#8593; Up</button><div class="fxpath">'+path+'</div><button type="button" class="mmbtn fxcp" data-fx="copypath" title="Copy this location (paste it after cd in the terminal)" aria-label="Copy this folder location">&#128203; Copy path</button>'
       +'<button type="button" class="mmbtn" data-fx="newdir" title="New folder">+ Folder</button><button type="button" class="mmbtn" data-fx="newfile" title="New file">+ File</button>'
-      +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button></div>'
-      +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.</div>':'')
-      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:isPicFile(it.k)?'<img class="fxthumb" src="'+ML.binUrl(S().files[it.k])+'" alt="">':I.file)
+      +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button><label class="fxhid" title="Show hidden folders like .git"><input type="checkbox" data-fx="hid"'+(fxHid?' checked':'')+'> Hidden items</label></div>'
+      +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.'+(fxHid?'':' Its history lives in a hidden <b>.git</b> folder: tick <b>Hidden items</b> to see it.')+'</div>':'')
+      +(/\/\.git(\/|$)/.test(fxDir)?'<div class="fxrepo">This is Git\'s own folder: <b>HEAD</b> says which branch you are on, <b>refs/heads</b> has a file per branch with its newest commit, and <b>objects</b> stores every commit. Git keeps it up to date, so look, but do not change it.</div>':'')
+      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(it.hid?' fxhidden':'')+(fxSels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:isPicFile(it.k)?'<img class="fxthumb" src="'+ML.binUrl(S().files[it.k])+'" alt="">':I.file)
         +(it.repo?'<b class="dbadge bU" style="background:#e8336d">git</b>':it.mark?'<b class="dbadge b'+it.mark+'">'+(it.mark==='C'?'!':it.mark)+'</b>':'')+'</span><span class="mmn">'+esc(it.n)+'</span></button>'}).join('')+'</div>'
         :'<div class="mmempty">This folder is empty. Right-click (or long-press) for <b>New folder</b> or <b>New file</b>.</div>')
       +'<div class="fxfoot">'+list.length+' item'+(list.length===1?'':'s')+'</div>';fxSelBar()}
@@ -698,7 +700,7 @@
   FX.body.addEventListener('click',function(e){if(fxRen)return;var c=e.target.closest('[data-go]');if(c){fxDir=c.getAttribute('data-go');fxSel=null;fxSels={};fxSelMode=false;fxDraw();return}
     var sb=e.target.closest('.selbar [data-sb]');if(sb){var w2=sb.getAttribute('data-sb'),l=fxList();if(w2==='open')openMany(l);else if(w2==='cut')setClip('cut',l);else if(w2==='copy')setClip('copy',l);else if(w2==='del')delMany(l);else if(w2==='all'){fxAll();return}if(w2==='done'||w2==='open'||w2==='del')fxClear();return}
     var a=e.target.closest('[data-fx]');if(a){var w=a.getAttribute('data-fx');if(w==='copypath'){var t=fxDir===HOME?'~':'~'+fxDir.slice(HOME.length),ok=function(){a.innerHTML='&#10003; Copied!';setTimeout(function(){if(a.isConnected)a.innerHTML='&#128203; Copy path'},1400)},old=function(){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(z){}ta.remove();ok()};
-      try{if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,old);else old()}catch(z){old()}return}if(w==='up'&&fxDir!==HOME){var was=fxDir;fxDir=dirname(fxDir);fxSels={};fxSels[was]=1;fxSel=was;fxSelMode=false;fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
+      try{if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,old);else old()}catch(z){old()}return}if(w==='hid'){fxHid=!fxHid;store('fxhid',fxHid?'1':'0');fxDraw();return}if(w==='up'&&fxDir!==HOME){var was=fxDir;fxDir=dirname(fxDir);fxSels={};fxSels[was]=1;fxSel=was;fxSelMode=false;fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
     var t=e.target.closest('.fxt');if(!t){if(FX.body._marqUntil&&Date.now()<FX.body._marqUntil)return;if(!fxSelMode&&!e.ctrlKey&&!e.metaKey){fxSels={};fxSel=null;fxMark()}return}
     var k=t.getAttribute('data-k'),now=Date.now();
     /* Ctrl/Cmd-click (or Select mode on a phone) adds or removes; Shift-click selects a range */
@@ -747,7 +749,7 @@
   applyLook();
   function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:term',n:'Git Bash / Terminal',ic:I.term,app:'term'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:setup',n:'Setup guide',ic:I.setup,app:'setup'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
-    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
+    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME&&base(d)!=='.git'}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){var pic=ML.isPic(s.files[f]);mine.push({k:f,n:base(f),ic:pic?'<img class="dthumb" src="'+ML.binUrl(s.files[f])+'" alt="">':I.file,mark:ML.gitMark(f)})});
     mine.forEach(function(x){if(!born[x.k])born[x.k]=++bornN});
     var nm=function(a,b){var x=a.n.toLowerCase(),y=b.n.toLowerCase();return x<y?-1:x>y?1:0},ext=function(x){var m=x.n.match(/\.([^.]+)$/);return m?m[1].toLowerCase():''};
@@ -1128,8 +1130,8 @@
       var score=function(c){var k=low(c[2]),sc=0;words.forEach(function(w){if(k.indexOf(w)===0)sc+=3;else if((' '+k).indexOf(' '+w)>-1)sc+=1;if(low(c[0]).indexOf(w)>-1)sc+=1});return sc};
       var cmds=CMDS.filter(function(c){return hit(c[0]+' '+c[1]+' '+c[2],words)}).map(function(c,i){return [c,score(c),i]}).sort(function(a,b){return b[1]-a[1]||a[2]-b[2]}).map(function(x){return x[0]}).slice(0,8)
         .map(function(c){return '<div class="smcmd"><a class="smhit" href="'+c[3]+'"><code>'+esc(c[0])+'</code><small>'+esc(c[1])+'</small></a><button type="button" class="smtry" data-i="'+act(function(){tryCmd(c[4])})+'" title="Type it in the Practice Lab">Try it</button></div>'});
-      var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
-        .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
+      var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)&&!/\/\.git(\/|$)/.test(d)}).map(function(d){return [d,1]})
+        .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)&&!/\/\.git\//.test(f)}).map(function(f){return [f,0]}))
         .filter(function(x){return x[0].indexOf('/.git')<0&&hit(base(x[0]),words)}).slice(0,6)
         .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){openFile(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
       var set=settings().filter(function(o){return hit(o.t+' '+o.k,words)}).slice(0,5)

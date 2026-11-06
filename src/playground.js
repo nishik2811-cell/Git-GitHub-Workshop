@@ -246,6 +246,7 @@
   /* ---------- commands ---------- */
   function git(a){
     var sub=a[0],r;
+    if(S.repo&&under(S.cwd,S.repo.root+'/.git')&&/^(status|add|commit|diff|restore|rm|mv|switch|checkout|merge|stash|reset|pull|revert|rebase|clean)$/.test(sub||'')){perr('fatal: this operation must be run in a work tree');return}
     if(!sub||sub==='help'){pl('usage: git <command>\n\nstart:    init, clone\nwork:     status, add, commit, diff, restore, rm, mv\nundo:     restore, reset, revert, stash\nhistory:  log, show, tag, ls-files\nbranches: branch, switch, checkout, merge, rebase\nonline:   remote, push, pull, fetch\nsetup:    config, --version');return}
     if(sub==='--version'||sub==='version'){pl('git version 2.43.0');return}
     if(sub==='config'){
@@ -771,14 +772,15 @@
       case 'whoami':pl('you');return;
       case 'ls':{var fl=t.filter(function(x,i){return i>0&&x[0]==='-'}).join(''),all=/a/.test(fl),lng=/l/.test(fl);if(all)S.ran.lsa=1;var dir=norm(t.filter(function(x,i){return i>0&&x[0]!=='-'})[0]||'.');
         if(!S.dirs[dir]){perr("ls: cannot access '"+(t[1]||'')+"': No such file or directory");return}
-        var items=[];if(all){items.push('<span class="b">./</span>','<span class="b">../</span>');if(S.repos[dir])items.push('<span class="b">.git/</span>')} /* ls -a always shows . and .. too, like Git Bash */
-        keys(S.dirs).forEach(function(d){if(d!==dir&&dirname(d)===dir)items.push('<span class="b">'+esc(base(d))+'/</span>')});
+        var items=[];if(all){items.push('<span class="b">./</span>','<span class="b">../</span>')} /* ls -a always shows . and .. too, like Git Bash */
+        keys(S.dirs).sort().forEach(function(d){if(d!==dir&&dirname(d)===dir&&(all||base(d)[0]!=='.'))items.push('<span class="b">'+esc(base(d))+'/</span>')});
         keys(S.files).forEach(function(f){if(dirname(f)===dir&&(all||base(f)[0]!=='.'))items.push(esc(base(f)))});
         if(lng){/* ls -l: one line each, with permissions, owner, size in bytes, date and name, like Git Bash */
           var dt=new Date(),MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],when=MO[dt.getMonth()]+' '+('  '+dt.getDate()).slice(-2)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
           var sz=function(f){var v=S.files[f];return isBin(v)?binSize(v):unescape(encodeURIComponent(v||'')).length};
-          var row=function(dirp,n,size){return (dirp?'drwxr-xr-x':'-rw-r--r--')+' 1 you 197121 '+('      '+size).slice(-6)+' '+when+' '+(dirp?'<span class="b">'+esc(n)+'/</span>':esc(n))};
-          var rows=[],tot=0;if(all){rows.push(row(1,'.',0));rows.push(row(1,'..',0));if(S.repos[dir])rows.push(row(1,'.git',0))}
+          var zw=Math.max(1,String(Math.max.apply(null,[0].concat(keys(S.files).filter(function(f){return dirname(f)===dir}).map(sz)))).length);
+          var row=function(dirp,n,size){return (dirp?'drwxr-xr-x':'-rw-r--r--')+' 1 you 197121 '+(new Array(zw+1).join(' ')+size).slice(-zw)+' '+when+' '+(dirp?'<span class="b">'+esc(n)+'/</span>':esc(n))};
+          var rows=[],tot=0;if(all){rows.push(row(1,'.',0));rows.push(row(1,'..',0))}
           keys(S.dirs).filter(function(d){return d!==dir&&dirname(d)===dir&&(all||base(d)[0]!=='.')}).sort().forEach(function(d){rows.push(row(1,base(d),0))});
           keys(S.files).filter(function(f){return dirname(f)===dir&&(all||base(f)[0]!=='.')}).sort().forEach(function(f){var z=sz(f);tot+=Math.ceil(z/1024);rows.push(row(0,base(f),z))});
           pr('total '+tot);rows.forEach(function(x){pr(x)});return}
@@ -813,7 +815,7 @@
             else if(S.dirs[q]){if(!rec){perr("rm: cannot remove '"+x+"': Is a directory (use rm -r)");return}
               keys(S.files).forEach(function(f){if(f.indexOf(q+'/')===0)delete S.files[f]});keys(S.dirs).forEach(function(d){if(d===q||d.indexOf(q+'/')===0)delete S.dirs[d]});hit++}
             else perr("rm: cannot remove '"+x+"': No such file or directory")}});
-        if(hit&&S.repo)pl('Files removed from your folder. Now git add . (or git rm) , commit, push.','y');return}
+        if(hit&&S.repo&&!args.some(function(x){return /(^|\/)\.git\/?$/.test(x)}))pl('Files removed from your folder. Now git add . (or git rm) , commit, push.','y');return}
       case 'rm_old':{if(!t[1]){perr('rm: missing operand');return}var f3=norm(t[1]);if(!(f3 in S.files)){perr("rm: cannot remove '"+t[1]+"': No such file or directory");return}delete S.files[f3];return}
       case 'clear':out.innerHTML='';return;
       case 'help':pl('Try these:\n  rm file | rm -r folder | rm *    (delete things)\n  git rm .    (remove all tracked files)\n  wipe-github    (Real mode: delete EVERYTHING in the GitHub repo, start fresh)\n\n  pwd  ls  cd  mkdir  touch  cat  rm  mv  cp  clear\n  mv old.txt new.txt    (rename or move)   cp a.txt b.txt   (copy; cp -r for folders)\n  echo "text" > file      (make or change a file)\n  git init | clone | status | add | commit | diff | log | show\n  git restore | reset | revert | stash | rm | mv | tag\n  git branch | switch | checkout | merge | rebase\n  ls -l | ls -la | git ls-files    (long list, hidden files too, files Git tracks)\n  git remote | push | fetch | pull\n  git help    (all git commands, grouped)\n\nEvery command, with what it does: open the Cheat Sheet on the desktop.','y');return;
@@ -831,10 +833,39 @@
     shell(t);
   }
   /* ---------- prompt + render ---------- */
+  /* the .git folder git init makes: what is inside, worked out from the repo (HEAD, config, refs, objects, ...) */
+  /* reads this repo's own commits (not the repo of the folder you are in) */
+  function gitDirFiles(r){var Cr=function(id){return r.cm[id]},ancR=function(id){var set={},st=[id];while(st.length){var x=st.pop();if(!x||set[x]||!Cr(x))continue;set[x]=1;Cr(x).p.forEach(function(q){st.push(q)})}return set},f={},d=['hooks','info','objects','objects/info','objects/pack','refs','refs/heads','refs/tags'],up=r.up||{};
+    f['HEAD']=r.det?fullid(r.det)+'\n':'ref: refs/heads/'+r.head+'\n';
+    var cfg='[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tsymlinks = false\n\tignorecase = true\n';
+    if(r.remote&&r.remote.url){cfg+='[remote "origin"]\n\turl = '+r.remote.url+'\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n';keys(up).forEach(function(b){if(up[b]&&b in r.br)cfg+='[branch "'+b+'"]\n\tremote = origin\n\tmerge = refs/heads/'+b+'\n'})}
+    f['config']=cfg;f['description']="Unnamed repository; edit this file 'description' to name the repository.\n";
+    ['applypatch-msg','commit-msg','pre-commit','pre-push','pre-rebase','prepare-commit-msg'].forEach(function(h){f['hooks/'+h+'.sample']='#!/bin/sh\n#\n# An example hook script. To use it, rename this file to "'+h+'" (no .sample).\n'});
+    f['info/exclude']="# git ls-files --others --exclude-from=.git/info/exclude\n# Lines that start with '#' are comments.\n# For a project mostly in C, the following would be a good set of\n# exclude patterns (uncomment them if you want to use them):\n# *.[oa]\n# *~\n";
+    keys(r.br).forEach(function(b){if(r.br[b])f['refs/heads/'+b]=fullid(r.br[b])+'\n'});
+    keys(r.tags||{}).forEach(function(t){f['refs/tags/'+t]=fullid(r.tags[t].id)+'\n'});
+    var rb=keys(r.rbr||{}).filter(function(b){return r.rbr[b]});if(rb.length){d.push('refs/remotes','refs/remotes/origin');rb.forEach(function(b){f['refs/remotes/origin/'+b]=fullid(r.rbr[b])+'\n'})}
+    /* one object per commit, stored like Git does: objects/<first 2 characters>/<the other 38> */
+    var seen={};keys(r.br).map(function(b){return r.br[b]}).concat(r.det?[r.det]:[],rb.map(function(b){return r.rbr[b]})).forEach(function(t){if(t)keys(ancR(t)).forEach(function(id){if(seen[id])return;seen[id]=1;var c=Cr(id);if(!c||c.hidden)return;var h=fullid(id),dd='objects/'+h.slice(0,2);if(d.indexOf(dd)<0)d.push(dd);
+      f[dd+'/'+h.slice(2)]='(a Git object, compressed: the commit '+id+' "'+c.msg+'".\n Real Git stores every commit, file and folder like this.\n To read it, use  git show '+id+' )\n'})});
+    if(keys(r.index).length)f['index']='(Git\'s staging area, a binary file. It lists the '+keys(r.index).length+' file'+(keys(r.index).length===1?'':'s')+' in the next commit.\n To read it, use  git ls-files  or  git status )\n';
+    var hc=r.det||r.br[r.head];if(hc&&Cr(hc))f['COMMIT_EDITMSG']=Cr(hc).msg+'\n';
+    if(r.merge&&r.merge.other)f['MERGE_HEAD']=fullid(r.merge.other)+'\n';
+    return {dirs:d,files:f}}
+  function gitDirSync(){if(!S||!S.repos)return;var want={},wantD={};
+    keys(S.repos).forEach(function(rt){var r=S.repos[rt];if(!r||!S.dirs[rt])return;var g=rt+'/.git';
+      /* rm -rf .git: the files stay, but the folder is not a repo any more (its history is gone) */
+      if(r.gitMade&&!S.dirs[g]){delete S.repos[rt];if(under(S.cwd,g))S.cwd=rt;return}
+      r.gitMade=true;var v=gitDirFiles(r);wantD[g]=1;v.dirs.forEach(function(x){wantD[g+'/'+x]=1});keys(v.files).forEach(function(x){want[g+'/'+x]=v.files[x]})});
+    keys(S.files).forEach(function(f){if(hasGit(f)&&!(f in want))delete S.files[f]});
+    keys(S.dirs).forEach(function(d){if(hasGit(d)&&!wantD[d])delete S.dirs[d]});
+    keys(want).forEach(function(f){if(S.files[f]!==want[f])S.files[f]=want[f]});keys(wantD).forEach(function(d){S.dirs[d]=1});
+    if(!S.dirs[S.cwd])S.cwd=HOME}
   function promptHtml(){var d=S.cwd.replace(HOME,'~'),b='';
-    if(S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0))b=' <span class="c">('+(S.repo.det?'('+S.repo.det+'...)':esc(S.repo.head))+')</span>';
+    if(S.repo&&under(S.cwd,S.repo.root+'/.git'))b=' <span class="c">(GIT_DIR!)</span>';
+    else if(S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0))b=' <span class="c">('+(S.repo.det?'('+S.repo.det+'...)':esc(S.repo.head))+')</span>';
     return '<span class="g">you@laptop</span> <span class="p">MINGW64</span> <span class="y">'+esc(d)+'</span>'+b+'<br>$ '}
-  function setPrompt(){ps.innerHTML=promptHtml().replace('<br>$ ','');if(window.mlTermBar)try{window.mlTermBar()}catch(z){}}
+  function setPrompt(){gitDirSync();ps.innerHTML=promptHtml().replace('<br>$ ','');if(window.mlTermBar)try{window.mlTermBar()}catch(z){}}
   /* Git Bash's GitHub login: real (with the account) or the Mini laptop's pretend GitHub */
   function termAuth(){var t=tvCur==='term'?RL:(TV.term&&TV.term.rl)||{};return {on:!!t.on,login:t.login||'',busy:tvCur==='term'&&(busy||pend)}}
   function run(line){
@@ -1553,7 +1584,7 @@
    {say:'<b>Your turn.</b> Upload it to GitHub: <code>git push -u origin main</code>.',cmds:['git push -u origin main'],free:true}
   ];
   function ownRepo(){return S.own&&S.repos[HOME+'/'+S.own.f]}
-  function ownFiles(){var rp=ownRepo();if(!rp)return [];return keys(S.files).filter(function(f){return f.indexOf(rp.root+'/')===0})}
+  function ownFiles(){var rp=ownRepo();if(!rp)return [];return keys(S.files).filter(function(f){return f.indexOf(rp.root+'/')===0&&!hasGit(f.slice(rp.root.length))})}
   var PR5=[
    function(){var rp=ownRepo();return !!(rp&&S.cfg.name&&S.cfg.email&&rp.remote)},
    function(){var rp=ownRepo();return !!rp&&(ownFiles().length>0||!!rp.br[rp.head])},
