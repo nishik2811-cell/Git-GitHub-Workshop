@@ -584,7 +584,10 @@
   function picOpen(k){picAt=k;activate(MW.el,true);picDraw();var f=MW.body.querySelector('[data-mm="next"]');if(f)f.focus({preventScroll:true})}
   function picStep(d){var l=picList();if(l.length<2)return;picAt=l[(l.indexOf(picAt)+d+l.length)%l.length];picDraw()}
   /* open a file the way a desktop would: pictures in Photos, everything else in VS Code */
-  function openFile(k){if(S().dirs[k]){openFolder(k);return}if(isPicFile(k))picOpen(k);else if(/\.pptx?$/i.test(k)&&ML.isBin(S().files[k]))deckOpen(k);else openVS(k)}
+  /* a file inside .git (HEAD, config, refs/heads/main ...): plain text, read-only, like opening it in Notepad */
+  function gitFileOpen(k){var t=S().files[k];if(t==null)return;var rel=k.replace(/^.*?\/\.git\//,'.git/');
+    window.gitPop&&window.gitPop('warn',rel,'<pre class="gitfile">'+esc(t.replace(/\n$/,''))+'</pre><small class="gitfnote">Git writes this file itself and keeps it up to date, so you can look but should not change it. In Git Bash: <code>cat '+esc(rel)+'</code></small>',[{t:'Close'}])}
+  function openFile(k){if(S().dirs[k]){openFolder(k);return}if(/\/\.git\//.test(k)){gitFileOpen(k);return}if(isPicFile(k))picOpen(k);else if(/\.pptx?$/i.test(k)&&ML.isBin(S().files[k]))deckOpen(k);else openVS(k)}
   /* a slide deck opens in Slides: the real slides as pictures (made from the .pptx), one at a time, with Download for the file itself */
   var tkDeck=tkBtn('tkDeck','Slides',I.pic);tkDeck.hidden=true;tbar.insertBefore(tkDeck,tray);
   var SW=makeWin('deckWin','Slides',I.pic,tkDeck,820,560,{max:true}),deckAt=null,deckI=0;
