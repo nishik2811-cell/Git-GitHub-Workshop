@@ -1563,7 +1563,11 @@
   }
   function b64(t){return btoa(unescape(encodeURIComponent(t)))}
   function ago(d){var s=Math.max(0,(Date.now()-new Date(d))/1000);return s<60?'just now':s<3600?Math.floor(s/60)+' min ago':Math.floor(s/3600)+' h ago'}
-  function setupForm(msg,sw){
+  /* while switching repos, the rest of the Practice Lab is greyed out (nothing else can be clicked or typed) */
+  function labLock(on){RL.form=!!on;$('pg').classList.toggle('rswitching',!!on);labIn.disabled=!!on}
+  /* while GitHub answers, the panel greys out too, so Connect cannot be pressed twice */
+  function rbBusy(t){rbody.classList.add('rbusy');rbody.querySelectorAll('button,input').forEach(function(e){e.disabled=true});var m=document.createElement('p');m.className='rbusymsg';m.textContent=t;rbody.insertBefore(m,rbody.firstChild)}
+  function setupForm(msg,sw){rbody.classList.remove('rbusy');
     rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
      +'<li><b>Pick the repo.</b> Already have an empty repo? Paste its link. No repo yet? Make one right here, below.</li></ol>'
      +'<label class="rf">Token (starts with ghp_ or github_pat_)<input id="rfTok" type="password" placeholder="paste the token here" autocomplete="off"></label>'
@@ -1576,8 +1580,8 @@
      +'<div class="btns" style="justify-content:flex-start;margin:6px 0 0"><button id="rfNew">Create it and connect</button></div><small>Your token makes an empty repo on your GitHub account (like github.com/new), then connects to it.</small></div>';
     $('rfGo').onclick=connect;$('rfOff').onclick=realOff;$('rfNew').onclick=connectNew;
     /* switching repos: you stay logged in (the token is kept), and Cancel goes back to the repo you were on */
-    if(sw&&RL.on){$('rfTok').value=RL.tok;var st=rbody.querySelector('.rsteps');if(st)st.outerHTML='<p class="rswitch"><b>Switch repo.</b> You stay logged in. Paste another repo\'s link and press <b>Connect</b>, or make a new repo below. Now on: <b>'+esc(RL.repo)+'</b></p>';
-      $('rfRepo').value='';var c=$('rfOff');c.textContent='Cancel';c.onclick=function(){refreshLive(true)}}
+    if(sw&&RL.on){labLock(true);$('rfTok').value=RL.tok;var st=rbody.querySelector('.rsteps');if(st)st.outerHTML='<p class="rswitch"><b>Switch repo.</b> You stay logged in. Paste another repo\'s link and press <b>Connect</b>, or make a new repo below. Now on: <b>'+esc(RL.repo)+'</b></p>';
+      $('rfRepo').value='';var c=$('rfOff');c.textContent='Cancel';c.onclick=function(){labLock(false);refreshLive(true)}}
     $('rfNewName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();connectNew()}});
   }
   function parseRepo(v){v=v.trim();var m=v.match(/github\.com[\/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[\/?#].*)?$/);if(m)return m[1]+'/'+m[2];m=v.match(/^([\w.-]+)\/([\w.-]+)$/);return m?m[1]+'/'+m[2].replace(/\.git$/,''):''}
@@ -1587,25 +1591,25 @@
     connectTo(rp,tk)}
   /* no repo yet: make it with the token (POST /user/repos), then connect to it */
   function connectNew(){tvUse('lab');var tk=$('rfTok').value.trim(),nm=ghFixName($('rfNewName').value),priv=!!document.querySelector('input[name="rfVis"][value="private"]:checked');
-    function again(m){setupForm(m);$('rfTok').value=tk;$('rfNewName').value=nm;if(priv)document.querySelector('input[name="rfVis"][value="private"]').checked=true}
+    function again(m){setupForm(m,RL.on);$('rfTok').value=tk;$('rfNewName').value=nm;if(priv)document.querySelector('input[name="rfVis"][value="private"]').checked=true}
     if(!tk){again('Paste the token first: it is what makes the repo on your account.');return}
     if(!nm||nm==='.'||nm==='..'){again('Type a name for the new repo, like my-first-repo.');return}
-    RL.tok=tk;rbody.innerHTML='<p class="empty">Making github.com/&hellip;/'+esc(nm)+' ...</p>';
+    RL.tok=tk;rbBusy('Making github.com/.../'+nm+' ...');
     gh('POST','/user/repos',{name:nm,description:'Made with the Git & GitHub Workshop Mini laptop',private:priv,auto_init:false}).then(function(x){
       if(x.s===201||x.s===200){var full=x.j.full_name;pl('✓ Created repository '+full+' on GitHub\n  https://github.com/'+full,'g');connectTo(full,tk);return}
-      var msg=(x.j&&x.j.message)||'',det=(x.j&&x.j.errors&&x.j.errors[0]&&(x.j.errors[0].message||x.j.errors[0].code))||'';RL.tok='';
+      var msg=(x.j&&x.j.message)||'',det=(x.j&&x.j.errors&&x.j.errors[0]&&(x.j.errors[0].message||x.j.errors[0].code))||'';if(!RL.on)RL.tok='';
       if(x.s===422&&/exist/i.test(msg+' '+det)){again('You already have a repo called '+nm+'. Pick another name, or paste its link above and press Connect.');return}
       if(x.s===401){again('GitHub said 401: the token is wrong or expired. Make a new one.');return}
       if(x.s===403||x.s===404){again('GitHub said '+x.s+': this token cannot make repos. Use a classic token with the repo box ticked (a fine-grained token also needs Administration: Read and write). Or make the repo at github.com/new and paste its link.');return}
       again('GitHub said '+x.s+': '+(msg||'could not make the repo')+(det?' ('+det+')':''))
-    }).catch(function(e){RL.tok='';again('Could not reach GitHub ('+((e&&e.message)||'blocked')+'). Check your internet and open the file directly in Chrome or Edge.')})}
+    }).catch(function(e){if(!RL.on)RL.tok='';again('Could not reach GitHub ('+((e&&e.message)||'blocked')+'). Check your internet and open the file directly in Chrome or Edge.')})}
   function connectTo(rp,tk){var prev=RL.on?{repo:RL.repo,tok:RL.tok,def:RL.def}:null;
     function fail(m){if(prev){RL.repo=prev.repo;RL.tok=prev.tok;RL.def=prev.def;setupForm(m,true)}else{RL.tok='';setupForm(m)}}
-    RL.repo=rp;RL.tok=tk;rbody.innerHTML='<p class="empty">Connecting...</p>';
+    RL.repo=rp;RL.tok=tk;if($('rfGo'))rbBusy('Connecting to github.com/'+rp+' ...');else rbody.innerHTML='<p class="empty">Connecting...</p>';
     gh('GET','/repos/'+rp).then(function(x){
       if(x.s!==200){fail('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
       if(x.j.permissions&&!x.j.permissions.push){fail('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
-      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};RL.login='';
+      if(RL.form)labLock(false);rbody.classList.remove('rbusy');RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};RL.login='';
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
       pl('Connected to github.com/'+rp+' for real.','y');
       var inRepo=S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0);
@@ -1617,9 +1621,9 @@
       setupForm('Could not reach GitHub ('+(e&&e.message||'blocked')+'). '+(inFrame?'This page is inside a preview that blocks outside connections. Download the file and open it in Chrome or Edge.':'Check your internet, turn off ad blockers, and open the file directly in Chrome or Edge instead of a preview.'));
       var t=$('rfTok');if(t)t.value=keep;RL.tok=''})
   }
-  function realOff(){RL.on=false;RL.tok='';clearInterval(RL.timer);$('pg').classList.remove('real');rb.hidden=true;$('pgReal').textContent='Real GitHub mode'}
+  function realOff(){if(RL.form)labLock(false);rbody.classList.remove('rbusy');RL.on=false;RL.tok='';clearInterval(RL.timer);$('pg').classList.remove('real');rb.hidden=true;$('pgReal').textContent='Real GitHub mode'}
   function refreshLive(first){
-    if(!RL.on||tvCur!=='lab'||!RL.repo)return;
+    if(!RL.on||tvCur!=='lab'||!RL.repo||RL.form)return;
     var r=R(),v=(r&&r.head&&r.remote&&r.remote.br[r.head])?r.head:RL.view;
     Promise.all([gh('GET','/repos/'+RL.repo+'/commits?sha='+encodeURIComponent(v)+'&per_page=8'),gh('GET','/repos/'+RL.repo+'/contents?ref='+encodeURIComponent(v)),gh('GET','/repos/'+RL.repo+'/branches')]).then(function(a){
       var cm=a[0],ct=a[1],br=a[2],h='';
@@ -1632,7 +1636,7 @@
           h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+c.html_url+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
         h+='</div>';
       }else h+='<p class="empty">This repo has no commits on <b>'+esc(v)+'</b> yet. Make a commit and push.</p>';
-      h+='<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button id="rfWipe" class="redbtn">Delete everything in this repo</button><button id="rfSwitch">Switch repo</button><button id="rfOff2">Switch off real mode</button></div>';
+      h+='<div class="btns rbtns"><button id="rfSwitch">Switch repo</button><button id="rfOff2">Switch off real mode</button><button id="rfWipe" class="redbtn">Delete everything in this repo</button></div>';
       rbody.innerHTML=h;rb.hidden=false;
       var b=$('rfRef');if(b)b.onclick=function(){refreshLive()};$('rfOff2').onclick=realOff;$('rfSwitch').onclick=function(){if(busy||pend)return;setupForm(null,true)};$('rfWipe').onclick=function(){if(busy)return;window.gitPop('err','DELETE EVERYTHING?','This deletes <b>every file and every extra branch</b> in <b>github.com/'+esc(RL.repo)+'</b> and clears the Mini laptop too. Use it to reset the repo for the next demo.',[{t:'Yes, delete everything',fn:wipeReal},{t:'Cancel'}])};
     });

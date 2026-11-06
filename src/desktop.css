@@ -630,3 +630,14 @@ html.deskon,html.deskon body{overflow:hidden;height:100%}
 .tmcard small{display:block;opacity:.85;line-height:1.4}
 /* Practice Lab: Switch repo note */
 .rswitch{margin:0 0 8px;font-size:13.5px;line-height:1.45}
+/* Real GitHub panel buttons: Switch repo + Switch off side by side, the red Delete on its own row */
+#realBox .rbtns{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 0!important;justify-content:stretch}
+#realBox .rbtns button{margin:0!important;width:100%;min-width:0;white-space:normal;line-height:1.2}
+#realBox .rbtns #rfWipe{grid-column:1/-1}
+#realBox .rbtns{align-items:stretch}
+#realBox .rbtns button{height:auto;align-self:stretch}
+/* a repo switch in progress: the rest of the Practice Lab is greyed out */
+#pg.rswitching .pgl,#pg.rswitching .pgr>:not(#realBox){opacity:.4;filter:grayscale(.6);pointer-events:none;user-select:none;transition:opacity .2s}
+/* GitHub is answering: the panel greys out in place, with a note on top */
+#realBox .rbusy>:not(.rbusymsg){opacity:.45;pointer-events:none;filter:grayscale(.5)}
+#realBox .rbusymsg{margin:0 0 8px;padding:6px 10px;border-radius:8px;background:#e7f6ec;border:2px solid #2f9a5a;font-weight:800;font-size:13.5px;color:#1d5c36}
