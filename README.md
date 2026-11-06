@@ -48,13 +48,19 @@ It behaves like a real desktop: windows move, resize, minimise and pin on phones
 |---|---|---|
 | 1 | Foundational concepts | What Git and GitHub are, where Git came from, centralized vs distributed |
 | 2 | Setup and the 4 states | Installing Git, `git config`, the working folder, staging area, local and remote repo |
-| 3 | Everyday commands | `init`, `status`, `add`, `commit` and reading the history with `git log` |
+| 3 | Everyday commands | Repositories, a single-user repo from `git init` to `git log --oneline`, then `git status -s`, `commit -am` and reading the history |
 | 4 | Ignoring files | `.gitignore`, `git rm --cached` and keeping empty folders with `.gitkeep` |
-| 5 | Branches and more | Branches, merging, conflicts, `stash`, rebase vs merge and tags |
+| 5 | Branches and more | Branches, merging, conflicts and `git reset`. Then `stash`, rebase vs merge and tags |
 | 6 | GitHub | Remotes, push, pull, clone, and fetch vs pull |
 | 7 | Git with buttons | VS Code Source Control, Git Graph and GitHub Desktop |
-| 8 | Teamwork | Forks, pull requests, issues, branch protection and the three ways to merge |
+| 8 | Teamwork | Forks, issues, assignees and pull requests, team collaboration. Then branch protection and the three ways to merge |
 | 9 | Good habits | Commit messages, small commits, keeping secrets out, and using AI safely |
+
+## See it happen
+
+Seven lessons have a step-by-step picture for presenting: you type the real commands in your own terminal, press **Next** (or a clicker), and the picture shows what that command changed. The commit graph with HEAD and every branch, the files with their U / A / M letters, the three zones, the file's contents (conflict markers included), or the GitHub page with the button to click. **Big view** (or F) fills the projector.
+
+The steps live in `src/viz.js`. Change them there, then run `python3 src/sync.py`.
 
 Every module has something to click: diagrams you can play with, drawn GitHub screens where you tap a part to learn what it does, code with a *Copy* button, and a short quiz at the end.
 
@@ -136,11 +142,12 @@ Tools like *Learn Git Branching* draw the commit graph as you type. This worksho
 | `index.html` | The whole site. Open it in a browser and it runs. The lesson text lives here. |
 | `src/playground.js` | The Git engine: the Practice Lab, Git Bash / Terminal and VS Code |
 | `src/desktop.js`, `src/desktop.css` | The Mini laptop desktop and its apps |
+| `src/viz.js`, `src/viz.css` | The step-by-step pictures in seven of the lessons |
 | `src/sync.py` | Copies the `src/` files, the PDF and the memes into `index.html` |
 | `docs/` | The setup guide PDF, screenshots and the link preview picture |
 | `memes/` | The pictures for the hehehe folder |
 
-After changing anything in `src/`, `docs/` or `memes/`, rebuild the page from the project folder:
+After changing `src/playground.js`, `src/desktop.*`, `src/viz.*`, `docs/` or `memes/`, rebuild the page from the project folder:
 
 ```bash
 python3 src/sync.py

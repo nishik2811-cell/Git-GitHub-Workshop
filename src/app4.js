@@ -111,92 +111,10 @@
   setItems.forEach(function(t){var l=document.createElement('label');l.className='chk';l.innerHTML='<input type="checkbox"><span>'+t+'</span>';l.querySelector('input').onchange=function(){l.className='chk'+(this.checked?' done':'');drawSet()};sL.appendChild(l)});
   drawSet();
 
-  var steps=[
-    {z:-1,cmd:'$ git init   # start watching this folder',cap:'Step 0: <code>git init</code> turns an ordinary folder into a repository.'},
-    {z:0,cmd:'$ echo "Pasta" > pasta.txt',cap:'You created <code>pasta.txt</code>. It sits in your working folder. Git sees it but is not tracking it yet.'},
-    {z:1,cmd:'$ git add pasta.txt',cap:'<code>git add</code> moves it to the staging area: picked for the next snapshot.'},
-    {z:2,cmd:'$ git commit -m "Add pasta recipe"',cap:'<code>git commit</code> saves the snapshot into your local repo. You can see it with <code>git log</code>.'},
-    {z:3,cmd:'$ git push -u origin main',cap:'<code>git push</code> uploads the commit. GitHub has it too, and teammates can pull it. (The folder was linked to GitHub once with <code>git remote add origin</code> and the repo link; <code>-u</code> on the first push lets plain <code>git push</code> work after that.)'}
-  ];
-  var si=0,zs=document.querySelectorAll('#zones .zn');
-  function drawStep(){
-    var s=steps[si];
-    Array.prototype.forEach.call(zs,function(z,i){
-      z.className='zn'+(i===s.z?' on':'');
-      z.querySelector('.slot').innerHTML=i===s.z?'<span class="file">pasta.txt</span>':'';
-    });
-    document.getElementById('cmdLine').textContent=s.cmd;
-    document.getElementById('cap').innerHTML=s.cap;
-    document.getElementById('nextBtn').disabled=si===steps.length-1;
-  }
-  document.getElementById('nextBtn').onclick=function(){if(si<steps.length-1){si++;drawStep()}};
-  document.getElementById('resetBtn').onclick=function(){si=0;drawStep()};
-  drawStep();
-
-  var st,NS='http://www.w3.org/2000/svg';
-  function resetBr(){st={commits:[],heads:{},feature:false,merged:false,msg:'Start here. <code>main</code> has two commits. Press "New branch".'};
-    add('main',[],'init');add('main',[st.commits[0].id],'home');}
-  function add(br,parents,label){var c={id:st.commits.length,br:br,parents:parents,label:label};st.commits.push(c);st.heads[br]=c.id;return c}
-  function pos(c){return {x:60+c.id*58,y:c.br==='main'?55:135}}
-  function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e}
-  function drawBr(){
-    var svg=document.getElementById('brSvg');svg.innerHTML='';
-    st.commits.forEach(function(c){
-      var p=pos(c);
-      c.parents.forEach(function(pid){
-        var q=pos(st.commits[pid]);
-        var col=c.br==='main'&&st.commits[pid].br==='main'?'#1d4ba6':'#d0722e';
-        if(q.y===p.y)svg.appendChild(el('line',{x1:q.x,y1:q.y,x2:p.x,y2:p.y,stroke:col,'stroke-width':4}));
-        else svg.appendChild(el('path',{d:'M'+q.x+' '+q.y+' C '+(q.x+30)+' '+q.y+', '+(p.x-30)+' '+p.y+', '+p.x+' '+p.y,fill:'none',stroke:'#d0722e','stroke-width':4}));
-      });
-    });
-    st.commits.forEach(function(c){
-      var p=pos(c);
-      svg.appendChild(el('circle',{cx:p.x,cy:p.y,r:11,fill:c.br==='main'?'#1d4ba6':'#d0722e',stroke:'#2b2f6b','stroke-width':2.5}));
-      var t=el('text',{x:p.x,y:p.y+(c.br==='main'?-20:30),'text-anchor':'middle','font-size':12,fill:'#2b2f6b'});t.textContent=c.label;svg.appendChild(t);
-    });
-    var m=el('text',{x:10,y:20,'font-size':14,'font-weight':700,fill:'#1d4ba6','font-family':'Pixelify Sans'});m.textContent='main';svg.appendChild(m);
-    if(st.feature){var f=el('text',{x:10,y:178,'font-size':14,'font-weight':700,fill:'#d0722e','font-family':'Pixelify Sans'});f.textContent='feature/login';svg.appendChild(f)}
-    document.getElementById('brCap').innerHTML=st.msg;
-    var full=st.commits.length>=11;
-    document.getElementById('bBranch').disabled=st.feature;
-    document.getElementById('bFeat').disabled=!st.feature||st.merged||full;
-    document.getElementById('bMain').disabled=full||st.merged&&false;
-    document.getElementById('bMerge').disabled=!st.feature||st.heads.feature===undefined||st.merged||full;
-  }
-  var fc=0;
-  document.getElementById('bBranch').onclick=function(){st.feature=true;st.msg='You made a branch: <code>git switch -c feature/login</code>. Nothing moved yet. Now commit on it.';drawBr()};
-  document.getElementById('bFeat').onclick=function(){
-    var names=['add login','style login','fix bug','add tests'];
-    var parent=st.heads.feature!==undefined?st.heads.feature:st.heads.main;
-    add('feature',[parent],names[Math.min(fc,3)]);fc++;
-    st.msg='A commit on the branch. <code>main</code> is untouched, so nothing here can break it.';drawBr()};
-  document.getElementById('bMain').onclick=function(){add('main',[st.heads.main],'update');st.msg='Someone else committed to <code>main</code> meanwhile. Branches live side by side.';drawBr()};
-  document.getElementById('bMerge').onclick=function(){
-    var ps=[st.heads.main];if(st.heads.feature!==undefined)ps.push(st.heads.feature);
-    add('main',ps,'merge');st.merged=true;st.msg='Merged. The branch work is now part of <code>main</code>. Delete the branch with <code>git branch -d feature/login</code>.';drawBr()};
-  document.getElementById('bReset').onclick=function(){fc=0;resetBr();drawBr()};
-  resetBr();drawBr();
 
 
-  /* ---------- 3.5 merge conflict pop-up ---------- */
-  var res=$('resolved'),rn=$('resNote');
-  var out={mine:['title = "Home"','You kept your version.'],theirs:['title = "Welcome"','You kept their version.'],both:['title = "Home"\ntitle = "Welcome"','You kept both lines. Check that the file still makes sense.']};
-  function pick(k){var o=out[k];res.textContent=o[0];rn.innerHTML=o[1]+' Next you would run <code>git add</code> and then <code>git commit</code>.'}
-  $('mergeBtn').onclick=function(){
-    pop('err','WARNING: CONFLICT','Both branches changed the same line of <b>index.html</b>.<br>Which version do you keep?',[{t:'Keep mine',fn:function(){pick('mine')}},{t:'Keep theirs',fn:function(){pick('theirs')}},{t:'Keep both',fn:function(){pick('both')}}]);
-  };
 
-  var ign=[['index.html',0],['app.py',0],['.env',1],['node_modules/',1],['debug.log',1],['README.md',0]];
-  var ib=document.getElementById('ignFiles'),it=document.getElementById('ignText');
-  function drawIgn(){
-    ib.innerHTML='';
-    ign.forEach(function(f,i){var s=document.createElement('span');s.className='file'+(f[1]?' ign':'');s.style.cursor='pointer';s.textContent=f[0];
-      s.onclick=function(){f[1]=f[1]?0:1;drawIgn()};ib.appendChild(s)});
-    var lines=ign.filter(function(f){return f[1]}).map(function(f){return f[0]});
-    it.textContent='# .gitignore\n'+(lines.length?lines.join('\n'):'(nothing ignored)');
-  }
-  drawIgn();
+
 
   Array.prototype.forEach.call(document.querySelectorAll('.flip'),function(f){
     f.onclick=function(){f.classList.toggle('on')};
