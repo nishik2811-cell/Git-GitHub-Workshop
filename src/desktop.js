@@ -397,11 +397,11 @@
      after that it is an ordinary terminal: no stories, no boxes, no repo link to paste. */
   var TW=makeWin('termWin','Git Bash / Terminal',I.term,tkTerm,760,480,{max:true});
   TW.body.classList.add('tmb');
-  TW.body.innerHTML='<div class="tmw" id="tmW"><div class="tmout" id="tmOut" role="log" aria-label="Terminal output"></div>'
+  TW.body.innerHTML='<div class="tmw" id="tmW"><div class="tmtabs" id="tmTabs" role="tablist" aria-label="Terminal tabs"></div><div class="tmbar" id="tmBar"><span id="tmWho"></span><button type="button" id="tmAuth"></button></div><div class="tmout" id="tmOut" role="log" aria-label="Terminal output"></div>'
     +'<div class="tmps" id="tmPs"></div><div class="tmline"><span class="tmd" aria-hidden="true">$</span><input id="tmIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command" enterkeyhint="send"></div></div>'
     +'<div class="tmlog" id="tmLog" hidden><div class="tmcard"><div class="tmlh">'+I.term+'<b>Log in to GitHub</b></div>'
     +'<p>Do it once, then use Git like on a real computer: <code>gh repo create</code>, <code>git clone https://…</code>, <code>git push</code>. No repo link needed.</p>'
-    +'<ol><li>Make a token: <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens/new</a>, tick <b>repo</b>, press <b>Generate token</b>, copy it.</li><li>Paste it here.</li></ol>'
+    +'<ol><li>Make a token: <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens/new</a>, tick <b>repo</b>, set <b>Expiration</b> to <b>7 days</b>, press <b>Generate token</b>, copy it.</li><li>Paste it here.</li></ol>'
     +'<label class="tmlab">GitHub token<input id="tmTok" type="password" placeholder="ghp_… or github_pat_…" autocomplete="off"></label>'
     +'<p class="tmerr" id="tmErr" role="alert" hidden></p>'
     +'<div class="tmbtns"><button type="button" class="tmgo" id="tmGo">Log in</button><button type="button" id="tmSkip">Use without GitHub</button></div>'
@@ -415,9 +415,28 @@
   function tmLogin(){var b=$('tmGo');if(b.disabled)return;b.disabled=true;b.textContent='Logging in…';$('tmErr').hidden=true;
     ML.termLogin($('tmTok').value,function(res){b.disabled=false;b.textContent='Log in';
       if(res.err){$('tmErr').textContent=res.err;$('tmErr').hidden=false;return}
-      $('tmTok').value='';$('tmLog').hidden=true;tmFocus()})}
+      $('tmTok').value='';$('tmLog').hidden=true;tmBar();tmFocus()})}
   $('tmGo').onclick=tmLogin;$('tmTok').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tmLogin()}});
   $('tmSkip').onclick=function(){$('tmLog').hidden=true;ML.termSkip();tmFocus()};
+  /* the bar at the top: which GitHub you are on, and one button to log out (back to pretend GitHub) or log in */
+  function tmBar(){var a=ML.termAuth(),w=$('tmWho'),b=$('tmAuth');if(!w)return;
+    w.innerHTML=a.on?'<i class="tmdot on"></i>Real GitHub &middot; <b>'+esc(a.login)+'</b>':'<i class="tmdot"></i>Pretend GitHub <small>(only on this laptop)</small>';
+    b.textContent=a.on?'Log out':'Log in';b.title=a.on?'Stop using your real GitHub (runs gh auth logout)':'Use your real GitHub account';b.className=a.on?'tmout1':'tmin1';b.disabled=!!a.busy}
+  /* tabs: + opens a new one in ~, × closes one, a tab shows its folder (like MINGW64:~/resources) */
+  function tmTabs(){var T=ML.termTabs(),h='';T.list.forEach(function(lb,i){var on=i===T.cur;
+      h+='<span class="tmtab'+(on?' on':'')+'"><button type="button" class="tmtgo" role="tab" aria-selected="'+on+'" data-tt="'+i+'" title="MINGW64:'+escA(lb)+'"'+(T.busy&&!on?' disabled':'')+'>MINGW64: '+esc(lb)+'</button>'
+        +(T.list.length>1?'<button type="button" class="tmtx" data-tx="'+i+'" aria-label="Close tab '+(i+1)+'" title="Close tab"'+(T.busy?' disabled':'')+'>&times;</button>':'')+'</span>'});
+    h+='<button type="button" class="tmtnew" id="tmNew" aria-label="New tab" title="New tab"'+(T.busy||T.list.length>=6?' disabled':'')+'>+</button>';$('tmTabs').innerHTML=h;
+    var a=$('tmTabs').querySelector('.tmtab.on');if(a&&a.scrollIntoView)try{a.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}}
+  window.mlTermBar=function(){tmBar();tmTabs()};tmBar();tmTabs();
+  $('tmTabs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||b.disabled)return;
+    if(b.id==='tmNew'){var o=document.createElement('div');o.className='tmout';o.setAttribute('role','log');o.setAttribute('aria-label','Terminal output');$('tmW').insertBefore(o,$('tmPs'));ML.termTabNew(o)}
+    else if(b.hasAttribute('data-tx'))ML.termTabClose(+b.getAttribute('data-tx'));
+    else ML.termTabGo(+b.getAttribute('data-tt'));
+    tmBar();tmTabs();tmFocus()});
+  $('tmAuth').onclick=function(){var a=ML.termAuth();if(a.busy)return;
+    if(a.on){var i=$('tmIn');i.value='gh auth logout';i.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));tmFocus()}
+    else termAsk()};
   /* a tap anywhere on the black screen puts the cursor in the command line (but selecting text still works) */
   $('tmW').addEventListener('click',function(e){if(e.target.closest('a,button,input'))return;var s=window.getSelection&&window.getSelection();if(s&&String(s).length)return;tmFocus()});
   /* Start menu: Terminal, under the Practice Lab */
@@ -539,13 +558,17 @@
   var HHENV='# a secret: never upload this file\nMEME_API_KEY=sk-fake-4f9a2c7e1b3d-not-a-real-key\n';
   /* hehehe is a real folder on the Mini laptop: the pictures are files you can open, move, copy, delete, git add and git push */
   var HH=HOME+'/hehehe',memeKeys={};
-  window.mlSeed=function(st){var names=MEMES.map(function(m){return m[0]}).filter(function(n){return memeKeys[n]}).concat(Object.keys(memeKeys).filter(function(n){return !MEMES.some(function(m){return m[0]===n})}));
+  /* resources: the workshop's slide decks, as a normal folder (open, copy, move, git add, commit, push) */
+  var RD=HOME+'/resources',DECKS=[],PPTX='application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  function decksRead(){if(DECKS.length)return;var j=document.getElementById('resPack');if(!j)return;try{DECKS=JSON.parse(j.textContent)||[]}catch(e){DECKS=[]}}
+  function resSeed(st){decksRead();if(!DECKS.length||st.dirs[RD])return;st.dirs[RD]=1;DECKS.forEach(function(d){st.files[RD+'/'+d.name]=ML.binLazy('res:'+d.name,'resources/'+d.name,PPTX,d.name,d.size)})}
+  window.mlSeed=function(st){resSeed(st);var names=MEMES.map(function(m){return m[0]}).filter(function(n){return memeKeys[n]}).concat(Object.keys(memeKeys).filter(function(n){return !MEMES.some(function(m){return m[0]===n})}));
     if(!names.length)return;st.dirs[HH]=1;names.forEach(function(n){st.files[HH+'/'+n]=memeKeys[n]});
     /* a small task to practise on: upload this folder to GitHub, without leaking the (fake) key */
     st.files[HH+'/task.txt']=HHTASK;st.files[HH+'/README.md']=HHREADME;st.files[HH+'/.env']=HHENV};
   /* the pictures are packed into the page after this script, so read them once the page has loaded */
   function memesLoad(){document.querySelectorAll('script.memePack').forEach(function(sc){var n=sc.getAttribute('data-name');if(!memeKeys[n])memeKeys[n]=ML.binReg('meme:'+n,sc.textContent,'image/jpeg',n)});
-    var st=S();if(!st.dirs[HH]){window.mlSeed(st);ML.render()}}
+    var st=S();if(!st.dirs[HH]){window.mlSeed(st);ML.render()}else if(!st.dirs[RD]){resSeed(st);ML.render()}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',memesLoad);else memesLoad();
   function escA(t){return esc(t).replace(/"/g,'&quot;')}
   function altOf(abs){var m=MEMES.filter(function(x){return x[0]===base(abs)})[0];return m?m[1]:base(abs)}
@@ -561,7 +584,51 @@
   function picOpen(k){picAt=k;activate(MW.el,true);picDraw();var f=MW.body.querySelector('[data-mm="next"]');if(f)f.focus({preventScroll:true})}
   function picStep(d){var l=picList();if(l.length<2)return;picAt=l[(l.indexOf(picAt)+d+l.length)%l.length];picDraw()}
   /* open a file the way a desktop would: pictures in Photos, everything else in VS Code */
-  function openFile(k){if(S().dirs[k]){openFolder(k);return}if(isPicFile(k))picOpen(k);else openVS(k)}
+  /* a file inside .git (HEAD, config, refs/heads/main ...): plain text, read-only, like opening it in Notepad */
+  function gitFileOpen(k){var t=S().files[k];if(t==null)return;var rel=k.replace(/^.*?\/\.git\//,'.git/');
+    if(ML.isBin(t)){var om=rel.match(/objects\/([0-9a-f]{2})\/([0-9a-f]{38})$/);window.gitPop&&window.gitPop('warn',rel,'<p class="gitfnote">This is a <b>binary</b> file ('+ML.binSize(t)+' bytes): '+(om?'Git keeps every file, folder and commit like this, compressed with zlib and named by its SHA-1.':'Git\'s staging area (the index), in Git\'s own binary format.')+'</p><p class="gitfnote">Read it in Git Bash with: <code>'+(om?'git cat-file -p '+om[1]+om[2]:'git ls-files --stage')+'</code></p>',[{t:'Close'}]);return}
+    window.gitPop&&window.gitPop('warn',rel,'<pre class="gitfile">'+esc(t.replace(/\n$/,''))+'</pre><small class="gitfnote">Git writes this file itself and keeps it up to date, so you can look but should not change it. In Git Bash: <code>cat '+esc(rel)+'</code></small>',[{t:'Close'}])}
+  function openFile(k){if(S().dirs[k]){openFolder(k);return}if(/\/\.git\//.test(k)){gitFileOpen(k);return}if(isPicFile(k))picOpen(k);else if(/\.pptx?$/i.test(k)&&ML.isBin(S().files[k]))deckOpen(k);else openVS(k)}
+  /* a slide deck opens in Slides: the real slides as pictures (made from the .pptx), one at a time, with Download for the file itself */
+  var tkDeck=tkBtn('tkDeck','Slides',I.pic);tkDeck.hidden=true;tbar.insertBefore(tkDeck,tray);
+  var SW=makeWin('deckWin','Slides',I.pic,tkDeck,820,560,{max:true}),deckAt=null,deckI=0;
+  function deckOf(k){decksRead();var t=S().files[k];if(!t||!ML.isBin(t))return null;var key=t.slice(5);return DECKS.filter(function(x){return 'res:'+x.name===key})[0]||null}
+  function deckSrc(d,i){return 'resources/slides/'+encodeURIComponent(d.name.replace(/\.pptx?$/i,''))+'/'+d.slides[i]}
+  /* Slides is drawn once per deck; going to another slide only swaps the picture, and the old slide stays on screen
+     until the new one is ready (no blank flash on a slow phone). The next slides are loaded ahead. */
+  var dkCache={},dkTok=0;
+  function dkImg(src,urgent){var im=dkCache[src];if(!im){im=new Image();im.decoding='async';if('fetchPriority' in im)im.fetchPriority=urgent?'high':'low';im.src=src;dkCache[src]=im}return im}
+  function dkReady(im){return im.complete&&im.naturalWidth>0}
+  /* once the slide you are on is showing: the next two and the one before, so Next and Back are instant */
+  function dkPrefetch(d){for(var k=deckI+1;k<Math.min(d.slides.length,deckI+3);k++)dkImg(deckSrc(d,k),false);if(deckI>0)dkImg(deckSrc(d,deckI-1),false)}
+  function deckDraw(){var st=S();dkTok++;if(!deckAt||!(deckAt in st.files)){SW.body.innerHTML='<div class="mmempty">This deck is not there any more.</div>';return}
+    var d=deckOf(deckAt),n=d&&d.slides?d.slides.length:0,t=st.files[deckAt],kb=Math.round(ML.binSize(t)/1024),size=kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';
+    SW.el.querySelector('.dwh span').textContent=base(deckAt);tkDeck.querySelector('span').textContent=base(deckAt);
+    if(deckI>=n)deckI=Math.max(0,n-1);
+    SW.body.innerHTML='<div class="mmbar"><button type="button" class="mmbtn" data-dk="back">&#9664; Open folder</button><span>'+esc(base(deckAt))+' <small class="dkpos"></small><small> &middot; '+size+'</small></span>'
+      +'<button type="button" class="mmbtn" data-dk="prev" aria-label="Previous slide">&larr;</button><button type="button" class="mmbtn" data-dk="next" aria-label="Next slide">&rarr;</button><button type="button" class="mmbtn" data-dk="dl">Download</button></div>'
+      +(n?'<div class="dkview"><img class="dkimg" alt=""><i class="dkspin" aria-hidden="true"></i></div><div class="dkcap" aria-live="polite"></div>'
+        :'<div class="mmempty">This deck has no slide pictures on the Mini laptop. Download it to open it in PowerPoint, Keynote or Google Slides.</div>');
+    deckShow()}
+  function deckShow(){var d=deckOf(deckAt),n=d&&d.slides?d.slides.length:0;
+    var pv=SW.body.querySelector('[data-dk="prev"]'),nx=SW.body.querySelector('[data-dk="next"]');if(pv)pv.disabled=deckI<1;if(nx)nx.disabled=deckI>=n-1;if(!n)return;
+    /* the number and title change at once; the picture follows as soon as it is ready */
+    SW.body.querySelector('.dkpos').textContent='(slide '+(deckI+1)+' of '+n+')';SW.body.querySelector('.dkcap').innerHTML='<b>'+(deckI+1)+'.</b> '+esc(d.titles[deckI]||'');
+    var el=SW.body.querySelector('.dkimg'),vw=SW.body.querySelector('.dkview'),src=deckSrc(d,deckI),im=dkImg(src,true),tok=++dkTok,alt='Slide '+(deckI+1)+': '+(d.titles[deckI]||'');
+    function put(){if(tok!==dkTok)return;el.src=src;el.alt=alt;vw.classList.remove('dkwait');dkPrefetch(d)}
+    if(dkReady(im))put();else{var tm=setTimeout(function(){if(tok===dkTok)vw.classList.add('dkwait')},180);
+      (im.decode?im.decode():new Promise(function(r,j){im.addEventListener('load',r);im.addEventListener('error',j)})).then(put,function(){if(tok===dkTok){el.src=src;el.alt=alt;vw.classList.remove('dkwait')}}).then(function(){clearTimeout(tm)})}
+  }
+  function deckOpen(k){if(deckAt!==k)deckI=0;deckAt=k;activate(SW.el,true);deckDraw();var f=SW.body.querySelector('[data-dk="next"]');if(f&&!f.disabled)f.focus({preventScroll:true})}
+  function deckStep(dl){var d=deckOf(deckAt);if(!d||!d.slides)return;var j=deckI+dl;if(j<0||j>=d.slides.length)return;deckI=j;deckShow();
+    /* the buttons stay in place now, but at the first or last slide one of them turns off: keep the focus on one that works */
+    var f=document.activeElement;if(f&&f.disabled&&SW.el.contains(f)){var o2=SW.body.querySelector('[data-dk="'+(dl>0?'prev':'next')+'"]');if(o2&&!o2.disabled)o2.focus({preventScroll:true})}}
+  function deckDl(){var t=S().files[deckAt];if(!t)return;var a=document.createElement('a');a.href=ML.binUrl(t);a.download=base(deckAt);a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}
+  SW.body.addEventListener('click',function(e){var b=e.target.closest('[data-dk]');if(!b)return;var a=b.getAttribute('data-dk');if(a==='back'){if(deckAt)openFolder(dirname(deckAt))}else if(a==='dl')deckDl();else deckStep(a==='next'?1:-1)});
+  SW.el.addEventListener('keydown',function(e){if(!deckAt)return;if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();deckStep(1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();deckStep(-1)}});
+  /* swipe on a phone */
+  var dkX=null;SW.body.addEventListener('touchstart',function(e){if(e.target.closest('.dkview'))dkX=e.touches[0].clientX},{passive:true});
+  SW.body.addEventListener('touchend',function(e){if(dkX==null)return;var dx=e.changedTouches[0].clientX-dkX;dkX=null;if(Math.abs(dx)>40)deckStep(dx<0?1:-1)},{passive:true});
   MW.body.addEventListener('click',function(e){var b=e.target.closest('[data-mm]');if(!b)return;var a=b.getAttribute('data-mm');if(a==='back'){if(picAt)openFolder(dirname(picAt))}else picStep(a==='next'?1:-1)});
   MW.el.addEventListener('keydown',function(e){if(!picAt)return;if(e.key==='ArrowRight'){e.preventDefault();picStep(1)}else if(e.key==='ArrowLeft'){e.preventDefault();picStep(-1)}else if(e.key==='Backspace'){e.preventDefault();openFolder(dirname(picAt))}});
 
@@ -569,8 +636,9 @@
   /* ---------- File Explorer: opening a folder shows what is inside (folders in folders too); "Open with VS Code" edits it ---------- */
   var FX=makeWin('fxWin','File Explorer',I.folder,tkFx,620,440,{max:true}),fxDir=HOME,fxSel=null,fxSels={},fxSelMode=false,fxRen=null,fxTap={k:null,t:0},fxPtr='mouse',fxMarq=null;
   FX.body.classList.add('fxb');
+  var fxHid=store('fxhid')==='1';
   function fxItems(){var st=S(),o=[];
-    Object.keys(st.dirs).filter(function(d){return d!==fxDir&&dirname(d)===fxDir}).forEach(function(d){o.push({k:d,n:base(d),dir:true,repo:!!(st.repos&&st.repos[d])})});
+    Object.keys(st.dirs).filter(function(d){return d!==fxDir&&dirname(d)===fxDir&&(fxHid||base(d)!=='.git')}).forEach(function(d){o.push({k:d,n:base(d),dir:true,repo:!!(st.repos&&st.repos[d]),hid:base(d)==='.git'})});
     Object.keys(st.files).filter(function(f){return dirname(f)===fxDir}).forEach(function(f){o.push({k:f,n:base(f),mark:ML.gitMark(f)})});
     return o.sort(function(a,b){return a.dir!==b.dir?(a.dir?-1:1):a.n.toLowerCase()<b.n.toLowerCase()?-1:1})}
   function fxDraw(){if(FX.el.hidden||fxRen)return;var st=S();while(fxDir!==HOME&&!st.dirs[fxDir])fxDir=dirname(fxDir);
@@ -579,9 +647,10 @@
     parts.forEach(function(x){acc+='/'+x;path+=' / <span class="fxcrumb" data-go="'+esc(acc)+'">'+esc(x)+'</span>'});
     FX.body.innerHTML='<div class="fxbar"><button type="button" class="mmbtn" data-fx="up"'+(fxDir===HOME?' disabled':'')+' aria-label="Up one folder" title="Up one folder">&#8593; Up</button><div class="fxpath">'+path+'</div><button type="button" class="mmbtn fxcp" data-fx="copypath" title="Copy this location (paste it after cd in the terminal)" aria-label="Copy this folder location">&#128203; Copy path</button>'
       +'<button type="button" class="mmbtn" data-fx="newdir" title="New folder">+ Folder</button><button type="button" class="mmbtn" data-fx="newfile" title="New file">+ File</button>'
-      +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button></div>'
-      +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.</div>':'')
-      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(fxSels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:isPicFile(it.k)?'<img class="fxthumb" src="'+ML.binUrl(S().files[it.k])+'" alt="">':I.file)
+      +'<button type="button" class="mmbtn" data-fx="vs" title="Open this folder in VS Code">VS Code</button><label class="fxhid" title="Show hidden folders like .git"><input type="checkbox" data-fx="hid"'+(fxHid?' checked':'')+'> Hidden items</label></div>'
+      +(st.repos&&st.repos[fxDir]?'<div class="fxrepo">This folder is a <b>Git repo</b>.'+(fxHid?'':' Its history lives in a hidden <b>.git</b> folder: tick <b>Hidden items</b> to see it.')+'</div>':'')
+      +(/\/\.git(\/|$)/.test(fxDir)?'<div class="fxrepo">This is Git\'s own folder: <b>HEAD</b> says which branch you are on, <b>refs/heads</b> has a file per branch with its newest commit, and <b>objects</b> stores every commit. Git keeps it up to date, so look, but do not change it.</div>':'')
+      +(list.length?'<div class="mmgrid fxgrid">'+list.map(function(it){return '<button type="button" class="mmt fxt'+(it.hid?' fxhidden':'')+(fxSels[it.k]?' sel':'')+(inClip(it.k)?' cut':'')+'" data-k="'+esc(it.k)+'" title="'+esc(it.n)+'"><span class="fxic">'+(it.dir?I.folder:isPicFile(it.k)?'<img class="fxthumb" src="'+ML.binUrl(S().files[it.k])+'" alt="">':I.file)
         +(it.repo?'<b class="dbadge bU" style="background:#e8336d">git</b>':it.mark?'<b class="dbadge b'+it.mark+'">'+(it.mark==='C'?'!':it.mark)+'</b>':'')+'</span><span class="mmn">'+esc(it.n)+'</span></button>'}).join('')+'</div>'
         :'<div class="mmempty">This folder is empty. Right-click (or long-press) for <b>New folder</b> or <b>New file</b>.</div>')
       +'<div class="fxfoot">'+list.length+' item'+(list.length===1?'':'s')+'</div>';fxSelBar()}
@@ -635,7 +704,7 @@
   FX.body.addEventListener('click',function(e){if(fxRen)return;var c=e.target.closest('[data-go]');if(c){fxDir=c.getAttribute('data-go');fxSel=null;fxSels={};fxSelMode=false;fxDraw();return}
     var sb=e.target.closest('.selbar [data-sb]');if(sb){var w2=sb.getAttribute('data-sb'),l=fxList();if(w2==='open')openMany(l);else if(w2==='cut')setClip('cut',l);else if(w2==='copy')setClip('copy',l);else if(w2==='del')delMany(l);else if(w2==='all'){fxAll();return}if(w2==='done'||w2==='open'||w2==='del')fxClear();return}
     var a=e.target.closest('[data-fx]');if(a){var w=a.getAttribute('data-fx');if(w==='copypath'){var t=fxDir===HOME?'~':'~'+fxDir.slice(HOME.length),ok=function(){a.innerHTML='&#10003; Copied!';setTimeout(function(){if(a.isConnected)a.innerHTML='&#128203; Copy path'},1400)},old=function(){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(z){}ta.remove();ok()};
-      try{if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,old);else old()}catch(z){old()}return}if(w==='up'&&fxDir!==HOME){var was=fxDir;fxDir=dirname(fxDir);fxSels={};fxSels[was]=1;fxSel=was;fxSelMode=false;fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
+      try{if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,old);else old()}catch(z){old()}return}if(w==='hid'){fxHid=!fxHid;store('fxhid',fxHid?'1':'0');fxDraw();return}if(w==='up'&&fxDir!==HOME){var was=fxDir;fxDir=dirname(fxDir);fxSels={};fxSels[was]=1;fxSel=was;fxSelMode=false;fxDraw()}else if(w==='newdir')fxNew(true);else if(w==='newfile')fxNew(false);else if(w==='vs')openVS(fxDir);return}
     var t=e.target.closest('.fxt');if(!t){if(FX.body._marqUntil&&Date.now()<FX.body._marqUntil)return;if(!fxSelMode&&!e.ctrlKey&&!e.metaKey){fxSels={};fxSel=null;fxMark()}return}
     var k=t.getAttribute('data-k'),now=Date.now();
     /* Ctrl/Cmd-click (or Select mode on a phone) adds or removes; Shift-click selects a range */
@@ -684,7 +753,7 @@
   applyLook();
   function items(){var s=S(),bin=s.bin||[],o=[{k:'app:ws',n:'Workshop',ic:I.ws,app:'ws'},{k:'app:lab',n:'Practice Lab',ic:I.lab,app:'lab'},{k:'app:term',n:'Git Bash / Terminal',ic:I.term,app:'term'},{k:'app:cheat',n:'Cheat Sheet',ic:I.cheat,app:'cheat'},{k:'app:vs',n:'VS Code',ic:I.vs,app:'vs'},{k:'app:br',n:'Browser',ic:I.br,app:'br'},{k:'app:setup',n:'Setup guide',ic:I.setup,app:'setup'},{k:'app:draw',n:'Notepad',ic:I.pad,app:'draw'},{k:'app:guide',n:'Setup-Guide.pdf',ic:I.pdf,app:'guide'},{k:'app:credits',n:'suspects.txt',ic:I.file,app:'credits'},{k:'app:bin',n:'Bin',ic:bin.length?I.binf:I.bin,app:'bin'}];
     var mine=[];
-    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
+    Object.keys(s.dirs).filter(function(d){return d!==HOME&&dirname(d)===HOME&&base(d)!=='.git'}).forEach(function(d){mine.push({k:d,n:base(d),ic:I.folder,dir:true,repo:!!(s.repos&&s.repos[d])})});
     Object.keys(s.files).filter(function(f){return dirname(f)===HOME}).forEach(function(f){var pic=ML.isPic(s.files[f]);mine.push({k:f,n:base(f),ic:pic?'<img class="dthumb" src="'+ML.binUrl(s.files[f])+'" alt="">':I.file,mark:ML.gitMark(f)})});
     mine.forEach(function(x){if(!born[x.k])born[x.k]=++bornN});
     var nm=function(a,b){var x=a.n.toLowerCase(),y=b.n.toLowerCase();return x<y?-1:x>y?1:0},ext=function(x){var m=x.n.match(/\.([^.]+)$/);return m?m[1].toLowerCase():''};
@@ -910,27 +979,31 @@
     ['git clone <url>','Copy a whole repo from GitHub into a new folder. Try it with GitHub\'s own sample repo; in Real GitHub mode any repo you can see on github.com works','download clone copy get repo github','#t2-4','git clone https://github.com/octocat/Hello-World'],
     ['git clone <folder> <new-folder>','Clone a repo that is already on this laptop into another folder','clone copy local folder repo','#t2-4','git clone ']]},
    {g:'Save your work',l:[
-    ['git status','See what changed, what is staged, and if you are ahead of or behind GitHub','status changed what happened check see state behind ahead','#ar1','git status'],
+    ['git status','See what changed, what is staged, and if you are ahead of or behind GitHub','status changed what happened check see state behind ahead','#n3-1','git status'],
     ['git add <file>','Put one file\'s changes in the staging area, ready to save','save stage add prepare track file','#ar1','git add '],
     ['git add .','Stage every change in this folder at once','save stage add all everything','#ar1','git add .'],
     ['git commit -m "message"','Save a snapshot (a save point) of what you staged','save commit snapshot message checkpoint','#ar1','git commit -m ""'],
-    ['git commit -am "message"','Stage every change to files Git already tracks, and commit, in one go (new files still need git add)','save commit all stage tracked shortcut','#ar1','git commit -am ""'],
+    ['git commit -am "message"','Stage every change to files Git already tracks, and commit, in one go (new files still need git add)','save commit all stage tracked shortcut','#n3-1','git commit -am ""'],
     ['git diff','See exactly which lines you changed (not staged yet)','diff difference changes compare what changed lines see','#ar1','git diff'],
     ['git diff --staged','See the changes you staged, before you commit them','diff staged cached compare before commit','#ar1','git diff --staged'],
     ['git diff HEAD~1 HEAD','Compare two commits: here, the one before last with the last one','diff compare commits two versions','#ar1','git diff HEAD~1 HEAD'],
-    ['git log','See every commit: who, when and why','history log list commits past see author','#ar1','git log'],
-    ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#ar1','git log --oneline'],
+    ['git log','See every commit: who, when and why','history log list commits past see author','#n3-2','git log'],
+    ['git log --oneline','See your history, one short line per commit','history log list commits short oneline','#n3-2','git log --oneline'],
+    ['git log --oneline --graph --all','See every branch at once, drawn with lines','history graph branches tree all picture lines','#n3-2','git log --oneline --graph --all'],
     ['git show','See the last commit and the lines it changed','show last commit details lines changed','#ar1','git show'],
     ['git show HEAD~1','See the commit before the last one (HEAD~2 goes two back, and so on)','show older commit previous details','#ar1','git show HEAD~1'],
-    ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#ar1','git ls-files']]},
+    ['git show <commit>','See any commit by its id from git log --oneline (the first 7 characters are enough)','show commit id hash sha details','#ar1','git show '],
+    ['git cat-file -p <id>','Look inside one of Git\'s objects in .git/objects: a commit, a folder (tree) or a file (blob)','cat-file object inside commit tree blob sha hash .git','#n3-2','git cat-file -p '],
+    ['git ls-files','List every file Git is keeping track of (tracked files)','list files tracked ls-files what git knows','#ar1','git ls-files'],
+    ['git ls-files --stage','The staging area (.git/index): each file with the id of its saved contents','ls-files stage index staging blob id sha','#n3-2','git ls-files --stage']]},
    {g:'Undo things',l:[
-    ['git restore <file>','Throw away changes to a file you have not staged yet','undo discard throw away changes reset file restore go back','#ar6','git restore '],
-    ['git restore --staged <file>','Take a file back out of the staging area (keeps your changes)','unstage undo add remove staging restore','#ar6','git restore --staged '],
-    ['git reset <file>','Unstage a file (the same as git restore --staged)','unstage reset undo add','#ar6','git reset '],
-    ['git reset --soft HEAD~1','Undo the last commit but keep its changes staged','undo last commit reset soft uncommit keep','#ar6','git reset --soft HEAD~1'],
-    ['git reset --hard HEAD~1','Throw away the last commit and its changes (careful: they are gone)','undo delete last commit reset hard throw away dangerous','#ar6','git reset --hard HEAD~1'],
+    ['git restore <file>','Throw away changes to a file you have not staged yet','undo discard throw away changes reset file restore go back','#ar1','git restore '],
+    ['git restore --staged <file>','Take a file back out of the staging area (keeps your changes)','unstage undo add remove staging restore','#ar1','git restore --staged '],
+    ['git reset <file>','Unstage a file (the same as git restore --staged)','unstage reset undo add','#ar1','git reset '],
+    ['git reset --soft HEAD~1','Undo the last commit but keep its changes staged','undo last commit reset soft uncommit keep','#ar1','git reset --soft HEAD~1'],
+    ['git reset --hard HEAD~1','Throw away the last commit and its changes (careful: they are gone)','undo delete last commit reset hard throw away dangerous','#ar1','git reset --hard HEAD~1'],
     ['git revert HEAD','Undo the last commit safely, by adding a new commit that reverses it','undo last commit head revert mistake','#ar1','git revert HEAD'],
-    ['git revert <commit>','Undo any older commit (use its id from git log), only that one','undo revert reverse commit go back mistake older','#ar1','git revert '],
+    ['git revert <commit>','Undo any older commit, only that one: use its id from git log --oneline, like git revert a1b2c3d','undo revert reverse commit go back mistake older id','#ar1','git revert '],
     ['git revert -m 1 <merge>','Undo a merge: keep your branch (parent 1), take out what the merge brought in','undo merge revert mainline','#ar4','git revert -m 1 '],
     ['git revert --continue','Finish a revert after you fixed its conflict and used git add','revert continue conflict finish','#ar5','git revert --continue'],
     ['git revert --abort','Give up on a revert that hit a conflict','revert abort cancel conflict','#ar5','git revert --abort']]},
@@ -945,6 +1018,7 @@
     ['git stash drop','Throw away the newest stash','stash drop delete remove','#n5-3','git stash drop']]},
    {g:'Files in Git',l:[
     ['git rm <file>','Delete a file and stage the deletion','delete remove rm file','#ar1','git rm '],
+    ['git rm --cached <file>','Stop tracking a file but keep it on your laptop (then add it to .gitignore)','untrack stop tracking keep file gitignore cached secret env','#n4-1','git rm --cached '],
     ['git mv <old> <new>','Rename or move a file, and stage the rename','rename move mv file','#ar1','git mv '],
     ['.gitignore','A file listing what Git should never save, like passwords: one name (or *.log) per line','ignore secret password private hide gitignore keep out','#ar2','echo "secret.txt" > .gitignore']]},
    {g:'Branches',l:[
@@ -980,6 +1054,7 @@
     ['git push -u origin main','The first upload of a branch: it also links the branch to GitHub (-u is short for --set-upstream). After this, plain git push and git pull work','upload push send share github online first upstream set-upstream link track','#t2-4','git push -u origin main'],
     ['git push','Upload your new commits to GitHub. Works once the branch is linked (pushed with -u, or cloned); before that Git says "no upstream branch"','upload push send share github online upstream','#t2-4','git push'],
     ['git push origin <branch>','Upload one branch by name, even if you are on another. It does not link the branch: add -u for that','push branch upload','#t2-4','git push origin '],
+    ['git push origin --delete <branch>','Delete a branch on GitHub, for example once it is merged (git branch -d deletes it on your laptop)','delete remove branch github remote cleanup merged','#t2-4','git push origin --delete '],
     ['git branch --set-upstream-to=origin/main','Link the branch you are on to GitHub\'s main without pushing (then plain git push and git pull work)','upstream link track set-upstream-to no upstream tracking information','#t2-4','git branch --set-upstream-to=origin/main'],
     ['git fetch','Download new commits from GitHub without changing your files (origin/main moves)','download fetch check update look remote teammate','#n6-2','git fetch'],
     ['git pull','Download new commits from GitHub and merge them into your branch. Like git push, it needs the branch linked first (pushed with -u, or cloned)','download pull get update latest sync teammate upstream','#n6-2','git pull'],
@@ -1062,8 +1137,8 @@
       var score=function(c){var k=low(c[2]),sc=0;words.forEach(function(w){if(k.indexOf(w)===0)sc+=3;else if((' '+k).indexOf(' '+w)>-1)sc+=1;if(low(c[0]).indexOf(w)>-1)sc+=1});return sc};
       var cmds=CMDS.filter(function(c){return hit(c[0]+' '+c[1]+' '+c[2],words)}).map(function(c,i){return [c,score(c),i]}).sort(function(a,b){return b[1]-a[1]||a[2]-b[2]}).map(function(x){return x[0]}).slice(0,8)
         .map(function(c){return '<div class="smcmd"><a class="smhit" href="'+c[3]+'"><code>'+esc(c[0])+'</code><small>'+esc(c[1])+'</small></a><button type="button" class="smtry" data-i="'+act(function(){tryCmd(c[4])})+'" title="Type it in the Practice Lab">Try it</button></div>'});
-      var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)}).map(function(d){return [d,1]})
-        .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)}).map(function(f){return [f,0]}))
+      var st=S(),fs=Object.keys(st.dirs).filter(function(d){return d!==HOME&&under(d,HOME)&&!/\/\.git(\/|$)/.test(d)}).map(function(d){return [d,1]})
+        .concat(Object.keys(st.files).filter(function(f){return under(f,HOME)&&!/\/\.git\//.test(f)}).map(function(f){return [f,0]}))
         .filter(function(x){return x[0].indexOf('/.git')<0&&hit(base(x[0]),words)}).slice(0,6)
         .map(function(x){return '<button type="button" class="smhit" data-i="'+act(function(){openFile(x[0])})+'"><i class="smic">'+(x[1]?I.folder:I.file)+'</i>'+esc(base(x[0]))+'<small>'+esc(tilde(dirname(x[0])))+'</small></button>'});
       var set=settings().filter(function(o){return hit(o.t+' '+o.k,words)}).slice(0,5)

@@ -49,16 +49,23 @@
   function isBin(t){return typeof t==='string'&&t.indexOf('\u0000BIN:')===0}
   function binInfo(t){return isBin(t)?BIN[t.slice(5)]:null}
   function binReg(key,b64,mime,name){if(!BIN[key])BIN[key]={b64:b64.replace(/\s+/g,''),mime:mime||'application/octet-stream',name:name||key,url:null};return '\u0000BIN:'+key}
-  function binUrl(t){var b=binInfo(t);if(!b)return '';if(!b.url){try{var s2=atob(b.b64),a=new Uint8Array(s2.length);for(var i=0;i<s2.length;i++)a[i]=s2.charCodeAt(i);b.url=URL.createObjectURL(new Blob([a],{type:b.mime}))}catch(e){b.url=''}}return b.url}
-  function binSize(t){var b=binInfo(t);return b?Math.floor(b.b64.length*3/4)-(/==$/.test(b.b64)?2:/=$/.test(b.b64)?1:0):0}
+  /* a big file (like a presentation in resources/) that is not packed into the page: the bytes are fetched from src when needed */
+  function binLazy(key,src,mime,name,size){if(!BIN[key])BIN[key]={b64:null,src:src,size:size||0,mime:mime||'application/octet-stream',name:name||key,url:null};return '\u0000BIN:'+key}
+  function binLoad(t){var b=binInfo(t);if(!b)return Promise.reject(new Error('not a binary file'));if(b.b64!=null)return Promise.resolve(b.b64);
+    return fetch(b.src).then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(function(buf){var u=new Uint8Array(buf),s3='';for(var i=0;i<u.length;i+=32768)s3+=String.fromCharCode.apply(null,u.subarray(i,i+32768));b.b64=btoa(s3);return b.b64})
+      .catch(function(){throw new Error('could not read '+b.name+'. Open the workshop from its website (not as a file on your computer) to upload it.')})}
+  function binUrl(t){var b=binInfo(t);if(!b)return '';if(b.b64==null)return b.src||'';if(!b.url){try{var s2=atob(b.b64),a=new Uint8Array(s2.length);for(var i=0;i<s2.length;i++)a[i]=s2.charCodeAt(i);b.url=URL.createObjectURL(new Blob([a],{type:b.mime}))}catch(e){b.url=''}}return b.url}
+  function binSize(t){var b=binInfo(t);if(b&&b.b64==null)return b.size||0;return b?Math.floor(b.b64.length*3/4)-(/==$/.test(b.b64)?2:/=$/.test(b.b64)?1:0):0}
   function isPic(t){var b=binInfo(t);return !!b&&/^image\//.test(b.mime)}
   function repoOf(path){var best=null;keys(S.repos||{}).forEach(function(rt){if(under(path,rt)&&(!best||rt.length>best.length))best=rt});return best?S.repos[best]:null}
-  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  /* makes text safe to put in the page. Quotes too: a file name from GitHub like  a" onmouseover="...  must not break out of data-f="..." */
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
   function pr(h){var d=document.createElement('div');d.className='ln';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight}
   function pl(t,c){String(t).split('\n').forEach(function(l){pr('<span class="'+(c||'')+'">'+(esc(l)||'&nbsp;')+'</span>')})}
   function perr(t){pl(t,'r')}
   function rid(){S.uid++;var x=(Math.imul(S.uid,2654435761)^(S.uid<<11)^0x5bd1e995)>>>0;return ('0000000'+x.toString(16)).slice(-7)}
-  function fullid(id){var s=id,k=0;while(s.length<40){k++;s+=(Math.imul(s.charCodeAt(k)+k*7919,2654435761)>>>0).toString(16)}return s.slice(0,40)}
+  var FULLID={};
+  function fullid(id){if(FULLID[id])return FULLID[id];var s=id,k=0;while(s.length<40){k++;s+=(Math.imul(s.charCodeAt(k)+k*7919,2654435761)>>>0).toString(16)}return s.slice(0,40)}
   function norm(p){if(p==='~')p=HOME;else if(p.indexOf('~/')===0)p=HOME+p.slice(1);var parts=(p[0]==='/'?p:S.cwd+'/'+p).split('/'),o=[];parts.forEach(function(x){if(!x||x==='.')return;if(x==='..')o.pop();else o.push(x)});return '/'+o.join('/')}
   function dirname(p){return p.slice(0,p.lastIndexOf('/'))||'/'}
   function base(p){return p.slice(p.lastIndexOf('/')+1)}
@@ -76,7 +83,11 @@
   /* ---------- repo helpers ---------- */
   function R(){return S.repo}
   function C(id){return R().cm[id]}
-  function headId(){return R().br[R().head]||null}
+  function headId(){var r=R();return r.det||r.br[r.head]||null}
+  /* move HEAD: the branch you are on, or HEAD itself when it is detached */
+  function setH(r,id){if(r.det)r.det=id;else r.br[r.head]=id}
+  /* what Git calls where you are: the branch name, or "detached HEAD" */
+  function hName(r){return r.det?'detached HEAD':r.head}
   function headTree(){var h=headId();return h?C(h).files:{}}
   function rel(abs){var r=R();return abs.indexOf(r.root+'/')===0?abs.slice(r.root.length+1):null}
   function ignored(r){var g=S.files[R().root+'/.gitignore'];if(!g)return false;
@@ -96,24 +107,45 @@
   function applyTree(nt){var r=R(),old=headTree();
     keys(old).forEach(function(f){if(!(f in nt))delete S.files[r.root+'/'+f]});
     keys(nt).forEach(function(f){S.files[r.root+'/'+f]=nt[f]});r.index=copy(nt)}
-  function needRepo(){if(!S.repo){perr('fatal: not a git repository (or any of the parent directories): .git');return false}
-    var r=R();if(!(S.cwd===r.root||S.cwd.indexOf(r.root+'/')===0)){perr('fatal: not a git repository (or any of the parent directories): .git');return false}return true}
-  function newCommit(msg,parents,files,author){var r=R(),c={id:rid(),msg:msg,p:parents,files:files,br:r.head,n:++S.n,who:author||S.cfg.name||'you'};r.cm[c.id]=c;r.list.push(c);return c}
+  function notRepo(){perr('fatal: not a git repository (or any of the parent directories): .git');
+    pl('You are not inside a repo folder ('+(S.cwd===HOME?'~':S.cwd.replace(HOME,'~'))+'). cd into your project folder, or run  git init  there first.','y')}
+  function needRepo(){if(!S.repo){notRepo();return false}
+    var r=R();if(!(S.cwd===r.root||S.cwd.indexOf(r.root+'/')===0)){notRepo();return false}return true}
+  /* a commit's id is the SHA-1 of what it holds (its tree, parents, author and time, message), exactly like real Git;
+     the short id is the first 7 characters */
+  function cfin(c){var ts=c.ts||Math.floor(Date.now()/1000),tz=c.tz||tzs(),em=c.email||(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com')),who=c.who+' <'+em+'> '+ts+' '+tz;
+    var tx='tree '+gtree(c.files)+'\n'+c.p.map(function(q){return 'parent '+fullid(q)+'\n'}).join('')+'author '+who+'\ncommitter '+who+'\n\n'+c.msg+'\n',body=u8(tx),h=sha1(cat8([u8('commit '+body.length+'\u0000'),body]));
+    c.ts=ts;c.tz=tz;c.email=em;c.full=h;c.id=h.slice(0,7);FULLID[c.id]=h;GOBJ[h]={t:'commit',body:body,z:null};c.gobj=h;return c}
+  /* the date line real Git prints: Fri Nov 6 12:40:01 2026 +0530 */
+  function gdate(c){if(!c.ts)return 'Sun Nov 1 22:'+(10+c.n%50)+':00 2026 +0000';var d=new Date(c.ts*1000),D=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],z=function(n){return ('0'+n).slice(-2)};
+    return D[d.getDay()]+' '+M[d.getMonth()]+' '+d.getDate()+' '+z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds())+' '+d.getFullYear()+' '+(c.tz||'+0000')}
+  function newCommit(msg,parents,files,author){var r=R(),c={id:'',msg:msg,p:parents,files:files,br:r.head,n:++S.n,who:author||S.cfg.name||'you'};cfin(c);r.cm[c.id]=c;r.list.push(c);return c}
   function lines(s){return s?s.replace(/\n$/,'').split('\n').length:0}
   /* lines added and removed between two versions of a file, counted like real Git (longest common subsequence) */
   function lineCount(o,n){if(isBin(o)||isBin(n))return {ins:0,del:0};var A=o==null||o===''?[]:o.replace(/\n$/,'').split('\n'),B=n==null||n===''?[]:n.replace(/\n$/,'').split('\n'),L=[];
     for(var i=A.length;i>=0;i--){L[i]=[];for(var j=B.length;j>=0;j--)L[i][j]=i===A.length||j===B.length?0:A[i]===B[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1])}
     return {ins:B.length-L[0][0],del:A.length-L[0][0]}}
+  function lcsLen(A,B){var prev=new Array(B.length+1).fill(0);for(var i=1;i<=A.length;i++){var cur=[0];for(var j=1;j<=B.length;j++)cur[j]=A[i-1]===B[j-1]?prev[j-1]+1:Math.max(prev[j],cur[j-1]);prev=cur}return prev[B.length]}
+  function statTrees(o,n,only){if(only){var o2={},n2={};keys(o).forEach(function(f){if(only.indexOf(f)>=0)o2[f]=o[f]});keys(n).forEach(function(f){if(only.indexOf(f)>=0)n2[f]=n[f]});o=o2;n=n2}var all={},rows=[],ins=0,del=0;keys(o).concat(keys(n)).forEach(function(f){all[f]=1});
+    keys(all).sort().forEach(function(f){var a0=f in o?o[f]:null,b0=f in n?n[f]:null;if(a0===b0)return;
+      if(isBin(a0)||isBin(b0)){rows.push([f,'Bin']);return}
+      var A=a0==null||a0===''?[]:a0.replace(/\n$/,'').split('\n'),B=b0==null||b0===''?[]:b0.replace(/\n$/,'').split('\n'),l=lcsLen(A,B),pl1=B.length-l,mi=A.length-l;ins+=pl1;del+=mi;rows.push([f,pl1,mi])});
+    if(!rows.length)return;var w=Math.max.apply(null,rows.map(function(x){return x[0].length})),nw=Math.max.apply(null,rows.map(function(x){return x[1]==='Bin'?3:String(x[1]+x[2]).length})),big=Math.max.apply(null,rows.map(function(x){return x[1]==='Bin'?0:x[1]+x[2]})),sc=big>40?40/big:1;
+    rows.forEach(function(x){var nm=' '+esc(x[0])+new Array(w-x[0].length+1).join(' ')+' | ';if(x[1]==='Bin'){pr(nm+'Bin');return}
+      var t=String(x[1]+x[2]);pr(nm+new Array(nw-t.length+1).join(' ')+t+' <span class="g">'+new Array(Math.round(x[1]*sc)+1).join('+')+'</span><span class="r">'+new Array(Math.round(x[2]*sc)+1).join('-')+'</span>')});
+    pl(' '+rows.length+' file'+(rows.length>1?'s':'')+' changed'+(ins||!del?', '+ins+' insertion'+(ins===1?'':'s')+'(+)':'')+(del?', '+del+' deletion'+(del===1?'':'s')+'(-)':''))}
   function diffStat(oldT,newT){var files=0,ins=0,del=0,created=[],deleted=[];
     keys(newT).forEach(function(f){if(oldT[f]!==newT[f]){files++;var c=lineCount(oldT[f],newT[f]);ins+=c.ins;del+=c.del;if(!(f in oldT))created.push(f)}});
     keys(oldT).forEach(function(f){if(!(f in newT)){files++;del+=lineCount(oldT[f],null).del;deleted.push(f)}});return {files:files,ins:ins,del:del,created:created,deleted:deleted}}
+  /* the file lines real Git prints after a merge or pull: the stat, then create / delete mode */
+  function mergeStat(o,n){var d=diffStat(o,n);if(!d.files)return;statTrees(o,n);d.created.sort().forEach(function(f){pl(' create mode 100644 '+f)});(d.deleted||[]).sort().forEach(function(f){pl(' delete mode 100644 '+f)})}
   function statLine(s){return ' '+s.files+' file'+(s.files===1?'':'s')+' changed'+(s.ins?', '+s.ins+' insertion'+(s.ins===1?'':'s')+'(+)':'')+(s.del?', '+s.del+' deletion'+(s.del===1?'':'s')+'(-)':'')}
-  function refsOf(id){var r=R(),a=[];keys(r.br).forEach(function(b){if(r.br[b]===id){a.push(b===r.head?'HEAD -> '+b:b)}});
+  function refsOf(id){var r=R(),a=[];if(r.det&&r.det===id)a.push('HEAD');keys(r.br).forEach(function(b){if(r.br[b]===id){a.push(b===r.head&&!r.det?'HEAD -> '+b:b)}});
     keys(r.rbr||{}).forEach(function(b){if(r.rbr[b]===id)a.push('origin/'+b)});
     keys(r.tags||{}).sort().forEach(function(t){if(r.tags[t].id===id)a.push('tag: '+t)});
     a.sort(function(x,y){return x.indexOf('HEAD')===0?-1:y.indexOf('HEAD')===0?1:0});return a}
   /* how your branch compares with origin/<branch>: your laptop's memory of GitHub (only fetch, pull and push update it) */
-  function track(){var r=R();if(!r||!r.remote||!r.rbr)return null;var o=r.rbr[r.head],h=headId();if(!o||!h)return null;
+  function track(){var r=R();if(!r||!r.remote||!r.rbr||r.det)return null;var o=r.rbr[r.head],h=headId();if(!o||!h)return null;
     var A=anc(h),B=anc(o),ah=0,bh=0;keys(A).forEach(function(k){if(!B[k])ah++});keys(B).forEach(function(k){if(!A[k])bh++});return {ah:ah,bh:bh,o:'origin/'+r.head}}
   function cmt(n){return n+' commit'+(n===1?'':'s')}
   /* SSH addresses work just like HTTPS ones (as if this laptop has an SSH key set up):
@@ -156,7 +188,7 @@
     if(S.mate2&&S.ran.rej2)S.ran.pc2=1;
     var cur=headId();
     if(S.ran.f1&&!S.mate2&&cur&&cur!==rb&&!anc(cur)[rb])S.ran.p1=1; // only when the pull really brings something new
-    if(!cur){var s0=diffStat({},C(rb).files);applyTree(C(rb).files);r.br[r.head]=rb;pl('Fast-forward','y');pl(statLine(s0));return}
+    if(!cur){var s0=diffStat({},C(rb).files);applyTree(C(rb).files);setH(r,rb);pl('Fast-forward','y');pl(statLine(s0));return}
     if(cur===rb||anc(cur)[rb]){pl('Already up to date.');return}
     if(!anc(rb)[cur]&&!lca(cur,rb)&&!allowU){perr('fatal: refusing to merge unrelated histories');pl("Your laptop's history and GitHub's started separately (for example, the repo was created with a README on GitHub). To join them, type:  git pull origin "+r.head+" --allow-unrelated-histories",'y');return}
     if(reb){rebaseOnto(rb,'origin/'+r.head);return}
@@ -173,9 +205,9 @@
   function rebaseOnto(up,upName){var r=R(),cur=headId();
     if(!cur){perr('fatal: your current branch \''+r.head+'\' does not have any commits yet');return}
     if(cur===up||anc(cur)[up]){pl('Current branch '+r.head+' is up to date.');return}
-    if(anc(up)[cur]){setWork(copy(C(up).files));r.br[r.head]=up;pl('Successfully rebased and updated refs/heads/'+r.head+'.');S.ran.rebase=1;return}
+    if(anc(up)[cur]){setWork(copy(C(up).files));setH(r,up);pl('Successfully rebased and updated '+(r.det?'detached HEAD':'refs/heads/'+r.head)+'.');S.ran.rebase=1;return}
     var A=anc(up),todo=keys(anc(cur)).filter(function(k){return !A[k]&&C(k).p.length<2}).map(C).sort(function(x,y){return x.n-y.n}).map(function(c){return c.id});
-    r.rebase={orig:cur,onto:up,name:upName,todo:todo,cur:null};r.br[r.head]=up;setWork(copy(C(up).files));rebaseNext()}
+    r.rebase={orig:cur,onto:up,name:upName,todo:todo,cur:null};setH(r,up);setWork(copy(C(up).files));rebaseNext()}
   function rebaseNext(){var r=R(),rb=r.rebase;
     while(rb.todo.length){var id=rb.todo.shift(),c=C(id),tip=headId(),m=merge3(c.p.length?C(c.p[0]).files:{},C(tip).files,c.files,'HEAD','('+id+' ('+c.msg+'))');
       if(m.conf.length){rb.cur=id;keys(m.res).forEach(function(f){S.files[r.root+'/'+f]=m.res[f]});keys(C(tip).files).forEach(function(f){if(!(f in m.res))delete S.files[r.root+'/'+f]});
@@ -184,13 +216,21 @@
         pl('Could not apply '+id+'... '+c.msg);return}
       var same=keys(m.res).length===keys(C(tip).files).length&&keys(m.res).every(function(f){return C(tip).files[f]===m.res[f]});
       if(same)continue; /* already there: real Git drops it too */
-      var nc=newCommit(c.msg,[tip],m.res,c.who);r.br[r.head]=nc.id;setWork(copy(m.res))}
-    r.rebase=null;S.ran.rebase=1;pl('Successfully rebased and updated refs/heads/'+r.head+'.')}
+      var nc=newCommit(c.msg,[tip],m.res,c.who);setH(r,nc.id);setWork(copy(m.res))}
+    r.rebase=null;S.ran.rebase=1;pl('Successfully rebased and updated '+(r.det?'detached HEAD':'refs/heads/'+r.head)+'.')}
   function mergeInto(otherId,label,msg){
-    var r=R(),cur=headId(),o=C(otherId),st=status();
-    if(st.staged.length||st.unstaged.length){perr('error: Your local changes would be overwritten by merge.\nCommit your changes first.');return false}
+    var r=R(),cur=headId(),o=C(otherId),st=status(),hh=headTree(),w0=work(),dirty={};
     var A=anc(cur);if(A[otherId]){pl('Already up to date.');return true}
-    if(anc(otherId)[cur]){pl('Updating '+cur+'..'+otherId+'\nFast-forward','y');var s=diffStat(headTree(),o.files);applyTree(o.files);r.br[r.head]=otherId;pl(statLine(s));S.merged=true;return true}
+    st.staged.forEach(function(x){dirty[x[0]]=1});st.unstaged.forEach(function(x){dirty[x[0]]=1});
+    function blockOn(t2){var ov=keys(dirty).filter(function(f){return hh[f]!==t2[f]}).sort();
+      if(ov.length){perr('error: Your local changes to the following files would be overwritten by merge:\n'+ov.map(function(f){return '\t'+f}).join('\n')+'\nPlease commit your changes or stash them before you merge.\nAborting');return true}
+      var un=st.untracked.filter(function(f){return (f in t2)&&!(f in hh)&&w0[f]!==t2[f]}).sort();
+      if(un.length){perr('error: The following untracked working tree files would be overwritten by merge:\n'+un.map(function(f){return '\t'+f}).join('\n')+'\nPlease move or remove them before you merge.\nAborting');return true}return false}
+    function put(f,v){if(dirty[f])return;if(v===undefined){delete S.files[r.root+'/'+f];return}S.files[r.root+'/'+f]=v;var d=dirname(r.root+'/'+f);while(d!==r.root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}}
+    if(anc(otherId)[cur]){if(blockOn(o.files))return false;pl('Updating '+cur+'..'+otherId+'\nFast-forward');
+      var u0={};keys(hh).concat(keys(o.files)).forEach(function(f){u0[f]=1});keys(u0).forEach(function(f){if(dirty[f])return;put(f,o.files[f]);if(f in o.files)r.index[f]=o.files[f];else delete r.index[f]});
+      setH(r,otherId);mergeStat(hh,o.files);S.merged=true;return true}
+    if(st.staged.length){perr('error: Your local changes to the following files would be overwritten by merge:\n'+st.staged.map(function(x){return '  '+x[0]}).sort().join('\n')+'\nMerge with strategy ort failed.');return false}
     var b=lca(cur,otherId),bt=b?C(b).files:{},ot=C(cur).files,tt=o.files,res={},conf=[];
     var all={};keys(bt).concat(keys(ot),keys(tt)).forEach(function(k){all[k]=1});
     keys(all).forEach(function(f){var x=bt[f],a=ot[f],t=tt[f];
@@ -199,8 +239,9 @@
       else if(t===x){if(a!==undefined)res[f]=a}
       else if(isBin(a)||isBin(t)){conf.push(f);res[f]=a!==undefined?a:t;pl('warning: Cannot merge binary files: '+f+' (HEAD vs. '+label+')','y')}
       else{conf.push(f);res[f]='<<<<<<< HEAD\n'+(a||'')+'=======\n'+(t||'')+'>>>>>>> '+label+'\n'}});
+    if(blockOn(res))return false;
     if(conf.length){
-      keys(res).forEach(function(f){S.files[r.root+'/'+f]=res[f]});
+      keys(ot).forEach(function(f){if(!(f in res))put(f,undefined)});keys(res).forEach(function(f){put(f,res[f])});
       keys(res).forEach(function(f){if(conf.indexOf(f)<0)r.index[f]=res[f]});
       conf.forEach(function(f){r.conf[f]=1});
       r.merge={other:otherId,label:label,msg:msg};
@@ -209,18 +250,23 @@
       window.gitPop&&window.gitPop('err','WARNING: MERGE CONFLICT','Both branches changed the same line of <b>'+esc(conf[0])+'</b>.<br><br>Open the file (type <code>cat '+esc(conf[0])+'</code>), then replace it with the line you want, for example:<br><code>echo "title = Welcome" &gt; '+esc(conf[0])+'</code><br>Then <code>git add '+esc(conf[0])+'</code> and <code>git commit</code>.');
       return false}
     var c=newCommit(msg,[cur,otherId],res);
-    keys(res).forEach(function(f){S.files[r.root+'/'+f]=res[f]});r.index=copy(res);r.br[r.head]=c.id;
-    pl("Merge made by the 'ort' strategy.");pl(statLine(diffStat(ot,res)));S.merged=true;return true}
+    keys(ot).forEach(function(f){if(!(f in res))put(f,undefined)});keys(res).forEach(function(f){put(f,res[f])});r.index=copy(res);setH(r,c.id);
+    pl("Merge made by the 'ort' strategy.");mergeStat(ot,res);S.merged=true;return true}
   /* ---------- commands ---------- */
   function git(a){
     var sub=a[0],r;
+    if(S.repo&&under(S.cwd,S.repo.root+'/.git')&&/^(status|add|commit|diff|restore|rm|mv|switch|checkout|merge|stash|reset|pull|revert|rebase|clean)$/.test(sub||'')){perr('fatal: this operation must be run in a work tree');return}
     if(!sub||sub==='help'){pl('usage: git <command>\n\nstart:    init, clone\nwork:     status, add, commit, diff, restore, rm, mv\nundo:     restore, reset, revert, stash\nhistory:  log, show, tag, ls-files\nbranches: branch, switch, checkout, merge, rebase\nonline:   remote, push, pull, fetch\nsetup:    config, --version');return}
     if(sub==='--version'||sub==='version'){pl('git version 2.43.0');return}
     if(sub==='config'){
       var gi=a.indexOf('--global');if(gi>=0)a.splice(gi,1);
-      if(a[1]==='--list'||a[1]==='-l'){pl('user.name='+(S.cfg.name||'')+'\nuser.email='+(S.cfg.email||'')+'\ninit.defaultbranch=main');return}
-      if(a[1]==='user.name'||a[1]==='user.email'){var k=a[1].slice(5);if(a.length>2){S.cfg[k]=a[2]}else{pl(S.cfg[k]||'')}return}
-      perr('error: only user.name, user.email and --list are supported here');return}
+      S.cfg.x=S.cfg.x||{};var gi2=a.indexOf('--get');if(gi2>=0)a.splice(gi2,1);var un=a.indexOf('--unset');if(un>=0)a.splice(un,1);
+      if(a[1]==='--list'||a[1]==='-l'){var ls=[];if(S.cfg.name)ls.push('user.name='+S.cfg.name);if(S.cfg.email)ls.push('user.email='+S.cfg.email);keys(S.cfg.x).forEach(function(k){ls.push(k+'='+S.cfg.x[k])});pl(ls.join('\n'));return}
+      var ck=(a[1]||'').toLowerCase();if(!ck){perr('usage: git config [--global] <name> [<value>]');return}
+      if(ck.indexOf('.')<1||/\.$/.test(ck)){perr('error: key does not contain a section: '+a[1]);return}
+      if(ck==='user.name'||ck==='user.email'){var k=ck.slice(5);if(un>=0){delete S.cfg[k];return}if(a.length>2){S.cfg[k]=a.slice(2).join(' ')}else if(S.cfg[k])pl(S.cfg[k]);return}
+      if(un>=0){delete S.cfg.x[ck];return}
+      if(a.length>2){S.cfg.x[ck]=a.slice(2).join(' ')}else if(ck in S.cfg.x)pl(S.cfg.x[ck]);return}
     if(sub==='init'){
       if(S.repo&&S.repo.root===S.cwd){pl('Reinitialized existing Git repository in '+S.cwd+'/.git/');return}
       S.repo={root:S.cwd,head:'main',br:{main:null},cm:{},list:[],index:{},conf:{},merge:null,remote:null,rbr:{}};
@@ -270,7 +316,7 @@
       else if(ghKey(url)==='https://github.com/roli/website'){nr2=made();
         /* a public demo repo that always exists on the pretend GitHub */
         var f1={'README.md':'# website\nRoli\'s first website.\n'},f2={'README.md':'# website\nRoli\'s first website.\n','index.html':'<h1>Hello</h1>\n'};
-        var c1={id:rid(),msg:'first commit',p:[],files:f1,br:'main',n:++S.n,who:'Roli'},c2={id:rid(),msg:'add index page',p:[c1.id],files:f2,br:'main',n:++S.n,who:'Roli'};
+        var c1=cfin({id:'',msg:'first commit',p:[],files:f1,br:'main',n:++S.n,who:'Roli'}),c2=cfin({id:'',msg:'add index page',p:[c1.id],files:f2,br:'main',n:++S.n,who:'Roli'});
         [c1,c2].forEach(function(c){nr2.cm[c.id]=c;nr2.list.push(c)});nr2.remote.br.main=c2.id}
       else if(S.ghMade&&S.ghMade[ghKey(url)]){nr2=made()}
       else{perr("remote: Repository not found.\nfatal: repository '"+url.replace(/\/+$/,'')+"/' not found");pl('On this Mini laptop, GitHub only has the repos you made (gh repo create, or Browser > New repository) or pushed to, plus public samples: git clone https://github.com/octocat/Hello-World','y');return}
@@ -308,19 +354,19 @@
     function showCommit(c){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'';
       pr('<span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
       if(c.p.length>1)pl('Merge: '+c.p.join(' '));
-      pl('Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   Sun Nov 1 22:'+(10+c.n%50)+':00 2026\n\n    '+c.msg+'\n')}
+      pl('Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   '+gdate(c)+'\n\n    '+c.msg+'\n')}
     function tracked(){var o={};keys(r.index).forEach(function(f){o[f]=1});keys(headTree()).forEach(function(f){o[f]=1});return o}
     /* make the files on disk match a commit's files (tracked files only; untracked files are left alone) */
     function hardTo(files){var w=work();keys(tracked()).forEach(function(f){if(!(f in files))delete S.files[r.root+'/'+f]});
       keys(files).forEach(function(f){S.files[r.root+'/'+f]=files[f];var d=dirname(r.root+'/'+f);while(d!==r.root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}});r.index=copy(files);r.conf={};r.merge=null}
     if(sub==='rebase'){
       if(a.indexOf('-i')>=0||a.indexOf('--interactive')>=0){perr('error: this Mini laptop has no text editor for git rebase -i (interactive rebase).');pl('Plain  git rebase <branch>  works here.','y');return}
-      if(a[1]==='--abort'){if(!r.rebase){perr('fatal: No rebase in progress?');return}r.br[r.head]=r.rebase.orig;setWork(copy(C(r.rebase.orig).files));r.rebase=null;return}
+      if(a[1]==='--abort'){if(!r.rebase){perr('fatal: No rebase in progress?');return}setH(r,r.rebase.orig);setWork(copy(C(r.rebase.orig).files));r.rebase=null;return}
       if(a[1]==='--skip'){if(!r.rebase){perr('fatal: No rebase in progress?');return}setWork(copy(headTree()));r.rebase.cur=null;rebaseNext();return}
       if(a[1]==='--continue'){if(!r.rebase){perr('fatal: No rebase in progress?');return}
         if(keys(r.conf).length){perr('error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use \'git add/rm <file>\'\nhint: as appropriate to mark resolution and make a commit.');keys(r.conf).forEach(function(f){pl(f+': needs merge')});
           perr('You must edit all merge conflicts and then\nmark them as resolved using git add');return}
-        var cc=r.rebase.cur&&C(r.rebase.cur);if(cc){var st6=status();if(st6.staged.length){var nc=newCommit(cc.msg,[headId()],copy(r.index),cc.who);r.br[r.head]=nc.id;pl('['+'detached HEAD '+nc.id+'] '+cc.msg,'g')}}
+        var cc=r.rebase.cur&&C(r.rebase.cur);if(cc){var st6=status();if(st6.staged.length){var nc=newCommit(cc.msg,[headId()],copy(r.index),cc.who);setH(r,nc.id);pl('['+'detached HEAD '+nc.id+'] '+cc.msg,'g')}}
         r.rebase.cur=null;rebaseNext();return}
       if(r.rebase){perr('fatal: It seems that there is already a rebase-merge directory, and\nI wonder if you are in the middle of another rebase.\nhint: Use "git rebase --continue", "--skip" or "--abort".');return}
       if(r.merge){perr('error: cannot rebase: You are in the middle of a merge.');return}
@@ -329,8 +375,18 @@
       if(!upR){if(r.rbr&&r.rbr[r.head]){upR='origin/'+r.head}else{perr('fatal: There is no tracking information for the current branch.\nPlease specify which branch you want to rebase against.\n\n    git rebase <branch>');return}}
       var upId=rev(upR);if(!upId){perr("fatal: invalid upstream '"+upR+"'");return}
       rebaseOnto(upId,upR);return}
-    if(sub==='ls-files'){var root=r.root,pre=S.cwd===root?'':S.cwd.slice(root.length+1)+'/';
-      keys(r.index).sort().forEach(function(f){if(!pre||f.indexOf(pre)===0)pl(f.slice(pre.length))});return}
+    if(sub==='ls-files'){var root=r.root,pre=S.cwd===root?'':S.cwd.slice(root.length+1)+'/',stg0=a.indexOf('-s')>=0||a.indexOf('--stage')>=0;
+      keys(r.index).sort().forEach(function(f){if(!pre||f.indexOf(pre)===0)pl((stg0?'100644 '+gblob(r.index[f])+' 0\t':'')+f.slice(pre.length))});return}
+    /* git cat-file: read an object (commit, tree or blob) the way Git stores it */
+    if(sub==='cat-file'){var cf=a.slice(1).filter(function(x){return x[0]!=='-'})[0],mode=a.indexOf('-t')>=0?'t':a.indexOf('-s')>=0?'s':a.indexOf('-p')>=0?'p':null;
+      if(!mode||!cf){perr('usage: git cat-file (-t | -s | -p) <object>');return}gitDirSync();
+      var hx=null,cid=rev(cf);if(cid)hx=gcommit(r,C(cid));else if(/^[0-9a-f]{4,40}$/.test(cf)){var hits=keys(r.objs||{}).filter(function(h){return h.indexOf(cf)===0});if(hits.length>1){perr('error: short object ID '+cf+' is ambiguous');return}hx=hits[0]||null}
+      if(!hx||!GOBJ[hx]){perr('fatal: Not a valid object name '+cf);return}var ob=GOBJ[hx];
+      if(mode==='t'){pl(ob.t);return}if(mode==='s'){pl(String(ob.body.length));return}
+      if(ob.t==='tree'){var bb=ob.body,i=0;while(i<bb.length){var sp=bb.indexOf(32,i),nul=bb.indexOf(0,sp),h2='';for(var k=nul+1;k<nul+21;k++)h2+=('0'+bb[k].toString(16)).slice(-2);var md=new TextDecoder().decode(bb.subarray(i,sp)),nm=new TextDecoder().decode(bb.subarray(sp+1,nul));
+          pl((md==='40000'?'040000 tree ':'100644 blob ')+h2+'\t'+nm);i=nul+21}return}
+      var txt=new TextDecoder().decode(ob.body);if(ob.t==='blob'&&/[\u0000-\u0008\u000E-\u001F]/.test(txt.slice(0,4000))){pl('(binary file, '+ob.body.length+' bytes)','y');return}
+      pl(txt.replace(/\n$/,''));return}
     if(sub==='diff'){S.ran.diff=1;
       var dd=a.indexOf('--'),flags=a.slice(1,dd<0?a.length:dd).filter(function(x){return x[0]==='-'}),words=a.slice(1,dd<0?a.length:dd).filter(function(x){return x[0]!=='-'}),paths=dd<0?[]:a.slice(dd+1);
       var revs=[];words.forEach(function(x){var id=rev(x);if(id)revs.push(id);else{var f=rel(norm(x));if(f!==null&&(f in work()||f in r.index||f in headTree()))paths.push(x);else revs.push(false),badRev(x)}});
@@ -338,6 +394,9 @@
       var only=paths.length?paths.map(function(x){return rel(norm(x))}):null,stg=flags.indexOf('--staged')>=0||flags.indexOf('--cached')>=0;
       keys(r.conf).forEach(function(f){if(!only||only.indexOf(f)>=0)pl('* Unmerged path '+f,'r')});
       var wt=function(){var w=work(),o={};keys(tracked()).forEach(function(f){if(f in w&&!r.conf[f])o[f]=w[f]});return o};
+      var dStat=flags.indexOf('--stat')>=0,dNames=flags.indexOf('--name-only')>=0,dNS=flags.indexOf('--name-status')>=0;
+      if(dStat||dNames||dNS){var diffTrees=function(o,n,on){if(dStat){statTrees(o,n,on);return}var al={};keys(o).concat(keys(n)).forEach(function(f){al[f]=1});
+        keys(al).sort().forEach(function(f){if(on&&on.indexOf(f)<0)return;if(o[f]!==n[f])pl(dNS?(!(f in o)?'A':!(f in n)?'D':'M')+'\t'+f:f)})}}
       if(revs.length===2){diffTrees(C(revs[0]).files,C(revs[1]).files,only);return}
       if(revs.length===1){diffTrees(C(revs[0]).files,stg?r.index:wt(),only);return}
       if(stg){diffTrees(headTree(),r.index,only);return}
@@ -346,16 +405,16 @@
     if(sub==='show'){var sref=a.slice(1).filter(function(x){return x[0]!=='-'})[0]||'HEAD',sid=rev(sref);
       if(!sid){if(!headId()&&sref==='HEAD'){perr("fatal: your current branch '"+r.head+"' does not have any commits yet");return}badRev(sref);return}
       var tg=r.tags&&r.tags[sref];if(tg&&tg.msg){pl('tag '+sref+'\nTagger: '+tg.who+'\nDate:   Sun Nov 1 23:00:00 2026\n\n'+tg.msg+'\n')}
-      var sc=C(sid);showCommit(sc);if(sc.p.length<2)diffTrees(sc.p.length?C(sc.p[0]).files:{},sc.files);S.ran.show=1;return}
+      var sc=C(sid);showCommit(sc);if(sc.p.length<2){if(a.indexOf('--stat')>=0)statTrees(sc.p.length?C(sc.p[0]).files:{},sc.files);else diffTrees(sc.p.length?C(sc.p[0]).files:{},sc.files)}S.ran.show=1;return}
     if(sub==='reset'){
       var mode=a.indexOf('--hard')>=0?'hard':a.indexOf('--soft')>=0?'soft':a.indexOf('--mixed')>=0?'mixed':'',rw=a.slice(1).filter(function(x){return x[0]!=='-'}),tgt=null,rpaths=[];
       rw.forEach(function(x,i){var id=i===0?rev(x):null;if(id)tgt=id;else rpaths.push(x)});
-      if(rpaths.length){if(mode==='hard'||mode==='soft'){perr('fatal: Cannot do '+mode+' reset with paths.');return}
+      if(rpaths.length){if(mode==='hard'||mode==='soft'){var nf=rpaths.filter(function(x){var f=rel(norm(x));return f===null||!(f in r.index||f in headTree()||f in work())})[0];if(nf){badRev(nf);return}perr('fatal: Cannot do '+mode+' reset with paths.');return}
         var ht=tgt?C(tgt).files:headTree(),bad=null;rpaths.forEach(function(x){var f=rel(norm(x));if(f===null||!(f in r.index||f in ht||f in work())){bad=x;return}if(f in ht)r.index[f]=ht[f];else delete r.index[f];delete r.conf[f]});
         if(bad){badRev(bad);return}var us=status().unstaged;if(us.length)pl('Unstaged changes after reset:\n'+us.map(function(u){return (u[1]==='deleted'?'D':'M')+'\t'+u[0]}).join('\n'));return}
       if(!headId()){perr("fatal: your current branch '"+r.head+"' does not have any commits yet");return}
       if(!tgt){if(rw.length){badRev(rw[0]);return}tgt=headId()}
-      var tc=C(tgt);r.br[r.head]=tgt;
+      var tc=C(tgt);setH(r,tgt);
       if(mode==='soft'){r.merge=null;return}
       if(mode==='hard'){hardTo(copy(tc.files));pl('HEAD is now at '+tc.id+' '+tc.msg);S.ran.reset=1;return}
       r.index=copy(tc.files);r.conf={};r.merge=null;var us2=status().unstaged;if(us2.length)pl('Unstaged changes after reset:\n'+us2.map(function(u){return (u[1]==='deleted'?'D':'M')+'\t'+u[0]}).join('\n'));S.ran.reset=1;return}
@@ -368,16 +427,16 @@
         if(!any){pl('No local changes to save');return}
         if(r.conf&&keys(r.conf).length){perr('error: could not write index');pl('Fix the merge conflict first (git add, git commit), then stash.','y');return}
         hardTo(copy(h));unt.forEach(function(f){delete S.files[r.root+'/'+f]});
-        var bc=C(ent.base);ent.label=(smsg?'On '+r.head+': '+smsg:'WIP on '+r.head+': '+bc.id+' '+bc.msg);ent.id=rid();r.stash.unshift(ent);
+        var bc=C(ent.base);ent.label=(smsg?'On '+(r.det?'(no branch)':r.head)+': '+smsg:'WIP on '+(r.det?'(no branch)':r.head)+': '+bc.id+' '+bc.msg);ent.id=rid();r.stash.unshift(ent);
         pl('Saved working directory and index state '+ent.label);S.ran.stash=1;return}
       if(act==='list'){r.stash.forEach(function(e,i){pl('stash@{'+i+'}: '+e.label)});return}
       var e=r.stash[idx];if(act==='clear'){r.stash=[];return}
       if(!e){perr(r.stash.length?'error: stash@{'+idx+'} is not a valid reference':'No stash entries found.');return}
-      if(act==='drop'){r.stash.splice(idx,1);pl('Dropped stash@{'+idx+'} ('+fullid(e.id)+')');return}
-      if(act==='show'){keys(e.work).sort().forEach(function(f){pl(' '+f)});pl(' '+keys(e.work).length+' file'+(keys(e.work).length===1?'':'s')+' changed');return}
+      if(act==='drop'){r.stash.splice(idx,1);pl('Dropped refs/stash@{'+idx+'} ('+fullid(e.id)+')');return}
+      if(act==='show'){var sb0=C(e.base).files,so={},sn={};keys(e.work).forEach(function(f){if(!(f in sb0)&&e.index[f]==null)return;if(f in sb0)so[f]=sb0[f];if(e.work[f]!=null)sn[f]=e.work[f]});statTrees(so,sn);return}
       if(act==='pop'||act==='apply'){var w3=work(),h3=headTree(),base3=C(e.base).files,clash=[];
         keys(e.work).forEach(function(f){var cur=f in w3?w3[f]:null,iv=f in r.index?r.index[f]:(f in h3?h3[f]:null);if(cur!==iv||(f in r.index&&r.index[f]!==(f in h3?h3[f]:undefined)))clash.push(f)});
-        if(clash.length){perr('error: Your local changes to the following files would be overwritten by merge:\n'+clash.map(function(f){return '\t'+f}).join('\n')+'\nPlease commit your changes or stash them before you merge.\nAborting');pl('The stash entry is kept in case you need it again.');return}
+        if(clash.length){perr('error: Your local changes to the following files would be overwritten by merge:\n'+clash.map(function(f){return '\t'+f}).join('\n')+'\nPlease commit your changes or stash them before you merge.\nAborting');git(['status']);pl('The stash entry is kept in case you need it again.');return}
         var cf=[];keys(e.work).forEach(function(f){var bs=f in base3?base3[f]:null,ou=f in h3?h3[f]:null,th=e.work[f],res;
           if(ou===bs)res=th;else if(th===bs)res=ou;else if(ou===th)res=ou;else{cf.push(f);res='<<<<<<< Updated upstream\n'+(ou||'')+'=======\n'+(th||'')+'>>>>>>> Stashed changes\n'}
           if(res==null)delete S.files[r.root+'/'+f];else{S.files[r.root+'/'+f]=res;var d=dirname(r.root+'/'+f);while(d!==r.root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}}
@@ -406,8 +465,17 @@
       var rr=fsRename(sa2,da2);if(rr.err){perr('fatal: '+rr.err.replace(/<[^>]+>/g,''));return}
       moved.forEach(function(f){var nf=df+f.slice(sf.length);r.index[nf]=r.index[f];delete r.index[f]});S.ran.mv=1;return}
     if(sub==='status'){
-      S.ran.status=1;if(S.files[R().root+'/.gitignore'])S.ran.stat2=1;var st=status(),o=['On branch '+r.head];
+      S.ran.status=1;if(S.files[R().root+'/.gitignore'])S.ran.stat2=1;var st=status(),o=[r.det?'HEAD detached '+(r.det===r.detFrom?'at ':'from ')+r.detName:'On branch '+r.head];
       var tk=track();
+      var sShort=a.some(function(x){return x==='-s'||x==='--short'||/^-(sb|bs)$/.test(x)}),sBr=a.some(function(x){return x==='-b'||x==='--branch'||/^-(sb|bs)$/.test(x)});
+      if(sShort){var hT0=headTree(),codes={},ren={},goneS=st.staged.filter(function(x){return x[1]==='deleted'});
+        st.staged.forEach(function(x){if(x[1]==='new file'){var src=goneS.filter(function(g){return !ren[g[0]]&&hT0[g[0]]===r.index[x[0]]})[0];if(src){ren[src[0]]=x[0];codes[x[0]]=['R',' ',src[0]]}}});
+        st.staged.forEach(function(x){if(codes[x[0]]||ren[x[0]])return;codes[x[0]]=[{'new file':'A',modified:'M',deleted:'D'}[x[1]],' ']});
+        st.unstaged.forEach(function(x){if(!codes[x[0]])codes[x[0]]=[' ',' '];codes[x[0]][1]=x[1]==='deleted'?'D':'M'});
+        st.conf.forEach(function(f){codes[f]=['U','U']});
+        if(sBr){var bl='## '+(r.det?'HEAD (no branch)':(headId()?'':'No commits yet on ')+r.head);if(tk){bl+='...'+tk.o;var ab=[];if(tk.ah)ab.push('ahead '+tk.ah);if(tk.bh)ab.push('behind '+tk.bh);if(ab.length)bl+=' ['+ab.join(', ')+']'}pr('<span class="g">'+esc(bl)+'</span>')}
+        keys(codes).sort().forEach(function(f){var c=codes[f];pr('<span class="g">'+c[0]+'</span><span class="r">'+c[1]+'</span> '+esc(c[2]?c[2]+' -> '+f:f))});
+        st.untracked.forEach(function(f){pr('<span class="r">??</span> '+esc(f))});return}
       if(tk){if(!tk.ah&&!tk.bh)o.push("Your branch is up to date with '"+tk.o+"'.");
         else if(!tk.ah)o.push("Your branch is behind '"+tk.o+"' by "+cmt(tk.bh)+', and can be fast-forwarded.\n  (use "git pull" to update your local branch)');
         else if(!tk.bh)o.push("Your branch is ahead of '"+tk.o+"' by "+cmt(tk.ah)+'.\n  (use "git push" to publish your local commits)');
@@ -415,21 +483,30 @@
       if(S.mate1&&!S.ran.f1)S.ran.st1=1;if(S.ran.f1&&tk&&tk.bh)S.ran.st2=1;
       if(!headId())o.push('\nNo commits yet');
       if(r.rebase){o.push('interactive rebase in progress; onto '+r.rebase.onto+'\nYou are currently rebasing branch \''+r.head+'\' on \''+r.rebase.onto+'\'.\n  (fix conflicts and then run "git rebase --continue")\n  (use "git rebase --skip" to skip this patch)\n  (use "git rebase --abort" to check out the original branch)')}
-      else if(r.merge||st.conf.length){o.push('You have unmerged paths.\n  (fix conflicts and run "git commit")');
+      else if(r.merge&&r.merge.revert){o.push('You are currently reverting commit '+(r.merge.rid||'')+'.\n'+(st.conf.length?'  (fix conflicts and run "git revert --continue")':'  (all conflicts fixed: run "git revert --continue")')+'\n  (use "git revert --skip" to skip this patch)\n  (use "git revert --abort" to cancel the revert operation)');
+        if(st.conf.length){o.push('\nUnmerged paths:\n  (use "git restore --staged <file>..." to unstage)\n  (use "git add <file>..." to mark resolution)');st.conf.forEach(function(f){o.push('\tboth modified:   '+f)})}}
+      else if(r.merge&&!st.conf.length){o.push('All conflicts fixed but you are still merging.\n  (use "git commit" to conclude merge)')}
+      else if(r.merge||st.conf.length){o.push('You have unmerged paths.\n  (fix conflicts and run "git commit")'+(r.merge?'\n  (use "git merge --abort" to abort the merge)':''));
         if(st.conf.length){o.push('\nUnmerged paths:\n  (use "git add <file>..." to mark resolution)');st.conf.forEach(function(f){o.push('\tboth modified:   '+f)})}}
-      if(st.staged.length){o.push('\nChanges to be committed:\n  (use "git restore --staged <file>..." to unstage)');
+      if(st.staged.length){o.push('\nChanges to be committed:'+(r.merge?'':!headId()?'\n  (use "git rm --cached <file>..." to unstage)':'\n  (use "git restore --staged <file>..." to unstage)'));
         var hT=headTree(),gone=st.staged.filter(function(x){return x[1]==='deleted'}),used={};
         st.staged.forEach(function(x){if(x[1]==='new file'){var src=gone.filter(function(g){return !used[g[0]]&&hT[g[0]]===r.index[x[0]]})[0];if(src){used[src[0]]=1;x.ren=src[0]}}});
         st.staged.forEach(function(x){if(x[1]==='deleted'&&used[x[0]])return;o.push(x.ren?'\trenamed:    '+x.ren+' -> '+x[0]:'\t'+x[1]+':   '+x[0])})}
-      if(st.unstaged.length){o.push('\nChanges not staged for commit:\n  (use "git add <file>..." to update what will be committed)');st.unstaged.forEach(function(x){o.push('\t'+x[1]+':   '+x[0])})}
+      if(st.unstaged.length){o.push('\nChanges not staged for commit:\n  (use "git add'+(st.unstaged.some(function(x){return x[1]==='deleted'})?'/rm':'')+' <file>..." to update what will be committed)\n  (use "git restore <file>..." to discard changes in working directory)');st.unstaged.forEach(function(x){o.push('\t'+x[1]+':   '+x[0])})}
       if(st.untracked.length){o.push('\nUntracked files:\n  (use "git add <file>..." to include in what will be committed)');st.untracked.forEach(function(f){o.push('\t'+f)})}
       if(!st.staged.length&&!st.unstaged.length&&!st.untracked.length&&!st.conf.length)o.push(headId()?'nothing to commit, working tree clean':'nothing to commit (create/copy files and use "git add" to track)');
-      else if(!st.staged.length&&!st.conf.length)o.push(st.untracked.length&&!st.unstaged.length?'\nnothing added to commit but untracked files present (use "git add" to track)':'\nno changes added to commit (use "git add" and/or "git commit -a")');
+      else if(!st.staged.length)o.push(st.untracked.length&&!st.unstaged.length&&!st.conf.length?'\nnothing added to commit but untracked files present (use "git add" to track)':'\nno changes added to commit (use "git add" and/or "git commit -a")');
       var txt=o.join('\n');txt.split('\n').forEach(function(l){var c=''; if(/^\t/.test(l)){c=/new file|modified|deleted/.test(l)&&txt.indexOf('Changes to be committed')>=0&&txt.indexOf(l)<txt.indexOf('Changes not staged')+0.1&&false?'':''}
         pr('<span class="'+(/^\t/.test(l)?(statusColor(l,txt)):'')+'">'+(esc(l)||'&nbsp;')+'</span>')});return}
     if(sub==='add'){
-      var w=work(),args=a.slice(1);if(!args.length){perr('Nothing specified, nothing added.\nMaybe you wanted to say \'git add .\'?');return}
-      var did=false;
+      var w=work(),args=a.slice(1),force=false,upd=false,badOpt=null;
+      args=args.filter(function(x){if(x==='-f'||x==='--force'){force=true;return false}if(x==='-u'||x==='--update'){upd=true;return false}if(x==='-v'||x==='--verbose'||x==='--')return false;
+        if(x[0]==='-'&&x!=='-A'&&x!=='--all'&&!badOpt)badOpt=x;return true});
+      if(badOpt){perr(badOpt==='-p'||badOpt==='--patch'||badOpt==='-i'?"error: interactive git add is not available on the Mini laptop: stage whole files with  git add <file>":"error: unknown "+(badOpt[1]==='-'?"option `"+badOpt.slice(2):"switch `"+badOpt.slice(1))+"'\nusage: git add [<options>] [--] <pathspec>...");return}
+      /* -u: every tracked file that changed or was deleted (new files stay untracked) */
+      if(upd){var up0=args.length?args.map(function(x){return rel(norm(x))}):null;keys(r.index).forEach(function(f){if(up0&&!up0.some(function(q){return q===''||q===f||f.indexOf(q+'/')===0}))return;if(f in w)r.index[f]=w[f];else delete r.index[f];delete r.conf[f]});return}
+      if(!args.length){perr('Nothing specified, nothing added.\nhint: Maybe you wanted to say \'git add .\'?\nhint: Turn this message off by running\nhint: "git config advice.addEmptyPathspec false"');return}
+      var did=false,ign=[];
       args.forEach(function(x){
         if(x==='.'||x==='-A'||x==='--all'){keys(w).forEach(function(f){if(!ignored(f)||f in r.index){r.index[f]=w[f];did=true}});keys(r.index).forEach(function(f){if(!(f in w)){delete r.index[f];did=true}});keys(r.conf).forEach(function(f){delete r.conf[f]})}
         else{var f=rel(norm(x));
@@ -439,14 +516,24 @@
             keys(r.index).forEach(function(k){if(k.indexOf(pre)===0&&!(k in w)){delete r.index[k];hit++}});
             if(hit)did=true;return}
           if(f===null||(!(f in w)&&!(f in r.index))){perr("fatal: pathspec '"+x+"' did not match any files");return}
+          if(f in w&&ignored(f)&&!(f in r.index)&&!force){ign.push(x);return}
           if(f in w){r.index[f]=w[f]}else delete r.index[f];delete r.conf[f];did=true}});
+      if(ign.length)perr('The following paths are ignored by one of your .gitignore files:\n'+ign.join('\n')+'\nhint: Use -f if you really want to add them.\nhint: Turn this message off by running\nhint: "git config advice.addIgnoredFile false"');
       return}
     if(sub==='rm'){
       var tg=a.slice(1).filter(function(x){return x[0]!=='-'});if(!tg.length){perr('usage: git rm [-r] <file>');return}
-      var all=tg.indexOf('.')>=0||tg.indexOf('*')>=0,done=0;
-      keys(r.index).slice().forEach(function(f){var hit=all||tg.some(function(x){var q=rel(norm(x));return q===f||(q!==null&&f.indexOf(q+'/')===0)});
-        if(hit){delete r.index[f];delete S.files[r.root+'/'+f];delete r.conf[f];pl("rm '"+f+"'");done++}});
-      if(!done)perr("fatal: pathspec '"+tg[0]+"' did not match any files");else pl('Now run: git commit -m "Remove files"  then  git push','y');return}
+      var all=tg.indexOf('.')>=0||tg.indexOf('*')>=0,done=0,cached=a.indexOf('--cached')>=0,recur=a.some(function(x){return /^-[a-z]*r[a-z]*$/.test(x)});
+      /* a folder needs -r, like real Git */
+      var dirArg=tg.filter(function(x){var q=rel(norm(x));return q!==null&&q!==''&&!(q in r.index)&&keys(r.index).some(function(f){return f.indexOf(q+'/')===0})})[0];
+      if((dirArg||tg.indexOf('.')>=0)&&!recur){perr("fatal: not removing '"+(dirArg||'.')+"' recursively without -r");return}
+      var hitF=keys(r.index).filter(function(f){return all||tg.some(function(x){var q=rel(norm(x));return q===f||(q!==null&&f.indexOf(q+'/')===0)})}),frc=a.some(function(x){return x==='-f'||x==='--force'||/^-[a-z]*f[a-z]*$/.test(x)}),hT1=headTree(),w6=work();
+      if(!cached&&!frc){var stg2=hitF.filter(function(f){return r.index[f]!==hT1[f]}),loc=hitF.filter(function(f){return f in w6&&w6[f]!==r.index[f]&&r.index[f]===hT1[f]});
+        if(stg2.length){perr('error: the following file'+(stg2.length>1?'s have':' has')+' changes staged in the index:\n'+stg2.map(function(f){return '    '+f}).join('\n')+'\n(use --cached to keep the file, or -f to force removal)');return}
+        if(loc.length){perr('error: the following file'+(loc.length>1?'s have':' has')+' local modifications:\n'+loc.map(function(f){return '    '+f}).join('\n')+'\n(use --cached to keep the file, or -f to force removal)');return}}
+      hitF.forEach(function(f){delete r.index[f];if(!cached)delete S.files[r.root+'/'+f];delete r.conf[f];pl("rm '"+f+"'");done++});
+      if(!done)perr("fatal: pathspec '"+tg[0]+"' did not match any files");
+      else if(cached)pl('Git stopped tracking '+(done===1?'it':'them')+', but the file'+(done===1?' is':'s are')+' still on your laptop (now untracked).\nAdd '+(done===1?'it':'them')+' to .gitignore so git add . does not pick '+(done===1?'it':'them')+' up again, then commit and push.','y');
+      else pl('Now run: git commit -m "Remove files"  then  git push','y');return}
     function hardTo0(files){keys(headTree()).concat(keys(r.index)).forEach(function(f){if(!(f in files))delete S.files[r.root+'/'+f]});keys(files).forEach(function(f){S.files[r.root+'/'+f]=files[f]});r.index=copy(files);r.conf={};r.merge=null}
     if(sub==='revert'){
       if(a[1]==='--continue'){if(!r.merge||!r.merge.revert){perr('error: no cherry-pick or revert in progress');return}git(['commit']);return}
@@ -465,11 +552,11 @@
       keys(all).forEach(function(f){var x=bt[f],o=ot[f],t=tt[f];if(o===t){if(o!==undefined)res[f]=o}else if(o===x){if(t!==undefined)res[f]=t}else if(t===x){if(o!==undefined)res[f]=o}else{conf.push(f);res[f]='<<<<<<< HEAD\n'+(o||'')+'=======\n'+(t||'')+'>>>>>>> parent of '+cc.id+' ('+cc.msg+')\n'}});
       var rmsg='Revert "'+cc.msg+'"';
       if(conf.length){keys(res).forEach(function(f){S.files[r.root+'/'+f]=res[f]});keys(ot).forEach(function(f){if(!(f in res))delete S.files[r.root+'/'+f]});
-        keys(res).forEach(function(f){if(conf.indexOf(f)<0)r.index[f]=res[f]});conf.forEach(function(f){r.conf[f]=1});r.merge={other:null,revert:true,msg:rmsg};
+        keys(res).forEach(function(f){if(conf.indexOf(f)<0)r.index[f]=res[f]});conf.forEach(function(f){r.conf[f]=1});r.merge={other:null,revert:true,msg:rmsg,rid:cc.id};
         perr('error: could not revert '+cc.id+'... '+cc.msg+'\nhint: After resolving the conflicts, mark them with\nhint: "git add/rm <pathspec>", then run\nhint: "git revert --continue".');return}
       var ds=diffStat(ot,res);keys(ot).forEach(function(f){if(!(f in res))delete S.files[r.root+'/'+f]});keys(res).forEach(function(f){S.files[r.root+'/'+f]=res[f]});r.index=copy(res);
-      var rc=newCommit(rmsg,[headId()],res);r.br[r.head]=rc.id;S.reverted=1;
-      pl('['+r.head+' '+rc.id+'] '+rmsg,'g');pl(statLine(ds));return}
+      var rc=newCommit(rmsg,[headId()],res);setH(r,rc.id);S.reverted=1;
+      pl('['+hName(r)+' '+rc.id+'] '+rmsg,'g');pl(statLine(ds));return}
     if(sub==='restore'){
       var stg=a.indexOf('--staged')>=0,fs=a.slice(1).filter(function(x){return x[0]!=='-'});
       fs.forEach(function(x){var f=rel(norm(x));if(f===null)return;
@@ -487,25 +574,60 @@
       if(keys(r.conf).length){perr('error: Committing is not possible because you have unmerged files.\nhint: Fix them up, then use \'git add <file>\' to mark them resolved.');return}
       if(all2){var w5=work();keys(r.index).forEach(function(f){if(!(f in w5))delete r.index[f];else r.index[f]=w5[f]});keys(headTree()).forEach(function(f){if(f in w5&&!(f in r.index)&&!r.conf[f])r.index[f]=w5[f]})}
       var st2=status(),merging=!!r.merge;
+      if(a.indexOf('--amend')>=0){if(!headId()){perr('fatal: You have nothing to amend.');return}if(merging){perr('fatal: You are in the middle of a merge -- cannot amend.');return}
+        var oc=C(headId()),am=msg||oc.msg,pt=oc.p.length?C(oc.p[0]).files:{},nc=newCommit(am,oc.p.slice(),copy(r.index));setH(r,nc.id);var ds0=diffStat(pt,nc.files);
+        pl('['+hName(r)+(oc.p.length?' ':' (root-commit) ')+nc.id+'] '+am,'g');pl(' Date: '+gdate(oc));pl(statLine(ds0));ds0.created.forEach(function(f){pl(' create mode 100644 '+f)});(ds0.deleted||[]).forEach(function(f){pl(' delete mode 100644 '+f)});return}
       if(!msg&&!merging){perr('Aborting commit due to empty commit message.\nTip: use  git commit -m "your message"');return}
       if(!st2.staged.length&&!merging){pl('On branch '+r.head+'\n'+(st2.untracked.length?'nothing added to commit but untracked files present (use "git add" to track)':'nothing to commit, working tree clean'));return}
       var first=!headId(),ot=headTree(),parents=first?[]:[headId()];
       if(merging&&r.merge.other)parents.push(r.merge.other);
-      var m=msg||r.merge.msg,c=newCommit(m,parents,copy(r.index));r.br[r.head]=c.id;r.merge=null;
+      var m=msg||r.merge.msg,c=newCommit(m,parents,copy(r.index));setH(r,c.id);r.merge=null;
       var ds=diffStat(ot,c.files);if(merging)S.merged=true;
-      pl('['+r.head+(first?' (root-commit) ':' ')+c.id+'] '+m,'g');pl(statLine(ds));ds.created.forEach(function(f){pl(' create mode 100644 '+f)});(ds.deleted||[]).forEach(function(f){pl(' delete mode 100644 '+f)});return}
+      pl('['+hName(r)+(first?' (root-commit) ':' ')+c.id+'] '+m,'g');if(merging)return;
+      var rn=[],usedD={};ds.created.forEach(function(f){var g=(ds.deleted||[]).filter(function(d){return !usedD[d]&&ot[d]===c.files[f]})[0];if(g){usedD[g]=1;rn.push([g,f])}});
+      if(rn.length){var ot2=copy(ot);rn.forEach(function(x){ot2[x[1]]=ot2[x[0]];delete ot2[x[0]]});ds=diffStat(ot2,c.files);ds.files+=rn.length}
+      pl(ds.ins||ds.del?statLine(ds):' '+ds.files+' file'+(ds.files===1?'':'s')+' changed, 0 insertions(+), 0 deletions(-)');
+      ds.created.forEach(function(f){pl(' create mode 100644 '+f)});(ds.deleted||[]).forEach(function(f){pl(' delete mode 100644 '+f)});rn.forEach(function(x){pl(' rename '+x[0]+' => '+x[1]+' (100%)')});return}
     if(sub==='log'){
       S.ran.log=1;if(!headId()){perr("fatal: your current branch '"+r.head+"' does not have any commits yet");return}
-      var one=a.indexOf('--oneline')>=0,list=reach(headId());
-      list.forEach(function(c,i){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'';
-        if(one){pr('<span class="y">'+c.id+'</span><span class="c">'+esc(rs)+'</span> '+esc(c.msg))}
-        else{pr('<span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
-          pl('Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   Sun Nov 1 22:'+(10+c.n%50)+':00 2026\n\n    '+c.msg+(i<list.length-1?'\n':''))}});return}
+      var one=a.indexOf('--oneline')>=0,patch=a.indexOf('-p')>=0||a.indexOf('--patch')>=0||a.indexOf('-u')>=0,stat=a.indexOf('--stat')>=0,graph=a.indexOf('--graph')>=0,lim=Infinity,tips=[],la=a.slice(1),lpaths=[];
+      for(var li=0;li<la.length;li++){var o1=la[li],mm;
+        if((mm=o1.match(/^-(\d+)$/))||(mm=o1.match(/^-n(\d+)$/))||(mm=o1.match(/^--max-count=(\d+)$/)))lim=+mm[1];
+        else if(o1==='-n'||o1==='--max-count'){if(!/^\d+$/.test(la[li+1]||'')){perr("fatal: '"+(la[li+1]||'')+"': not an integer");return}lim=+la[++li]}
+        else if(o1==='--all'){keys(r.br).forEach(function(b){if(r.br[b])tips.push(r.br[b])});keys(r.rbr||{}).forEach(function(b){tips.push(r.rbr[b])});if(headId())tips.push(headId())}
+        else if(o1==='--'){lpaths=lpaths.concat(la.slice(li+1));break}
+        else if(o1[0]!=='-'&&!rev(o1)&&(function(){var f=rel(norm(o1));return f!==null&&(f in work()||f in r.index||keys(r.cm).some(function(k){return f in r.cm[k].files}))})()){lpaths.push(o1)}
+        else if(o1[0]!=='-'){var tid=rev(o1);if(!tid){perr("fatal: ambiguous argument '"+o1+"': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'");return}tips.push(tid)}}
+      if(!tips.length)tips.push(headId());
+      var seenL={},list=[];tips.forEach(function(t){reach(t).forEach(function(c){if(!seenL[c.id]){seenL[c.id]=1;list.push(c)}})});
+      list.sort(function(x,y){return y.n-x.n});
+      if(lpaths.length){var lp=lpaths.map(function(x){return rel(norm(x))});list=list.filter(function(c){var pf=c.p.length?C(c.p[0]).files:{};return lp.some(function(q){return keys(c.files).concat(keys(pf)).some(function(f){return (f===q||f.indexOf(q+'/')===0)&&c.files[f]!==pf[f]})})})}
+      if(graph){var inSet={},indeg={};list.forEach(function(c){inSet[c.id]=c;indeg[c.id]=0});list.forEach(function(c){c.p.forEach(function(q){if(inSet[q])indeg[q]++})});
+        var stk=list.filter(function(c){return !indeg[c.id]}).sort(function(x,y){return x.n-y.n}),topo=[];
+        while(stk.length){var tc=stk.pop();topo.push(tc);tc.p.forEach(function(q){if(inSet[q]&&--indeg[q]===0)stk.push(inSet[q])})}list=topo}
+      if(lim<list.length)list=list.slice(0,lim);
+      /* --graph: the lines on the left, like real Git (one column per line of history) */
+      var cols=[],inL={};list.forEach(function(c){inL[c.id]=1});
+      function gl(t){pr('<span class="c">'+t+'</span>')}
+      list.forEach(function(c,i){var refs=refsOf(c.id),rs=refs.length?' ('+refs.join(', ')+')':'',gp='',ci=0;
+        if(graph){ci=cols.indexOf(c.id);if(ci<0){cols.push(c.id);ci=cols.length-1}gp=cols.map(function(x,k){return k===ci?'*':'|'}).join(' ')+(c.p.length>1?'   ':' ')}
+        var cont=graph?cols.map(function(x,k){return '|'}).join(' ')+' ':'';
+        if(one){pr('<span class="c">'+gp+'</span><span class="y">'+c.id+'</span><span class="c">'+esc(rs)+'</span> '+esc(c.msg))}
+        else{pr('<span class="c">'+gp+'</span><span class="y">commit '+fullid(c.id)+'</span><span class="c">'+esc(rs)+'</span>');
+          if(c.p.length>1)pl(cont+'Merge: '+c.p.join(' '));
+          pl((cont+'Author: '+c.who+' <'+(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com'))+'>\nDate:   '+gdate(c)+'\n\n    '+c.msg).split('\n').join('\n'+cont))}
+        if((patch||stat)&&c.p.length<2){if(!one)pl(cont);if(stat)statTrees(c.p.length?C(c.p[0]).files:{},c.files);else diffTrees(c.p.length?C(c.p[0]).files:{},c.files)}
+        if(graph){var ps=c.p.filter(function(x){return inL[x]});
+          if(!ps.length)cols.splice(ci,1);else{cols[ci]=ps[0];
+            if(ps.length>1&&cols.indexOf(ps[1])<0){cols.splice(ci+1,0,ps[1]);gl(cols.map(function(x,k){return k<ci?'|':k===ci?'|\\':k===ci+1?null:'\\'}).filter(function(x){return x!==null}).join(' '))}}
+          /* two lines that reach the same commit join up: |/ */
+          for(var k=cols.length-1;k>0;k--){var j=cols.indexOf(cols[k]);if(j<k){gl(cols.slice(0,k).map(function(){return '|'}).join(' ')+'/'+cols.slice(k+1).map(function(){return ' /'}).join(''));cols.splice(k,1)}}}
+        if(!one&&i<list.length-1)pl(graph?cols.map(function(){return '|'}).join(' '):'')});return}
     if(sub==='branch'){
       var da=a.indexOf('-d')>=0||a.indexOf('-D')>=0,names=a.slice(1).filter(function(x){return x[0]!=='-'});
-      if(da){var n=names[0];if(!(n in r.br)){perr("error: branch '"+n+"' not found.");return}
-        if(n===r.head){perr("error: Cannot delete branch '"+n+"' checked out");return}
-        var tip=r.br[n];if(tip&&a.indexOf('-D')<0&&!anc(headId())[tip]){perr("error: the branch '"+n+"' is not fully merged.\nIf you are sure, use 'git branch -D "+n+"'.");return}
+      if(da){var n=names[0];if(!n){perr('fatal: branch name required');return}if(!(n in r.br)){perr("error: branch '"+n+"' not found");return}
+        if(n===r.head&&!r.det){perr("error: cannot delete branch '"+n+"' used by worktree at '"+r.root+"'");return}
+        var tip=r.br[n];if(tip&&a.indexOf('-D')<0&&!anc(headId())[tip]){perr("error: the branch '"+n+"' is not fully merged.\nIf you are sure you want to delete it, run 'git branch -D "+n+"'");return}
         delete r.br[n];pl("Deleted branch "+n+" (was "+tip+").");return}
       var su=a.filter(function(x){return /^--set-upstream-to=|^-u$/.test(x)})[0];
       if(su){var tgt=su==='-u'?a[a.indexOf('-u')+1]:su.split('=')[1],lb=a.slice(1).filter(function(x){return x[0]!=='-'&&x!==tgt})[0]||r.head,rb=(tgt||'').replace(/^origin\//,'');
@@ -516,23 +638,67 @@
         if(!to){perr('fatal: branch name required');return}if(!(from in r.br)){perr("error: refname refs/heads/"+from+" not found\nfatal: Branch rename failed");return}
         if(from===to)return;if((to in r.br)&&a.indexOf('-M')<0){perr("fatal: a branch named '"+to+"' already exists");return}
         r.br[to]=r.br[from];delete r.br[from];if(r.head===from)r.head=to;if(r.up&&r.up[from]){delete r.up[from];r.up[to]=1}return}
+      if(a.indexOf('--show-current')>=0){if(!r.det)pl(r.head);return}
       if(names.length){var nb=names[0];if(nb in r.br){perr("fatal: a branch named '"+nb+"' already exists");return}
-        if(!headId()){perr("fatal: not a valid object name: '"+r.head+"'.");return}r.br[nb]=headId();return}
-      keys(r.br).sort().forEach(function(b){pr(b===r.head?'<span class="g">* '+esc(b)+'</span>':'  '+esc(b))});
+        if(!headId()){perr("fatal: not a valid object name: '"+r.head+"'.");return}
+        var sp=names[1]?rev(names[1]):headId();if(!sp){perr("fatal: not a valid object name: '"+names[1]+"'.");return}r.br[nb]=sp;return}
+      var vv=a.indexOf('-vv')>=0,v1=vv||a.indexOf('-v')>=0||a.indexOf('--verbose')>=0,bw=Math.max.apply(null,keys(r.br).map(function(b){return b.length}).concat([0]));
+      if(r.det){var dl='(HEAD detached '+(r.det===r.detFrom?'at ':'from ')+r.detName+')',dc=C(r.det);bw=Math.max(bw,dl.length);pr('<span class="g">'+esc('* '+dl+(v1?new Array(bw-dl.length+2).join(' ')+dc.id+' '+dc.msg:''))+'</span>')}
+      keys(r.br).sort().forEach(function(b){var t=(b===r.head&&!r.det?'* ':'  ')+b;
+        if(v1&&r.br[b]){var bc=C(r.br[b]),ex='';if(vv&&r.up&&r.up[b]&&r.rbr&&r.rbr[b]){var A1=anc(r.br[b]),B1=anc(r.rbr[b]),ah=keys(A1).filter(function(k){return !B1[k]}).length,bh=keys(B1).filter(function(k){return !A1[k]}).length;ex='[origin/'+b+(ah||bh?': '+[ah?'ahead '+ah:'',bh?'behind '+bh:''].filter(Boolean).join(', '):'')+'] '}
+          t+=new Array(bw-b.length+2).join(' ')+bc.id+' '+ex+bc.msg}
+        pr(b===r.head&&!r.det?'<span class="g">'+esc(t)+'</span>':esc(t))});
       if(a.indexOf('-a')>=0||a.indexOf('-r')>=0)keys(r.rbr||{}).sort().forEach(function(b){if(r.rbr[b])pr('<span class="r">  remotes/origin/'+esc(b)+'</span>')});return}
     if(sub==='switch'||sub==='checkout'){
-      var mk=a.indexOf('-c')>=0||a.indexOf('-b')>=0,tn=a.slice(1).filter(function(x){return x[0]!=='-'})[0];
-      if(!tn){perr('fatal: missing branch name');return}
-      if(mk){if(tn in r.br){perr("fatal: a branch named '"+tn+"' already exists");return}
-        r.br[tn]=headId();r.head=tn;pl("Switched to a new branch '"+tn+"'");return}
-      if(!(tn in r.br)&&r.rbr&&r.rbr[tn]){var st4=status();if(st4.staged.length||st4.unstaged.length||st4.conf.length){perr('error: Your local changes would be overwritten by checkout.\nPlease commit your changes first.');return}
-        r.br[tn]=r.rbr[tn];applyTree(C(r.rbr[tn]).files);r.head=tn;r.up=r.up||{};r.up[tn]=1;pl("branch '"+tn+"' set up to track 'origin/"+tn+"'.\nSwitched to a new branch '"+tn+"'");return}
-      if(!(tn in r.br)){perr("fatal: invalid reference: "+tn);return}
-      if(tn===r.head){pl("Already on '"+tn+"'");return}
-      var st3=status();if(st3.staged.length||st3.unstaged.length||st3.conf.length){perr('error: Your local changes would be overwritten by checkout.\nPlease commit your changes first.');return}
-      var tt=r.br[tn]?C(r.br[tn]).files:{};applyTree(tt);r.head=tn;pl("Switched to branch '"+tn+"'");return}
+      var co=sub==='checkout',dd2=a.indexOf('--'),mk=a.indexOf('-c')>=0||a.indexOf('-b')>=0||a.indexOf('-C')>=0||a.indexOf('-B')>=0,pos=a.slice(1,dd2<0?a.length:dd2).filter(function(x){return x[0]!=='-'||x==='-'}),tn=pos[0];
+      /* checkout -- <file> / checkout <file> / checkout <commit> -- <file>: put the file back, from the staging area or that commit */
+      if(co&&!mk&&(dd2>=0||(tn&&tn!=='-'&&!(tn in r.br)&&!(r.rbr&&r.rbr[tn])&&!rev(tn)))){
+        var src=null,fl=dd2>=0?a.slice(dd2+1):pos;if(dd2>=0&&pos.length){src=rev(pos[0]);if(!src){perr("fatal: invalid reference: "+pos[0]);return}}
+        if(!fl.length){perr('fatal: you must specify path(s) to restore');return}
+        var tree=src?C(src).files:null,bad2=null,n2=0;
+        fl.forEach(function(x){var f=rel(norm(x));if(bad2)return;var ks=keys(tree||r.index).filter(function(k){return f!==null&&(f===''||k===f||k.indexOf(f+'/')===0)});
+          if(!ks.length){bad2=x;return}ks.forEach(function(k){var v=(tree||r.index)[k];S.files[r.root+'/'+k]=v;if(tree)r.index[k]=v;delete r.conf[k];n2++})});
+        if(bad2){perr("error: pathspec '"+bad2+"' did not match any file(s) known to git");return}
+        return}
+      if(tn==='-'){if(!r.prev||!(r.prev in r.br)){perr('fatal: invalid reference: @{-1}');return}tn=r.prev}
+      var detach=a.indexOf('--detach')>=0||a.indexOf('-d')>=0&&!co;
+      if(!tn&&a.indexOf('--detach')<0){perr(mk?"error: switch `"+(co?'b':'c')+"' requires a value":'fatal: missing branch name; try -c');return}
+      if(keys(r.conf).length){perr('error: you need to resolve your current index first\n'+keys(r.conf).map(function(f){return f+': needs merge'}).join('\n'));return}
+      /* move to another commit, keeping uncommitted changes that do not clash (real Git refuses only when they would be overwritten) */
+      function moveTo(tid,label){var h=headTree(),w=work(),tt=tid?C(tid).files:{},st6=status(),dirty={},bad=[],unt=[];
+        st6.staged.forEach(function(x){dirty[x[0]]=x[1]==='new file'?'A':x[1]==='deleted'?'D':'M'});st6.unstaged.forEach(function(x){if(!dirty[x[0]])dirty[x[0]]=x[1]==='deleted'?'D':'M'});
+        keys(dirty).forEach(function(f){if(h[f]!==tt[f]&&!(dirty[f]==='A'&&r.index[f]===tt[f]))bad.push(f)});
+        st6.untracked.forEach(function(f){if(f in tt&&w[f]!==tt[f])unt.push(f)});
+        if(bad.length){perr('error: Your local changes to the following files would be overwritten by checkout:\n'+bad.sort().map(function(f){return '\t'+f}).join('\n')+'\nPlease commit your changes or stash them before you switch branches.\nAborting');return null}
+        if(unt.length){perr('error: The following untracked working tree files would be overwritten by checkout:\n'+unt.sort().map(function(f){return '\t'+f}).join('\n')+'\nPlease move or remove them before you switch branches.\nAborting');return null}
+        var all3={};keys(h).concat(keys(tt)).forEach(function(f){all3[f]=1});
+        keys(all3).forEach(function(f){if(dirty[f])return;if(f in tt){S.files[r.root+'/'+f]=tt[f];r.index[f]=tt[f];var d=dirname(r.root+'/'+f);while(d!==r.root&&!S.dirs[d]){S.dirs[d]=1;d=dirname(d)}}else{delete S.files[r.root+'/'+f];delete r.index[f]}});
+        return keys(dirty).sort().map(function(f){return dirty[f]+'\t'+f})}
+      function carried(l){if(l&&l.length)pl(l.join('\n'))}
+      function leaving(from,to){if(from===to)return '';var keep={};keys(r.br).forEach(function(b){if(r.br[b])keys(anc(r.br[b])).forEach(function(k){keep[k]=1})});keys(r.rbr||{}).forEach(function(b){if(r.rbr[b])keys(anc(r.rbr[b])).forEach(function(k){keep[k]=1})});keys(r.tags||{}).forEach(function(t){keys(anc(r.tags[t].id)).forEach(function(k){keep[k]=1})});
+        var lost=reach(from).filter(function(c){return !keep[c.id]});
+        if(!lost.length)return 'Previous HEAD position was '+from+' '+C(from).msg;
+        return 'Warning: you are leaving '+lost.length+' commit'+(lost.length>1?'s':'')+' behind, not connected to\nany of your branches:\n\n'+lost.slice(0,4).map(function(c){return '  '+c.id+' '+c.msg}).join('\n')+(lost.length>4?'\n ... and '+(lost.length-4)+' more.':'')+'\n\nIf you want to keep '+(lost.length>1?'them':'it')+' by creating a new branch, this may be a good time\nto do so with:\n\n git branch <new-branch-name> '+from+'\n'}
+      if(mk){if((tn in r.br)&&a.indexOf('-C')<0&&a.indexOf('-B')<0){perr("fatal: a branch named '"+tn+"' already exists");return}
+        var spt=pos[1]?rev(pos[1]):headId(),cl=null;if(pos[1]&&!spt){perr(co?"fatal: '"+pos[1]+"' is not a commit and a branch '"+tn+"' cannot be created from it":"fatal: invalid reference: "+pos[1]);return}
+        if(pos[1]){cl=moveTo(spt);if(!cl)return}
+        if(!r.det)r.prev=r.head;r.br[tn]=spt;r.head=tn;r.det=null;pl("Switched to a new branch '"+tn+"'");carried(cl);return}
+      if(!(tn in r.br)&&r.rbr&&r.rbr[tn]){var cl2=moveTo(r.rbr[tn]);if(!cl2)return;
+        var lv2=r.det?leaving(r.det,r.rbr[tn]):'';r.br[tn]=r.rbr[tn];if(!r.det)r.prev=r.head;r.head=tn;r.det=null;if(lv2)pl(lv2);r.up=r.up||{};r.up[tn]=1;pl("branch '"+tn+"' set up to track 'origin/"+tn+"'.\nSwitched to a new branch '"+tn+"'");carried(cl2);return}
+      /* detached HEAD: look at (and even commit on) an old commit without being on a branch, like real Git */
+      if((detach||co)&&!mk&&(detach||!(tn in r.br))&&(tn?rev(tn):headId())){var did0=tn?rev(tn):headId(),was=r.det,cl4=moveTo(did0);if(!cl4)return;
+        var nm0=!tn||tn==='HEAD'?did0:(r.tags&&r.tags[tn]?tn:/^origin\//.test(tn)&&r.rbr&&r.rbr[tn.slice(7)]?tn:(tn in r.br?tn:did0));
+        if(!was)r.prev=r.head;var oldTxt=was?leaving(was,did0):'';
+        r.det=did0;r.detFrom=did0;r.detName=nm0===did0?did0:nm0;carried(cl4);
+        if(oldTxt)pl(oldTxt);
+        else if(!was&&co&&!detach)pl("Note: switching to '"+(tn||did0)+"'.\n\nYou are in 'detached HEAD' state. You can look around, make experimental\nchanges and commit them, and you can discard any commits you make in this\nstate without impacting any branches by switching back to a branch.\n\nIf you want to create a new branch to retain commits you create, you may\ndo so (now or later) by using -c with the switch command. Example:\n\n  git switch -c <new-branch-name>\n\nOr undo this operation with:\n\n  git switch -\n\nTurn off this advice by setting config variable advice.detachedHead to false\n");
+        pl('HEAD is now at '+did0+' '+C(did0).msg);S.ran.detach=1;return}
+      if(!(tn in r.br)){if(co)perr(rev(tn)?"error: the Mini laptop cannot look at an old commit on its own (detached HEAD).\nhint: Use  git show "+tn+"  to see it, or  git switch -c look "+tn+"  to make a branch there.":"error: pathspec '"+tn+"' did not match any file(s) known to git");
+        else perr(rev(tn)?"fatal: a branch is expected, got commit '"+tn+"'\nhint: If you want to detach HEAD at the commit, try again with the --detach option.":"fatal: invalid reference: "+tn);return}
+      if(tn===r.head&&!r.det){pl("Already on '"+tn+"'");return}
+      var lv3=r.det?leaving(r.det,r.br[tn]):'';var cl3=moveTo(r.br[tn]);if(!cl3)return;if(!r.det)r.prev=r.head;r.head=tn;r.det=null;if(lv3)pl(lv3);pl("Switched to branch '"+tn+"'");carried(cl3);return}
     if(sub==='merge'){
-      if(a[1]==='--abort'){if(!r.merge){perr('fatal: There is no merge to abort (MERGE_HEAD missing).');return}applyTree(headTree());r.conf={};r.merge=null;pl('Merge aborted.');return}
+      if(a[1]==='--abort'){if(!r.merge){perr('fatal: There is no merge to abort (MERGE_HEAD missing).');return}applyTree(headTree());r.conf={};r.merge=null;return}
       if(mergeBlocked('Merging'))return;
       /* -m "message" names the merge commit, like real Git */
       var mmi=a.indexOf('-m'),mmsg=mmi>=0?a[mmi+1]:null,on=a.slice(1).filter(function(x,i){return x[0]!=='-'&&!(mmi>=0&&i+1===mmi+1)})[0];
@@ -557,8 +723,11 @@
       if(a[1]==='get-url'){if(a[2]!=='origin'||!r.remote){perr("error: No such remote '"+(a[2]||'')+"'");return}pl(r.remote.url);return}
       perr("error: unknown subcommand: `"+a[1]+"`\nusage: git remote [-v | --verbose]\n   or: git remote add <name> <url>\n   or: git remote set-url <name> <newurl>");return}
     if(sub==='push'){
-      if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nTip: connect first with  git remote add origin <url>");return}
+      if(!r.remote){if(a.slice(1).filter(function(x){return x[0]!=='-'}).length)perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.");
+        else perr("fatal: No configured push destination.\nEither specify the URL from the command-line or configure a remote repository using\n\n    git remote add <name> <url>\n\nand then push using the remote name\n\n    git push <name>\n");
+        pl('Tip: connect first with  git remote add origin <url>','y');return}
       var pw0=a.slice(1).filter(function(x){return x[0]!=='-'});
+      if(r.det&&a.indexOf('--tags')<0&&(pw0.length<2||pw0[1]==='HEAD')){perr("fatal: You are not currently on a branch.\nTo push the history leading to the current (detached HEAD)\nstate now, use\n\n    git push origin HEAD:<name-of-remote-branch>\n");pl('Or make a branch here first:  git switch -c <new-branch-name>','y');return}
       if(pw0.length<2&&a.indexOf('--tags')<0&&!(r.up&&r.up[r.head])&&r.br[r.head]!==undefined){
         perr("fatal: The current branch "+r.head+" has no upstream branch.\nTo push the current branch and set the remote as upstream, use\n\n    git push --set-upstream origin "+r.head+"\n\nTo have this happen automatically for branches without a tracking\nupstream, see 'push.autoSetupRemote' in 'git help config'.\n");
         pl('The first push of a branch needs -u:  git push -u origin '+r.head+'   (after that, plain  git push  works)','y');return}
@@ -566,6 +735,14 @@
       var pw=a.slice(1).filter(function(x){return x[0]!=='-'}),allTags=a.indexOf('--tags')>=0;
       if(pw[0]&&pw[0]!=='origin'){perr("fatal: '"+pw[0]+"' does not appear to be a git repository\nfatal: Could not read from remote repository.");return}
       var ref=pw[1],br=r.head;r.tags=r.tags||{};
+      if(a.indexOf('--delete')>=0||a.indexOf('-d')>=0){var db=ref;
+        if(!db){perr("fatal: --delete doesn't make sense without any refs");return}
+        if(db===(RL.on?ghDef(r):'main')){pl('To '+r.remote.url);perr(" ! [remote rejected] "+db+" (refusing to delete the current branch: refs/heads/"+db+")\nerror: failed to push some refs to '"+r.remote.url+"'");return}
+        if(RL.on){realDelBranch(db);return}
+        if(!r.remote.br[db]){perr("error: unable to delete '"+db+"': remote ref does not exist\nerror: failed to push some refs to '"+r.remote.url+"'");return}
+        delete r.remote.br[db];if(r.rbr)delete r.rbr[db];if(r.up)delete r.up[db];
+        keys(S.repos).forEach(function(rt){var q=S.repos[rt];if(q!==r&&q.remote&&ghKey(q.remote.url)===ghKey(r.remote.url))delete q.remote.br[db]});
+        pl('To '+r.remote.url);pl(' - [deleted]         '+db,'g');return}
       /* tags: git push origin v1.0, or git push --tags */
       if(allTags||(ref&&r.tags[ref]&&!(ref in r.br))){var tl=allTags?keys(r.tags).sort():[ref];r.remote.tags=r.remote.tags||{};tl=tl.filter(function(t){return r.remote.tags[t]!==r.tags[t].id});
         if(!tl.length){pl('Everything up-to-date');return}
@@ -584,8 +761,10 @@
       if(setU){pl("branch '"+br+"' set up to track 'origin/"+br+"'.");r.up=r.up||{};r.up[br]=1}
       r.remote.br[br]=lt;r.rbr[br]=lt;S.pushed=true;ghShare(r);return}
     if(sub==='fetch'||sub==='pull'){
-      if(!r.remote){perr("fatal: 'origin' does not appear to be a git repository");return}
+      if(!r.remote){if(sub==='pull'&&!a.slice(1).filter(function(x){return x[0]!=='-'}).length&&!r.det)perr("There is no tracking information for the current branch.\nPlease specify which branch you want to merge with.\nSee git-pull(1) for details.\n\n    git pull <remote> <branch>\n\nIf you wish to set tracking information for this branch you can do so with:\n\n    git branch --set-upstream-to=<remote>/<branch> "+r.head+"\n");
+        else perr("fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.");return}
       var pa=a.slice(1).filter(function(x){return x[0]!=='-'});
+      if(sub==='pull'&&r.det){perr("You are not currently on a branch.\nPlease specify which branch you want to merge with.\nSee git-pull(1) for details.\n\n    git pull <remote> <branch>\n");return}
       if(sub==='pull'&&pa.length<2&&!(r.up&&r.up[r.head])&&r.br[r.head]){
         perr("There is no tracking information for the current branch.\nPlease specify which branch you want to merge with.\nSee git-pull(1) for details.\n\n    git pull <remote> <branch>\n\nIf you wish to set tracking information for this branch you can do so with:\n\n    git branch --set-upstream-to=origin/"+r.head+" "+r.head+"\n");return}
       if(RL.on&&!realOk(r)){realRoute(r,'fetch',function(){git(a)});return}
@@ -595,7 +774,11 @@
       if(S.mate1)S.ran.f1=1;
       if(RL.on){realFetch(r.head,function(res){syncPull(sub,allowU,res,reb)});return}
       syncPull(sub,allowU,null,reb);return}
-    perr("git: '"+sub+"' is not a git command here. Try: git help");
+    /* a typo: real Git's message, with the closest command it knows */
+    var GC=['add','branch','checkout','clone','commit','config','diff','fetch','help','init','log','ls-files','merge','mv','pull','push','rebase','remote','reset','restore','revert','rm','show','stash','status','switch','tag'];
+    function lev(x,y){var d=[],i,j;for(i=0;i<=x.length;i++){d[i]=[i]}for(j=1;j<=y.length;j++)d[0][j]=j;for(i=1;i<=x.length;i++)for(j=1;j<=y.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(x[i-1]===y[j-1]?0:1));return d[x.length][y.length]}
+    var best=GC.map(function(c){return [c,lev(sub,c)]}).filter(function(c){return c[1]<=2}).sort(function(a,b){return a[1]-b[1]}),near=best.filter(function(c){return c[1]===(best[0]||[])[1]}).map(function(c){return c[0]});
+    perr("git: '"+sub+"' is not a git command. See 'git --help'."+(near.length?"\n\nThe most similar command"+(near.length>1?"s are":" is")+"\n\t"+near.join('\n\t'):''));
   }
   function statusColor(l,txt){var idx=txt.indexOf(l);var sIdx=txt.indexOf('Changes to be committed'),uIdx=txt.indexOf('Changes not staged'),tIdx=txt.indexOf('Untracked files'),mIdx=txt.indexOf('Unmerged paths');
     var pos=idx;
@@ -608,16 +791,21 @@
       case 'whoami':pl('you');return;
       case 'ls':{var fl=t.filter(function(x,i){return i>0&&x[0]==='-'}).join(''),all=/a/.test(fl),lng=/l/.test(fl);if(all)S.ran.lsa=1;var dir=norm(t.filter(function(x,i){return i>0&&x[0]!=='-'})[0]||'.');
         if(!S.dirs[dir]){perr("ls: cannot access '"+(t[1]||'')+"': No such file or directory");return}
-        var items=[];if(all){items.push('<span class="b">./</span>','<span class="b">../</span>');if(S.repos[dir])items.push('<span class="b">.git/</span>')} /* ls -a always shows . and .. too, like Git Bash */
-        keys(S.dirs).forEach(function(d){if(d!==dir&&dirname(d)===dir)items.push('<span class="b">'+esc(base(d))+'/</span>')});
-        keys(S.files).forEach(function(f){if(dirname(f)===dir&&(all||base(f)[0]!=='.'))items.push(esc(base(f)))});
+        var items=[];if(all){items.push('<span class="b">./</span>','<span class="b">../</span>')} /* ls -a always shows . and .. too, like Git Bash */
+        var lsk=winSortKey,ent=[];
+        keys(S.dirs).forEach(function(d){if(d!==dir&&dirname(d)===dir&&(all||base(d)[0]!=='.'))ent.push([lsk(base(d)),'<span class="b">'+esc(base(d))+'/</span>'])});
+        keys(S.files).forEach(function(f){if(dirname(f)===dir&&(all||base(f)[0]!=='.'))ent.push([lsk(base(f)),esc(base(f))])});
+        ent.sort(function(x,y){return x[0]<y[0]?-1:x[0]>y[0]?1:0}).forEach(function(e){items.push(e[1])});
         if(lng){/* ls -l: one line each, with permissions, owner, size in bytes, date and name, like Git Bash */
           var dt=new Date(),MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],when=MO[dt.getMonth()]+' '+('  '+dt.getDate()).slice(-2)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
           var sz=function(f){var v=S.files[f];return isBin(v)?binSize(v):unescape(encodeURIComponent(v||'')).length};
-          var row=function(dirp,n,size){return (dirp?'drwxr-xr-x':'-rw-r--r--')+' 1 you 197121 '+('      '+size).slice(-6)+' '+when+' '+(dirp?'<span class="b">'+esc(n)+'/</span>':esc(n))};
-          var rows=[],tot=0;if(all){rows.push(row(1,'.',0));rows.push(row(1,'..',0));if(S.repos[dir])rows.push(row(1,'.git',0))}
-          keys(S.dirs).filter(function(d){return d!==dir&&dirname(d)===dir&&(all||base(d)[0]!=='.')}).sort().forEach(function(d){rows.push(row(1,base(d),0))});
-          keys(S.files).filter(function(f){return dirname(f)===dir&&(all||base(f)[0]!=='.')}).sort().forEach(function(f){var z=sz(f);tot+=Math.ceil(z/1024);rows.push(row(0,base(f),z))});
+          var zw=Math.max(1,String(Math.max.apply(null,[0].concat(keys(S.files).filter(function(f){return dirname(f)===dir}).map(sz)))).length);
+          var row=function(dirp,n,size){return (dirp?'drwxr-xr-x':'-rw-r--r--')+' 1 you 197121 '+(new Array(zw+1).join(' ')+size).slice(-zw)+' '+when+' '+(dirp?'<span class="b">'+esc(n)+'/</span>':esc(n))};
+          var rows=[],tot=0;if(all){rows.push(row(1,'.',0));rows.push(row(1,'..',0))}
+          var lk=winSortKey,lent=[];
+          keys(S.dirs).filter(function(d){return d!==dir&&dirname(d)===dir&&(all||base(d)[0]!=='.')}).forEach(function(d){lent.push([lk(base(d)),row(1,base(d),0)])});
+          keys(S.files).filter(function(f){return dirname(f)===dir&&(all||base(f)[0]!=='.')}).forEach(function(f){var z=sz(f);tot+=Math.ceil(z/1024);lent.push([lk(base(f)),row(0,base(f),z)])});
+          lent.sort(function(x,y){return x[0]<y[0]?-1:x[0]>y[0]?1:0}).forEach(function(e){rows.push(e[1])});
           pr('total '+tot);rows.forEach(function(x){pr(x)});return}
         pr(items.length?items.join('&nbsp;&nbsp;'):'&nbsp;');return}
       case 'cd':{var d=norm(t[1]||'~');if(!S.dirs[d]){perr('bash: cd: '+(t[1]||'')+': No such file or directory');return}S.cwd=d;return}
@@ -639,6 +827,7 @@
         if(dst in S.files)delete S.files[dst];var mr=fsRename(src,dst);if(mr.err)perr('mv: '+mr.err.replace(/<[^>]+>/g,''));return}
       case 'touch':{if(!t[1]){perr('touch: missing file operand');return}var f=norm(t[1]);if(!S.dirs[dirname(f)]){perr('touch: No such directory');return}if(!(f in S.files))S.files[f]='';return}
       case 'cat':{if(!t[1]){perr('cat: missing file');return}var f2=norm(t[1]);S.ran.cat=1;if(!(f2 in S.files)){perr('cat: '+t[1]+': No such file or directory');return}
+        if(isBin(S.files[f2])&&/\/\.git\/(objects\/[0-9a-f]{2}\/[0-9a-f]{38}|index)$/.test(f2)){var om=f2.match(/objects\/([0-9a-f]{2})\/([0-9a-f]{38})$/);pl(t[1]+': a binary file: Git compressed it with zlib, so cat prints gibberish.\nRead it with:  '+(om?'git cat-file -p '+om[1]+om[2]:'git ls-files --stage'),'y');return}
         if(isBin(S.files[f2])){pl(t[1]+': '+(isPic(S.files[f2])?'a picture':'a binary file')+' ('+binSize(S.files[f2])+' bytes). cat would print gibberish: open it in VS Code or the File Explorer to see it.','y');return}
         S.files[f2].replace(/\n$/,'').split('\n').forEach(function(l){pr('<span class="'+(/^(<<<<<<<|=======|>>>>>>>)/.test(l)?'p':'')+'">'+(esc(l)||'&nbsp;')+'</span>')});if(!S.files[f2])pr('&nbsp;');return}
       case 'wipe-github':{if(!RL.on){perr('wipe-github only works in Real GitHub mode. Press the green button first.');return}wipeReal();return}
@@ -650,14 +839,14 @@
             else if(S.dirs[q]){if(!rec){perr("rm: cannot remove '"+x+"': Is a directory (use rm -r)");return}
               keys(S.files).forEach(function(f){if(f.indexOf(q+'/')===0)delete S.files[f]});keys(S.dirs).forEach(function(d){if(d===q||d.indexOf(q+'/')===0)delete S.dirs[d]});hit++}
             else perr("rm: cannot remove '"+x+"': No such file or directory")}});
-        if(hit&&S.repo)pl('Files removed from your folder. Now git add . (or git rm) , commit, push.','y');return}
+        if(hit&&S.repo&&!args.some(function(x){return /(^|\/)\.git\/?$/.test(x)}))pl('Files removed from your folder. Now git add . (or git rm) , commit, push.','y');return}
       case 'rm_old':{if(!t[1]){perr('rm: missing operand');return}var f3=norm(t[1]);if(!(f3 in S.files)){perr("rm: cannot remove '"+t[1]+"': No such file or directory");return}delete S.files[f3];return}
       case 'clear':out.innerHTML='';return;
       case 'help':pl('Try these:\n  rm file | rm -r folder | rm *    (delete things)\n  git rm .    (remove all tracked files)\n  wipe-github    (Real mode: delete EVERYTHING in the GitHub repo, start fresh)\n\n  pwd  ls  cd  mkdir  touch  cat  rm  mv  cp  clear\n  mv old.txt new.txt    (rename or move)   cp a.txt b.txt   (copy; cp -r for folders)\n  echo "text" > file      (make or change a file)\n  git init | clone | status | add | commit | diff | log | show\n  git restore | reset | revert | stash | rm | mv | tag\n  git branch | switch | checkout | merge | rebase\n  ls -l | ls -la | git ls-files    (long list, hidden files too, files Git tracks)\n  git remote | push | fetch | pull\n  git help    (all git commands, grouped)\n\nEvery command, with what it does: open the Cheat Sheet on the desktop.','y');return;
     }
     perr('bash: '+cmd+': command not found');
   }
-  function exec(line){
+  function exec(line){lastCmd=String(line||'');
     var t=tok(line),ri=-1;t.forEach(function(x,i){if((x==='>'||x==='>>')&&ri<0)ri=i});
     if(t[0]==='echo'&&ri>=0){var target=t[ri+1];if(!target){perr('bash: syntax error near unexpected token `newline\'');return}
       var p=norm(target);if(!S.dirs[dirname(p)]){perr('bash: '+target+': No such file or directory');return}
@@ -668,10 +857,125 @@
     shell(t);
   }
   /* ---------- prompt + render ---------- */
+  /* ---------- the .git folder, the way real Git writes it ----------
+     objects/ holds a zlib-compressed object for every file (blob), folder (tree) and commit, named by its SHA-1;
+     blob and tree names are the real SHA-1s Git would give them. index is Git's binary staging file (DIRC),
+     logs/ records every move of HEAD and the branches, hooks/ has Git's own sample scripts. */
+  var GIT_HOOKS={"applypatch-msg.sample": "#!/bin/sh\n#\n# An example hook script to check the commit log message taken by\n# applypatch from an e-mail message.\n#\n# The hook should exit with non-zero status after issuing an\n# appropriate message if it wants to stop the commit.  The hook is\n# allowed to edit the commit message file.\n#\n# To enable this hook, rename this file to \"applypatch-msg\".\n\n. git-sh-setup\ncommitmsg=\"$(git rev-parse --git-path hooks/commit-msg)\"\ntest -x \"$commitmsg\" && exec \"$commitmsg\" ${1+\"$@\"}\n:\n", "commit-msg.sample": "#!/bin/sh\n#\n# An example hook script to check the commit log message.\n# Called by \"git commit\" with one argument, the name of the file\n# that has the commit message.  The hook should exit with non-zero\n# status after issuing an appropriate message if it wants to stop the\n# commit.  The hook is allowed to edit the commit message file.\n#\n# To enable this hook, rename this file to \"commit-msg\".\n\n# Uncomment the below to add a Signed-off-by line to the message.\n# Doing this in a hook is a bad idea in general, but the prepare-commit-msg\n# hook is more suited to it.\n#\n# SOB=$(git var GIT_AUTHOR_IDENT | sed -n 's/^\\(.*>\\).*$/Signed-off-by: \\1/p')\n# grep -qs \"^$SOB\" \"$1\" || echo \"$SOB\" >> \"$1\"\n\n# This example catches duplicate Signed-off-by lines.\n\ntest \"\" = \"$(grep '^Signed-off-by: ' \"$1\" |\n\t sort | uniq -c | sed -e '/^[ \t]*1[ \t]/d')\" || {\n\techo >&2 Duplicate Signed-off-by lines.\n\texit 1\n}\n", "fsmonitor-watchman.sample": "#!/usr/bin/perl\n\nuse strict;\nuse warnings;\nuse IPC::Open2;\n\n# An example hook script to integrate Watchman\n# (https://facebook.github.io/watchman/) with git to speed up detecting\n# new and modified files.\n#\n# The hook is passed a version (currently 2) and last update token\n# formatted as a string and outputs to stdout a new update token and\n# all files that have been modified since the update token. Paths must\n# be relative to the root of the working tree and separated by a single NUL.\n#\n# To enable this hook, rename this file to \"query-watchman\" and set\n# 'git config core.fsmonitor .git/hooks/query-watchman'\n#\nmy ($version, $last_update_token) = @ARGV;\n\n# Uncomment for debugging\n# print STDERR \"$0 $version $last_update_token\\n\";\n\n# Check the hook interface version\nif ($version ne 2) {\n\tdie \"Unsupported query-fsmonitor hook version '$version'.\\n\" .\n\t    \"Falling back to scanning...\\n\";\n}\n\nmy $git_work_tree = get_working_dir();\n\nmy $retry = 1;\n\nmy $json_pkg;\neval {\n\trequire JSON::XS;\n\t$json_pkg = \"JSON::XS\";\n\t1;\n} or do {\n\trequire JSON::PP;\n\t$json_pkg = \"JSON::PP\";\n};\n\nlaunch_watchman();\n\nsub launch_watchman {\n\tmy $o = watchman_query();\n\tif (is_work_tree_watched($o)) {\n\t\toutput_result($o->{clock}, @{$o->{files}});\n\t}\n}\n\nsub output_result {\n\tmy ($clockid, @files) = @_;\n\n\t# Uncomment for debugging watchman output\n\t# open (my $fh, \">\", \".git/watchman-output.out\");\n\t# binmode $fh, \":utf8\";\n\t# print $fh \"$clockid\\n@files\\n\";\n\t# close $fh;\n\n\tbinmode STDOUT, \":utf8\";\n\tprint $clockid;\n\tprint \"\\0\";\n\tlocal $, = \"\\0\";\n\tprint @files;\n}\n\nsub watchman_clock {\n\tmy $response = qx/watchman clock \"$git_work_tree\"/;\n\tdie \"Failed to get clock id on '$git_work_tree'.\\n\" .\n\t\t\"Falling back to scanning...\\n\" if $? != 0;\n\n\treturn $json_pkg->new->utf8->decode($response);\n}\n\nsub watchman_query {\n\tmy $pid = open2(\\*CHLD_OUT, \\*CHLD_IN, 'watchman -j --no-pretty')\n\tor die \"open2() failed: $!\\n\" .\n\t\"Falling back to scanning...\\n\";\n\n\t# In the query expression below we're asking for names of files that\n\t# changed since $last_update_token but not from the .git folder.\n\t#\n\t# To accomplish this, we're using the \"since\" generator to use the\n\t# recency index to select candidate nodes and \"fields\" to limit the\n\t# output to file names only. Then we're using the \"expression\" term to\n\t# further constrain the results.\n\tmy $last_update_line = \"\";\n\tif (substr($last_update_token, 0, 1) eq \"c\") {\n\t\t$last_update_token = \"\\\"$last_update_token\\\"\";\n\t\t$last_update_line = qq[\\n\"since\": $last_update_token,];\n\t}\n\tmy $query = <<\"\tEND\";\n\t\t[\"query\", \"$git_work_tree\", {$last_update_line\n\t\t\t\"fields\": [\"name\"],\n\t\t\t\"expression\": [\"not\", [\"dirname\", \".git\"]]\n\t\t}]\n\tEND\n\n\t# Uncomment for debugging the watchman query\n\t# open (my $fh, \">\", \".git/watchman-query.json\");\n\t# print $fh $query;\n\t# close $fh;\n\n\tprint CHLD_IN $query;\n\tclose CHLD_IN;\n\tmy $response = do {local $/; <CHLD_OUT>};\n\n\t# Uncomment for debugging the watch response\n\t# open ($fh, \">\", \".git/watchman-response.json\");\n\t# print $fh $response;\n\t# close $fh;\n\n\tdie \"Watchman: command returned no output.\\n\" .\n\t\"Falling back to scanning...\\n\" if $response eq \"\";\n\tdie \"Watchman: command returned invalid output: $response\\n\" .\n\t\"Falling back to scanning...\\n\" unless $response =~ /^\\{/;\n\n\treturn $json_pkg->new->utf8->decode($response);\n}\n\nsub is_work_tree_watched {\n\tmy ($output) = @_;\n\tmy $error = $output->{error};\n\tif ($retry > 0 and $error and $error =~ m/unable to resolve root .* directory (.*) is not watched/) {\n\t\t$retry--;\n\t\tmy $response = qx/watchman watch \"$git_work_tree\"/;\n\t\tdie \"Failed to make watchman watch '$git_work_tree'.\\n\" .\n\t\t    \"Falling back to scanning...\\n\" if $? != 0;\n\t\t$output = $json_pkg->new->utf8->decode($response);\n\t\t$error = $output->{error};\n\t\tdie \"Watchman: $error.\\n\" .\n\t\t\"Falling back to scanning...\\n\" if $error;\n\n\t\t# Uncomment for debugging watchman output\n\t\t# open (my $fh, \">\", \".git/watchman-output.out\");\n\t\t# close $fh;\n\n\t\t# Watchman will always return all files on the first query so\n\t\t# return the fast \"everything is dirty\" flag to git and do the\n\t\t# Watchman query just to get it over with now so we won't pay\n\t\t# the cost in git to look up each individual file.\n\t\tmy $o = watchman_clock();\n\t\t$error = $output->{error};\n\n\t\tdie \"Watchman: $error.\\n\" .\n\t\t\"Falling back to scanning...\\n\" if $error;\n\n\t\toutput_result($o->{clock}, (\"/\"));\n\t\t$last_update_token = $o->{clock};\n\n\t\teval { launch_watchman() };\n\t\treturn 0;\n\t}\n\n\tdie \"Watchman: $error.\\n\" .\n\t\"Falling back to scanning...\\n\" if $error;\n\n\treturn 1;\n}\n\nsub get_working_dir {\n\tmy $working_dir;\n\tif ($^O =~ 'msys' || $^O =~ 'cygwin') {\n\t\t$working_dir = Win32::GetCwd();\n\t\t$working_dir =~ tr/\\\\/\\//;\n\t} else {\n\t\trequire Cwd;\n\t\t$working_dir = Cwd::cwd();\n\t}\n\n\treturn $working_dir;\n}\n", "post-update.sample": "#!/bin/sh\n#\n# An example hook script to prepare a packed repository for use over\n# dumb transports.\n#\n# To enable this hook, rename this file to \"post-update\".\n\nexec git update-server-info\n", "pre-applypatch.sample": "#!/bin/sh\n#\n# An example hook script to verify what is about to be committed\n# by applypatch from an e-mail message.\n#\n# The hook should exit with non-zero status after issuing an\n# appropriate message if it wants to stop the commit.\n#\n# To enable this hook, rename this file to \"pre-applypatch\".\n\n. git-sh-setup\nprecommit=\"$(git rev-parse --git-path hooks/pre-commit)\"\ntest -x \"$precommit\" && exec \"$precommit\" ${1+\"$@\"}\n:\n", "pre-commit.sample": "#!/bin/sh\n#\n# An example hook script to verify what is about to be committed.\n# Called by \"git commit\" with no arguments.  The hook should\n# exit with non-zero status after issuing an appropriate message if\n# it wants to stop the commit.\n#\n# To enable this hook, rename this file to \"pre-commit\".\n\nif git rev-parse --verify HEAD >/dev/null 2>&1\nthen\n\tagainst=HEAD\nelse\n\t# Initial commit: diff against an empty tree object\n\tagainst=$(git hash-object -t tree /dev/null)\nfi\n\n# If you want to allow non-ASCII filenames set this variable to true.\nallownonascii=$(git config --type=bool hooks.allownonascii)\n\n# Redirect output to stderr.\nexec 1>&2\n\n# Cross platform projects tend to avoid non-ASCII filenames; prevent\n# them from being added to the repository. We exploit the fact that the\n# printable range starts at the space character and ends with tilde.\nif [ \"$allownonascii\" != \"true\" ] &&\n\t# Note that the use of brackets around a tr range is ok here, (it's\n\t# even required, for portability to Solaris 10's /usr/bin/tr), since\n\t# the square bracket bytes happen to fall in the designated range.\n\ttest $(git diff --cached --name-only --diff-filter=A -z $against |\n\t  LC_ALL=C tr -d '[ -~]\\0' | wc -c) != 0\nthen\n\tcat <<\\EOF\nError: Attempt to add a non-ASCII file name.\n\nThis can cause problems if you want to work with people on other platforms.\n\nTo be portable it is advisable to rename the file.\n\nIf you know what you are doing you can disable this check using:\n\n  git config hooks.allownonascii true\nEOF\n\texit 1\nfi\n\n# If there are whitespace errors, print the offending file names and fail.\nexec git diff-index --check --cached $against --\n", "pre-merge-commit.sample": "#!/bin/sh\n#\n# An example hook script to verify what is about to be committed.\n# Called by \"git merge\" with no arguments.  The hook should\n# exit with non-zero status after issuing an appropriate message to\n# stderr if it wants to stop the merge commit.\n#\n# To enable this hook, rename this file to \"pre-merge-commit\".\n\n. git-sh-setup\ntest -x \"$GIT_DIR/hooks/pre-commit\" &&\n        exec \"$GIT_DIR/hooks/pre-commit\"\n:\n", "pre-push.sample": "#!/bin/sh\n\n# An example hook script to verify what is about to be pushed.  Called by \"git\n# push\" after it has checked the remote status, but before anything has been\n# pushed.  If this script exits with a non-zero status nothing will be pushed.\n#\n# This hook is called with the following parameters:\n#\n# $1 -- Name of the remote to which the push is being done\n# $2 -- URL to which the push is being done\n#\n# If pushing without using a named remote those arguments will be equal.\n#\n# Information about the commits which are being pushed is supplied as lines to\n# the standard input in the form:\n#\n#   <local ref> <local oid> <remote ref> <remote oid>\n#\n# This sample shows how to prevent push of commits where the log message starts\n# with \"WIP\" (work in progress).\n\nremote=\"$1\"\nurl=\"$2\"\n\nzero=$(git hash-object --stdin <\/dev/null | tr '[0-9a-f]' '0')\n\nwhile read local_ref local_oid remote_ref remote_oid\ndo\n\tif test \"$local_oid\" = \"$zero\"\n\tthen\n\t\t# Handle delete\n\t\t:\n\telse\n\t\tif test \"$remote_oid\" = \"$zero\"\n\t\tthen\n\t\t\t# New branch, examine all commits\n\t\t\trange=\"$local_oid\"\n\t\telse\n\t\t\t# Update to existing branch, examine new commits\n\t\t\trange=\"$remote_oid..$local_oid\"\n\t\tfi\n\n\t\t# Check for WIP commit\n\t\tcommit=$(git rev-list -n 1 --grep '^WIP' \"$range\")\n\t\tif test -n \"$commit\"\n\t\tthen\n\t\t\techo >&2 \"Found WIP commit in $local_ref, not pushing\"\n\t\t\texit 1\n\t\tfi\n\tfi\ndone\n\nexit 0\n", "pre-rebase.sample": "#!/bin/sh\n#\n# Copyright (c) 2006, 2008 Junio C Hamano\n#\n# The \"pre-rebase\" hook is run just before \"git rebase\" starts doing\n# its job, and can prevent the command from running by exiting with\n# non-zero status.\n#\n# The hook is called with the following parameters:\n#\n# $1 -- the upstream the series was forked from.\n# $2 -- the branch being rebased (or empty when rebasing the current branch).\n#\n# This sample shows how to prevent topic branches that are already\n# merged to 'next' branch from getting rebased, because allowing it\n# would result in rebasing already published history.\n\npublish=next\nbasebranch=\"$1\"\nif test \"$#\" = 2\nthen\n\ttopic=\"refs/heads/$2\"\nelse\n\ttopic=`git symbolic-ref HEAD` ||\n\texit 0 ;# we do not interrupt rebasing detached HEAD\nfi\n\ncase \"$topic\" in\nrefs/heads/??/*)\n\t;;\n*)\n\texit 0 ;# we do not interrupt others.\n\t;;\nesac\n\n# Now we are dealing with a topic branch being rebased\n# on top of master.  Is it OK to rebase it?\n\n# Does the topic really exist?\ngit show-ref -q \"$topic\" || {\n\techo >&2 \"No such branch $topic\"\n\texit 1\n}\n\n# Is topic fully merged to master?\nnot_in_master=`git rev-list --pretty=oneline ^master \"$topic\"`\nif test -z \"$not_in_master\"\nthen\n\techo >&2 \"$topic is fully merged to master; better remove it.\"\n\texit 1 ;# we could allow it, but there is no point.\nfi\n\n# Is topic ever merged to next?  If so you should not be rebasing it.\nonly_next_1=`git rev-list ^master \"^$topic\" ${publish} | sort`\nonly_next_2=`git rev-list ^master           ${publish} | sort`\nif test \"$only_next_1\" = \"$only_next_2\"\nthen\n\tnot_in_topic=`git rev-list \"^$topic\" master`\n\tif test -z \"$not_in_topic\"\n\tthen\n\t\techo >&2 \"$topic is already up to date with master\"\n\t\texit 1 ;# we could allow it, but there is no point.\n\telse\n\t\texit 0\n\tfi\nelse\n\tnot_in_next=`git rev-list --pretty=oneline ^${publish} \"$topic\"`\n\t/usr/bin/perl -e '\n\t\tmy $topic = $ARGV[0];\n\t\tmy $msg = \"* $topic has commits already merged to public branch:\\n\";\n\t\tmy (%not_in_next) = map {\n\t\t\t/^([0-9a-f]+) /;\n\t\t\t($1 => 1);\n\t\t} split(/\\n/, $ARGV[1]);\n\t\tfor my $elem (map {\n\t\t\t\t/^([0-9a-f]+) (.*)$/;\n\t\t\t\t[$1 => $2];\n\t\t\t} split(/\\n/, $ARGV[2])) {\n\t\t\tif (!exists $not_in_next{$elem->[0]}) {\n\t\t\t\tif ($msg) {\n\t\t\t\t\tprint STDERR $msg;\n\t\t\t\t\tundef $msg;\n\t\t\t\t}\n\t\t\t\tprint STDERR \" $elem->[1]\\n\";\n\t\t\t}\n\t\t}\n\t' \"$topic\" \"$not_in_next\" \"$not_in_master\"\n\texit 1\nfi\n\n<<\\DOC_END\n\nThis sample hook safeguards topic branches that have been\npublished from being rewound.\n\nThe workflow assumed here is:\n\n * Once a topic branch forks from \"master\", \"master\" is never\n   merged into it again (either directly or indirectly).\n\n * Once a topic branch is fully cooked and merged into \"master\",\n   it is deleted.  If you need to build on top of it to correct\n   earlier mistakes, a new topic branch is created by forking at\n   the tip of the \"master\".  This is not strictly necessary, but\n   it makes it easier to keep your history simple.\n\n * Whenever you need to test or publish your changes to topic\n   branches, merge them into \"next\" branch.\n\nThe script, being an example, hardcodes the publish branch name\nto be \"next\", but it is trivial to make it configurable via\n$GIT_DIR/config mechanism.\n\nWith this workflow, you would want to know:\n\n(1) ... if a topic branch has ever been merged to \"next\".  Young\n    topic branches can have stupid mistakes you would rather\n    clean up before publishing, and things that have not been\n    merged into other branches can be easily rebased without\n    affecting other people.  But once it is published, you would\n    not want to rewind it.\n\n(2) ... if a topic branch has been fully merged to \"master\".\n    Then you can delete it.  More importantly, you should not\n    build on top of it -- other people may already want to\n    change things related to the topic as patches against your\n    \"master\", so if you need further changes, it is better to\n    fork the topic (perhaps with the same name) afresh from the\n    tip of \"master\".\n\nLet's look at this example:\n\n\t\t   o---o---o---o---o---o---o---o---o---o \"next\"\n\t\t  /       /           /           /\n\t\t /   a---a---b A     /           /\n\t\t/   /               /           /\n\t       /   /   c---c---c---c B         /\n\t      /   /   /             \\         /\n\t     /   /   /   b---b C     \\       /\n\t    /   /   /   /             \\     /\n    ---o---o---o---o---o---o---o---o---o---o---o \"master\"\n\n\nA, B and C are topic branches.\n\n * A has one fix since it was merged up to \"next\".\n\n * B has finished.  It has been fully merged up to \"master\" and \"next\",\n   and is ready to be deleted.\n\n * C has not merged to \"next\" at all.\n\nWe would want to allow C to be rebased, refuse A, and encourage\nB to be deleted.\n\nTo compute (1):\n\n\tgit rev-list ^master ^topic next\n\tgit rev-list ^master        next\n\n\tif these match, topic has not merged in next at all.\n\nTo compute (2):\n\n\tgit rev-list master..topic\n\n\tif this is empty, it is fully merged to \"master\".\n\nDOC_END\n", "pre-receive.sample": "#!/bin/sh\n#\n# An example hook script to make use of push options.\n# The example simply echoes all push options that start with 'echoback='\n# and rejects all pushes when the \"reject\" push option is used.\n#\n# To enable this hook, rename this file to \"pre-receive\".\n\nif test -n \"$GIT_PUSH_OPTION_COUNT\"\nthen\n\ti=0\n\twhile test \"$i\" -lt \"$GIT_PUSH_OPTION_COUNT\"\n\tdo\n\t\teval \"value=\\$GIT_PUSH_OPTION_$i\"\n\t\tcase \"$value\" in\n\t\techoback=*)\n\t\t\techo \"echo from the pre-receive-hook: ${value#*=}\" >&2\n\t\t\t;;\n\t\treject)\n\t\t\texit 1\n\t\tesac\n\t\ti=$((i + 1))\n\tdone\nfi\n", "prepare-commit-msg.sample": "#!/bin/sh\n#\n# An example hook script to prepare the commit log message.\n# Called by \"git commit\" with the name of the file that has the\n# commit message, followed by the description of the commit\n# message's source.  The hook's purpose is to edit the commit\n# message file.  If the hook fails with a non-zero status,\n# the commit is aborted.\n#\n# To enable this hook, rename this file to \"prepare-commit-msg\".\n\n# This hook includes three examples. The first one removes the\n# \"# Please enter the commit message...\" help message.\n#\n# The second includes the output of \"git diff --name-status -r\"\n# into the message, just before the \"git status\" output.  It is\n# commented because it doesn't cope with --amend or with squashed\n# commits.\n#\n# The third example adds a Signed-off-by line to the message, that can\n# still be edited.  This is rarely a good idea.\n\nCOMMIT_MSG_FILE=$1\nCOMMIT_SOURCE=$2\nSHA1=$3\n\n/usr/bin/perl -i.bak -ne 'print unless(m/^. Please enter the commit message/..m/^#$/)' \"$COMMIT_MSG_FILE\"\n\n# case \"$COMMIT_SOURCE,$SHA1\" in\n#  ,|template,)\n#    /usr/bin/perl -i.bak -pe '\n#       print \"\\n\" . `git diff --cached --name-status -r`\n# \t if /^#/ && $first++ == 0' \"$COMMIT_MSG_FILE\" ;;\n#  *) ;;\n# esac\n\n# SOB=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\\(.*>\\).*$/Signed-off-by: \\1/p')\n# git interpret-trailers --in-place --trailer \"$SOB\" \"$COMMIT_MSG_FILE\"\n# if test -z \"$COMMIT_SOURCE\"\n# then\n#   /usr/bin/perl -i.bak -pe 'print \"\\n\" if !$first_line++' \"$COMMIT_MSG_FILE\"\n# fi\n", "push-to-checkout.sample": "#!/bin/sh\n\n# An example hook script to update a checked-out tree on a git push.\n#\n# This hook is invoked by git-receive-pack(1) when it reacts to git\n# push and updates reference(s) in its repository, and when the push\n# tries to update the branch that is currently checked out and the\n# receive.denyCurrentBranch configuration variable is set to\n# updateInstead.\n#\n# By default, such a push is refused if the working tree and the index\n# of the remote repository has any difference from the currently\n# checked out commit; when both the working tree and the index match\n# the current commit, they are updated to match the newly pushed tip\n# of the branch. This hook is to be used to override the default\n# behaviour; however the code below reimplements the default behaviour\n# as a starting point for convenient modification.\n#\n# The hook receives the commit with which the tip of the current\n# branch is going to be updated:\ncommit=$1\n\n# It can exit with a non-zero status to refuse the push (when it does\n# so, it must not modify the index or the working tree).\ndie () {\n\techo >&2 \"$*\"\n\texit 1\n}\n\n# Or it can make any necessary changes to the working tree and to the\n# index to bring them to the desired state when the tip of the current\n# branch is updated to the new commit, and exit with a zero status.\n#\n# For example, the hook can simply run git read-tree -u -m HEAD \"$1\"\n# in order to emulate git fetch that is run in the reverse direction\n# with git push, as the two-tree form of git read-tree -u -m is\n# essentially the same as git switch or git checkout that switches\n# branches while keeping the local changes in the working tree that do\n# not interfere with the difference between the branches.\n\n# The below is a more-or-less exact translation to shell of the C code\n# for the default behaviour for git's push-to-checkout hook defined in\n# the push_to_deploy() function in builtin/receive-pack.c.\n#\n# Note that the hook will be executed from the repository directory,\n# not from the working tree, so if you want to perform operations on\n# the working tree, you will have to adapt your code accordingly, e.g.\n# by adding \"cd ..\" or using relative paths.\n\nif ! git update-index -q --ignore-submodules --refresh\nthen\n\tdie \"Up-to-date check failed\"\nfi\n\nif ! git diff-files --quiet --ignore-submodules --\nthen\n\tdie \"Working directory has unstaged changes\"\nfi\n\n# This is a rough translation of:\n#\n#   head_has_history() ? \"HEAD\" : EMPTY_TREE_SHA1_HEX\nif git cat-file -e HEAD 2>/dev/null\nthen\n\thead=HEAD\nelse\n\thead=$(git hash-object -t tree --stdin <\/dev/null)\nfi\n\nif ! git diff-index --quiet --cached --ignore-submodules $head --\nthen\n\tdie \"Working directory has staged changes\"\nfi\n\nif ! git read-tree -u -m \"$commit\"\nthen\n\tdie \"Could not update working tree to new HEAD\"\nfi\n", "sendemail-validate.sample": "#!/bin/sh\n\n# An example hook script to validate a patch (and/or patch series) before\n# sending it via email.\n#\n# The hook should exit with non-zero status after issuing an appropriate\n# message if it wants to prevent the email(s) from being sent.\n#\n# To enable this hook, rename this file to \"sendemail-validate\".\n#\n# By default, it will only check that the patch(es) can be applied on top of\n# the default upstream branch without conflicts in a secondary worktree. After\n# validation (successful or not) of the last patch of a series, the worktree\n# will be deleted.\n#\n# The following config variables can be set to change the default remote and\n# remote ref that are used to apply the patches against:\n#\n#   sendemail.validateRemote (default: origin)\n#   sendemail.validateRemoteRef (default: HEAD)\n#\n# Replace the TODO placeholders with appropriate checks according to your\n# needs.\n\nvalidate_cover_letter () {\n\tfile=\"$1\"\n\t# TODO: Replace with appropriate checks (e.g. spell checking).\n\ttrue\n}\n\nvalidate_patch () {\n\tfile=\"$1\"\n\t# Ensure that the patch applies without conflicts.\n\tgit am -3 \"$file\" || return\n\t# TODO: Replace with appropriate checks for this patch\n\t# (e.g. checkpatch.pl).\n\ttrue\n}\n\nvalidate_series () {\n\t# TODO: Replace with appropriate checks for the whole series\n\t# (e.g. quick build, coding style checks, etc.).\n\ttrue\n}\n\n# main -------------------------------------------------------------------------\n\nif test \"$GIT_SENDEMAIL_FILE_COUNTER\" = 1\nthen\n\tremote=$(git config --default origin --get sendemail.validateRemote) &&\n\tref=$(git config --default HEAD --get sendemail.validateRemoteRef) &&\n\tworktree=$(mktemp --tmpdir -d sendemail-validate.XXXXXXX) &&\n\tgit worktree add -fd --checkout \"$worktree\" \"refs/remotes/$remote/$ref\" &&\n\tgit config --replace-all sendemail.validateWorktree \"$worktree\"\nelse\n\tworktree=$(git config --get sendemail.validateWorktree)\nfi || {\n\techo \"sendemail-validate: error: failed to prepare worktree\" >&2\n\texit 1\n}\n\nunset GIT_DIR GIT_WORK_TREE\ncd \"$worktree\" &&\n\nif grep -q \"^diff --git \" \"$1\"\nthen\n\tvalidate_patch \"$1\"\nelse\n\tvalidate_cover_letter \"$1\"\nfi &&\n\nif test \"$GIT_SENDEMAIL_FILE_COUNTER\" = \"$GIT_SENDEMAIL_FILE_TOTAL\"\nthen\n\tgit config --unset-all sendemail.validateWorktree &&\n\ttrap 'git worktree remove -ff \"$worktree\"' EXIT &&\n\tvalidate_series\nfi\n", "update.sample": "#!/bin/sh\n#\n# An example hook script to block unannotated tags from entering.\n# Called by \"git receive-pack\" with arguments: refname sha1-old sha1-new\n#\n# To enable this hook, rename this file to \"update\".\n#\n# Config\n# ------\n# hooks.allowunannotated\n#   This boolean sets whether unannotated tags will be allowed into the\n#   repository.  By default they won't be.\n# hooks.allowdeletetag\n#   This boolean sets whether deleting tags will be allowed in the\n#   repository.  By default they won't be.\n# hooks.allowmodifytag\n#   This boolean sets whether a tag may be modified after creation. By default\n#   it won't be.\n# hooks.allowdeletebranch\n#   This boolean sets whether deleting branches will be allowed in the\n#   repository.  By default they won't be.\n# hooks.denycreatebranch\n#   This boolean sets whether remotely creating branches will be denied\n#   in the repository.  By default this is allowed.\n#\n\n# --- Command line\nrefname=\"$1\"\noldrev=\"$2\"\nnewrev=\"$3\"\n\n# --- Safety check\nif [ -z \"$GIT_DIR\" ]; then\n\techo \"Don't run this script from the command line.\" >&2\n\techo \" (if you want, you could supply GIT_DIR then run\" >&2\n\techo \"  $0 <ref> <oldrev> <newrev>)\" >&2\n\texit 1\nfi\n\nif [ -z \"$refname\" -o -z \"$oldrev\" -o -z \"$newrev\" ]; then\n\techo \"usage: $0 <ref> <oldrev> <newrev>\" >&2\n\texit 1\nfi\n\n# --- Config\nallowunannotated=$(git config --type=bool hooks.allowunannotated)\nallowdeletebranch=$(git config --type=bool hooks.allowdeletebranch)\ndenycreatebranch=$(git config --type=bool hooks.denycreatebranch)\nallowdeletetag=$(git config --type=bool hooks.allowdeletetag)\nallowmodifytag=$(git config --type=bool hooks.allowmodifytag)\n\n# check for no description\nprojectdesc=$(sed -e '1q' \"$GIT_DIR/description\")\ncase \"$projectdesc\" in\n\"Unnamed repository\"* | \"\")\n\techo \"*** Project description file hasn't been set\" >&2\n\texit 1\n\t;;\nesac\n\n# --- Check types\n# if $newrev is 0000...0000, it's a commit to delete a ref.\nzero=$(git hash-object --stdin <\/dev/null | tr '[0-9a-f]' '0')\nif [ \"$newrev\" = \"$zero\" ]; then\n\tnewrev_type=delete\nelse\n\tnewrev_type=$(git cat-file -t $newrev)\nfi\n\ncase \"$refname\",\"$newrev_type\" in\n\trefs/tags/*,commit)\n\t\t# un-annotated tag\n\t\tshort_refname=${refname##refs/tags/}\n\t\tif [ \"$allowunannotated\" != \"true\" ]; then\n\t\t\techo \"*** The un-annotated tag, $short_refname, is not allowed in this repository\" >&2\n\t\t\techo \"*** Use 'git tag [ -a | -s ]' for tags you want to propagate.\" >&2\n\t\t\texit 1\n\t\tfi\n\t\t;;\n\trefs/tags/*,delete)\n\t\t# delete tag\n\t\tif [ \"$allowdeletetag\" != \"true\" ]; then\n\t\t\techo \"*** Deleting a tag is not allowed in this repository\" >&2\n\t\t\texit 1\n\t\tfi\n\t\t;;\n\trefs/tags/*,tag)\n\t\t# annotated tag\n\t\tif [ \"$allowmodifytag\" != \"true\" ] && git rev-parse $refname > /dev/null 2>&1\n\t\tthen\n\t\t\techo \"*** Tag '$refname' already exists.\" >&2\n\t\t\techo \"*** Modifying a tag is not allowed in this repository.\" >&2\n\t\t\texit 1\n\t\tfi\n\t\t;;\n\trefs/heads/*,commit)\n\t\t# branch\n\t\tif [ \"$oldrev\" = \"$zero\" -a \"$denycreatebranch\" = \"true\" ]; then\n\t\t\techo \"*** Creating a branch is not allowed in this repository\" >&2\n\t\t\texit 1\n\t\tfi\n\t\t;;\n\trefs/heads/*,delete)\n\t\t# delete branch\n\t\tif [ \"$allowdeletebranch\" != \"true\" ]; then\n\t\t\techo \"*** Deleting a branch is not allowed in this repository\" >&2\n\t\t\texit 1\n\t\tfi\n\t\t;;\n\trefs/remotes/*,commit)\n\t\t# tracking branch\n\t\t;;\n\trefs/remotes/*,delete)\n\t\t# delete tracking branch\n\t\tif [ \"$allowdeletebranch\" != \"true\" ]; then\n\t\t\techo \"*** Deleting a tracking branch is not allowed in this repository\" >&2\n\t\t\texit 1\n\t\tfi\n\t\t;;\n\t*)\n\t\t# Anything else (is there anything else?)\n\t\techo \"*** Update hook: unknown type of update to ref $refname of type $newrev_type\" >&2\n\t\texit 1\n\t\t;;\nesac\n\n# --- Finished\nexit 0\n"};
+  var GIT_EXCLUDE="# git ls-files --others --exclude-from=.git/info/exclude\n# Lines that start with '#' are comments.\n# For a project mostly in C, the following would be a good set of\n# exclude patterns (uncomment them if you want to use them):\n# *.[oa]\n# *~\n";
+  function u8(str){return new TextEncoder().encode(str)}
+  function cat8(list){var n=0;list.forEach(function(x){n+=x.length});var o=new Uint8Array(n),k=0;list.forEach(function(x){o.set(x,k);k+=x.length});return o}
+  function hex2b(h){var o=new Uint8Array(h.length/2);for(var i=0;i<o.length;i++)o[i]=parseInt(h.substr(i*2,2),16);return o}
+  function sha1(b){var H0=0x67452301,H1=0xEFCDAB89,H2=0x98BADCFE,H3=0x10325476,H4=0xC3D2E1F0,ml=b.length,nb=((ml+9+63)>>6)<<6,m=new Uint8Array(nb),w=new Int32Array(80);m.set(b);m[ml]=0x80;
+    var bits=ml*8;m[nb-4]=bits>>>24;m[nb-3]=(bits>>>16)&255;m[nb-2]=(bits>>>8)&255;m[nb-1]=bits&255;var hi=Math.floor(ml/536870912);m[nb-8]=hi>>>24;m[nb-7]=(hi>>>16)&255;m[nb-6]=(hi>>>8)&255;m[nb-5]=hi&255;
+    for(var i=0;i<nb;i+=64){for(var t=0;t<16;t++)w[t]=(m[i+t*4]<<24)|(m[i+t*4+1]<<16)|(m[i+t*4+2]<<8)|m[i+t*4+3];for(t=16;t<80;t++){var x=w[t-3]^w[t-8]^w[t-14]^w[t-16];w[t]=(x<<1)|(x>>>31)}
+      var A=H0,B=H1,C2=H2,D=H3,E=H4;for(t=0;t<80;t++){var f,k;if(t<20){f=(B&C2)|(~B&D);k=0x5A827999}else if(t<40){f=B^C2^D;k=0x6ED9EBA1}else if(t<60){f=(B&C2)|(B&D)|(C2&D);k=0x8F1BBCDC}else{f=B^C2^D;k=0xCA62C1D6}
+        var tmp=(((A<<5)|(A>>>27))+f+E+k+w[t])|0;E=D;D=C2;C2=(B<<30)|(B>>>2);B=A;A=tmp}
+      H0=(H0+A)|0;H1=(H1+B)|0;H2=(H2+C2)|0;H3=(H3+D)|0;H4=(H4+E)|0}
+    return [H0,H1,H2,H3,H4].map(function(v){return ('00000000'+(v>>>0).toString(16)).slice(-8)}).join('')}
+  /* zlib with stored (uncompressed) blocks: a valid zlib stream, starting with 0x78 0x01 like Git's objects */
+  function zlibStore(b){var parts=[new Uint8Array([0x78,0x01])],i=0;do{var n=Math.min(65535,b.length-i),last=i+n>=b.length?1:0;parts.push(new Uint8Array([last,n&255,n>>8,(~n)&255,((~n)>>8)&255]));parts.push(b.subarray(i,i+n));i+=n}while(i<b.length);
+    var a1=1,a2=0;for(var j=0;j<b.length;j++){a1=(a1+b[j])%65521;a2=(a2+a1)%65521}parts.push(new Uint8Array([a2>>8,a2&255,a1>>8,a1&255]));return cat8(parts)}
+  function b64of(b){var s0='';for(var i=0;i<b.length;i+=32768)s0+=String.fromCharCode.apply(null,b.subarray(i,i+32768));return btoa(s0)}
+  function bytesOf(t){if(isBin(t)){var bi=binInfo(t);if(!bi||bi.b64==null)return null;var s2=atob(bi.b64),o=new Uint8Array(s2.length);for(var i=0;i<s2.length;i++)o[i]=s2.charCodeAt(i);return o}return u8(t)}
+  var GOBJ={},GBLOB={},GTREE={};
+  function gobj(type,body){var hd=u8(type+' '+body.length+'\u0000'),raw=cat8([hd,body]),h=sha1(raw);if(!GOBJ[h])GOBJ[h]={t:type,body:body,z:null};return h}
+  function gobjFile(h){var o=GOBJ[h];if(!o.z)o.z=binReg('gitobj:'+h,b64of(zlibStore(cat8([u8(o.t+' '+o.body.length+'\u0000'),o.body]))),'application/x-git-object','object');return o.z}
+  function gblob(t){if(t in GBLOB)return GBLOB[t];var b=bytesOf(t),h;
+    if(b)h=gobj('blob',b);else{var bi=binInfo(t);h=sha1(u8('lazy:'+(bi?bi.name+bi.size:t)));if(!GOBJ[h])GOBJ[h]={t:'blob',body:u8('(this file is fetched when it is needed)'),z:null}}
+    GBLOB[t]=h;return h}
+  /* a folder becomes a tree: mode, name and the SHA-1 of each entry, in Git's order */
+  function gtree(files){var top={},subs={};keys(files).forEach(function(f){var i=f.indexOf('/');if(i<0)top[f]=gblob(files[f]);else{var d=f.slice(0,i);(subs[d]=subs[d]||{})[f.slice(i+1)]=files[f]}});
+    var ents=keys(top).map(function(n){return {n:n,m:'100644',h:top[n],k:n}}).concat(keys(subs).map(function(d){return {n:d,m:'40000',h:gtree(subs[d]),k:d+'/'}}));
+    ents.sort(function(x,y){return x.k<y.k?-1:x.k>y.k?1:0});var key=ents.map(function(e){return e.m+' '+e.n+' '+e.h}).join('\n');if(key in GTREE)return GTREE[key];
+    var body=cat8(ents.map(function(e){return cat8([u8(e.m+' '+e.n+'\u0000'),hex2b(e.h)])}));return GTREE[key]=gobj('tree',body)}
+  function gwho(c){var nm=c.who||S.cfg.name||'you',em=c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com');return nm+' <'+em+'> '+Math.floor(Date.UTC(2026,10,1,22,10+c.n%50)/1000)+' +0000'}
+  function gcommit(r,c){if(c.gobj&&GOBJ[c.gobj])return c.gobj;if(c.full&&c.ts&&!c.gobj){var em0=c.email||(c.who==='Roli'?'roli@example.com':(S.cfg.email||'you@example.com')),wh=c.who+' <'+em0+'> '+c.ts+' '+(c.tz||'+0000'),tx0='tree '+gtree(c.files)+'\n'+c.p.map(function(q){return 'parent '+fullid(q)+'\n'}).join('')+'author '+wh+'\ncommitter '+wh+'\n\n'+c.msg+'\n';GOBJ[c.full]={t:'commit',body:u8(tx0),z:null};c.gobj=c.full;return c.full}var tx='tree '+gtree(c.files)+'\n'+c.p.map(function(q){return 'parent '+fullid(q)+'\n'}).join('')+'author '+gwho(c)+'\ncommitter '+gwho(c)+'\n\n'+c.msg+'\n';
+    var h=fullid(c.id),body=u8(tx);GOBJ[h]={t:'commit',body:body,z:null};c.gobj=h;return h}
+  function tzs(){var o=-new Date().getTimezoneOffset(),a=Math.abs(o);return (o<0?'-':'+')+('0'+Math.floor(a/60)).slice(-2)+('0'+a%60).slice(-2)}
+  /* Git's binary index (DIRC version 2): one entry per staged file, then a SHA-1 of it all */
+  function gindex(r){var ps=keys(r.index).sort(function(x,y){return x<y?-1:x>y?1:0}),hd=new Uint8Array(12),dv=new DataView(hd.buffer);hd.set(u8('DIRC'));dv.setUint32(4,2);dv.setUint32(8,ps.length);
+    var parts=[hd];ps.forEach(function(f){var b=bytesOf(r.index[f]),size=b?b.length:0,nm=u8(f),len=62+nm.length,pad=8-(len%8),e=new Uint8Array(len+pad),v=new DataView(e.buffer),ts=1793570000;
+      v.setUint32(0,ts);v.setUint32(8,ts);v.setUint32(24,0x81A4);v.setUint32(36,size);e.set(hex2b(gblob(r.index[f])),40);v.setUint16(60,Math.min(nm.length,0xFFF));e.set(nm,62);parts.push(e)});
+    var all=cat8(parts);return cat8([all,hex2b(sha1(all))])}
+  /* the reflog: every time HEAD or a branch moves, one line, with the reason real Git writes */
+  var lastCmd='';
+  function gReflog(r){var cur={head:r.head,det:r.det||null,br:copy(r.br),rbr:copy(r.rbr||{})},sn=r.snap;r.rlog=r.rlog||{};r.snap=cur;
+    if(!sn){var hn=cur.br[cur.head];if(/^\s*git\s+clone\b/.test(lastCmd)&&hn){var w0=(S.cfg.name||'you')+' <'+(S.cfg.email||'you@example.com')+'> '+Math.floor(Date.now()/1000)+' '+tzs(),u0=tok(lastCmd).filter(function(x,i){return i>1&&x[0]!=='-'})[0]||'';
+        ['HEAD','refs/heads/'+cur.head].forEach(function(ref){r.rlog[ref]=['0000000000000000000000000000000000000000 '+fullid(hn)+' '+w0+'\tclone: from '+u0]})}return}
+    var Z='0000000000000000000000000000000000000000',who=(S.cfg.name||'you')+' <'+(S.cfg.email||'you@example.com')+'> '+Math.floor(Date.now()/1000)+' '+tzs();
+    var t=tok(lastCmd||''),g=t[0]==='git'?t[1]:t[0],arg=t.slice(2).filter(function(x){return x[0]!=='-'}),C0=function(id){return id&&r.cm[id]};
+    function add(ref,o,n,why){(r.rlog[ref]=r.rlog[ref]||[]).push((o?fullid(o):Z)+' '+(n?fullid(n):Z)+' '+who+'\t'+why)}
+    function why(o,n,isHead){var c=C0(n),m=c?c.msg.split('\n')[0]:'';
+      if(g==='commit')return 'commit'+(t.indexOf('--amend')>=0?' (amend)':!o?' (initial)':c&&c.p.length>1?' (merge)':'')+': '+m;
+      if(g==='merge'||g==='pull'){var ff=c&&c.p.length<2;return g+(g==='merge'?' '+(arg[0]||''):'')+': '+(ff?'Fast-forward':"Merge made by the 'ort' strategy.")}
+      if(g==='reset')return 'reset: moving to '+(arg[0]||'HEAD');
+      if(g==='revert')return 'revert: '+m;
+      if(g==='rebase')return isHead?'rebase (finish): returning to refs/heads/'+cur.head:'rebase (finish): refs/heads/'+cur.head+' onto '+fullid(n);
+      if(g==='clone')return 'clone: from '+(arg[0]||'');
+      if(g==='cherry-pick')return 'cherry-pick: '+m;
+      if(g==='stash')return 'reset: moving to HEAD';
+      return (g||'update')+': '+(m||'moving')}
+    var hO=sn.det||sn.br[sn.head],hN=cur.det||cur.br[cur.head],moved=sn.head!==cur.head||!!sn.det!==!!cur.det;
+    var bs={};keys(sn.br).concat(keys(cur.br)).forEach(function(b){bs[b]=1});
+    keys(bs).forEach(function(b){var o=sn.br[b],n=cur.br[b];if(o===n)return;var ref='refs/heads/'+b;
+      if(!n){if(g==='branch'&&(t.indexOf('-m')>=0||t.indexOf('-M')>=0)&&arg[1]&&cur.br[arg[1]]===o){r.rlog['refs/heads/'+arg[1]]=(r.rlog[ref]||[]).concat([]);add('refs/heads/'+arg[1],o,o,'Branch: renamed '+ref+' to refs/heads/'+arg[1])}delete r.rlog[ref];return}
+      if(!o){if(g==='branch'&&(t.indexOf('-m')>=0||t.indexOf('-M')>=0))return;add(ref,null,n,g==='clone'?'clone: from '+(arg[0]||''):(g==='switch'||g==='checkout')?'branch: Created from '+(arg[1]||'HEAD'):(g==='branch'?'branch: Created from '+(arg[1]||sn.head):(g==='fetch'||g==='pull'?'branch: Created from origin/'+b:why(o,n))));return}
+      add(ref,o,n,why(o,n))});
+    if(hO!==hN||moved){var w2=moved&&(g==='switch'||g==='checkout')?'checkout: moving from '+(sn.det?fullid(sn.det):sn.head)+' to '+(cur.det?(arg[0]||fullid(cur.det)):cur.head):why(hO,hN,true);
+      if(g==='commit'||!moved||g==='switch'||g==='checkout'||g==='clone')add('HEAD',hO,hN,w2);else add('HEAD',hO,hN,w2);
+      if(/^(reset|merge|pull|rebase)$/.test(g)&&hO)r.origHead=hO}
+    var rs={};keys(sn.rbr).concat(keys(cur.rbr)).forEach(function(b){rs[b]=1});
+    keys(rs).forEach(function(b){var o=sn.rbr[b],n=cur.rbr[b],ref='refs/remotes/origin/'+b;if(o===n)return;if(!n){delete r.rlog[ref];return}
+      if(g==='clone')return;add(ref,o,n,g==='push'||g==='gh'?'update by push':(!o?'storing head':g==='pull'?'pull: fast-forward':'fetch: fast-forward'))})}
+  function gitDirFiles(r){var f={},d=['branches','hooks','info','objects','objects/info','objects/pack','refs','refs/heads','refs/tags'],up=r.up||{},Cr=function(id){return r.cm[id]};
+    f['HEAD']=r.det?fullid(r.det)+'\n':'ref: refs/heads/'+r.head+'\n';
+    var cfg='[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tsymlinks = false\n\tignorecase = true\n';
+    if(r.remote&&r.remote.url){cfg+='[remote "origin"]\n\turl = '+r.remote.url+'\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n';keys(up).forEach(function(b){if(up[b]&&b in r.br)cfg+='[branch "'+b+'"]\n\tremote = origin\n\tmerge = refs/heads/'+b+'\n'})}
+    f['config']=cfg;f['description']="Unnamed repository; edit this file 'description' to name the repository.\n";
+    keys(GIT_HOOKS).forEach(function(h){f['hooks/'+h]=GIT_HOOKS[h]});f['info/exclude']=GIT_EXCLUDE;
+    keys(r.br).forEach(function(b){if(r.br[b])f['refs/heads/'+b]=fullid(r.br[b])+'\n'});
+    keys(r.tags||{}).forEach(function(t){f['refs/tags/'+t]=fullid(r.tags[t].id)+'\n'});
+    var rb=keys(r.rbr||{}).filter(function(b){return r.rbr[b]});if(rb.length){d.push('refs/remotes','refs/remotes/origin');rb.forEach(function(b){f['refs/remotes/origin/'+b]=fullid(r.rbr[b])+'\n'})}
+    if(r.stash&&r.stash.length){f['refs/stash']=fullid(r.stash[0].id)+'\n'}
+    /* objects: every commit you can reach, its trees and its files, plus what is staged (git add makes the blob) */
+    var objs={},seen={};function own(h){objs[h]=1}
+    keys(r.br).map(function(b){return r.br[b]}).concat(r.det?[r.det]:[],rb.map(function(b){return r.rbr[b]})).forEach(function(t){var st=[t];while(st.length){var id=st.pop();if(!id||seen[id]||!Cr(id))continue;seen[id]=1;var c=Cr(id);
+      if(!c.hidden){own(gcommit(r,c));var th=gtree(c.files);own(th);(function walk(h){var o=GOBJ[h];if(!o||o.t!=='tree')return;var b=o.body,i=0;while(i<b.length){var sp=b.indexOf(32,i),nul=b.indexOf(0,sp),hx='';for(var k=nul+1;k<nul+21;k++)hx+=('0'+b[k].toString(16)).slice(-2);var md=new TextDecoder().decode(b.subarray(i,sp));own(hx);if(md==='40000')walk(hx);i=nul+21}})(th)}
+      c.p.forEach(function(q){st.push(q)})}});
+    keys(r.index).forEach(function(x){own(gblob(r.index[x]))});
+    keys(objs).forEach(function(h){var dd='objects/'+h.slice(0,2);if(d.indexOf(dd)<0)d.push(dd);f[dd+'/'+h.slice(2)]=gobjFile(h)});
+    r.objs=objs;
+    if(keys(r.index).length)f['index']=binReg('gitidx:'+sha1(gindex(r)),b64of(gindex(r)),'application/x-git-index','index');
+    var hc=r.det||r.br[r.head];if(hc&&Cr(hc))f['COMMIT_EDITMSG']=Cr(hc).msg+'\n';
+    if(r.origHead&&Cr(r.origHead))f['ORIG_HEAD']=fullid(r.origHead)+'\n';
+    if(r.merge&&r.merge.other){f['MERGE_HEAD']=fullid(r.merge.other)+'\n';f['MERGE_MODE']='';f['MERGE_MSG']=(r.merge.msg||'Merge')+'\n'+(keys(r.conf).length?'\n# Conflicts:\n'+keys(r.conf).map(function(x){return '#\t'+x+'\n'}).join(''):'')}
+    /* logs/ */
+    var rl=r.rlog||{};keys(rl).forEach(function(ref){if(!rl[ref].length)return;var p2=ref.split('/');for(var i=1;i<p2.length;i++){var dd='logs/'+p2.slice(0,i).join('/');if(d.indexOf(dd)<0)d.push(dd)}if(d.indexOf('logs')<0)d.push('logs');f['logs/'+ref]=rl[ref].join('\n')+'\n'});
+    if(r.stash&&r.stash.length){['logs','logs/refs'].forEach(function(x){if(d.indexOf(x)<0)d.push(x)});f['logs/refs/stash']=r.stash.slice().reverse().map(function(e,i,a){return (i?fullid(a[i-1].id):'0000000000000000000000000000000000000000')+' '+fullid(e.id)+' '+(S.cfg.name||'you')+' <'+(S.cfg.email||'you@example.com')+'> '+Math.floor(Date.now()/1000)+' '+tzs()+'\t'+e.label}).join('\n')+'\n'}
+    return {dirs:d,files:f}}
+  function gitDirSync(){if(!S||!S.repos)return;var want={},wantD={};
+    keys(S.repos).forEach(function(rt){var r=S.repos[rt];if(!r||!S.dirs[rt])return;var g=rt+'/.git';
+      /* rm -rf .git: the files stay, but the folder is not a repo any more (its history is gone) */
+      if(r.gitMade&&!S.dirs[g]){delete S.repos[rt];if(under(S.cwd,g))S.cwd=rt;return}
+      r.gitMade=true;gReflog(r);var v=gitDirFiles(r);wantD[g]=1;v.dirs.forEach(function(x){wantD[g+'/'+x]=1});keys(v.files).forEach(function(x){want[g+'/'+x]=v.files[x]})});
+    keys(S.files).forEach(function(f){if(hasGit(f)&&!(f in want))delete S.files[f]});
+    keys(S.dirs).forEach(function(d){if(hasGit(d)&&!wantD[d])delete S.dirs[d]});
+    keys(want).forEach(function(f){if(S.files[f]!==want[f])S.files[f]=want[f]});keys(wantD).forEach(function(d){S.dirs[d]=1});
+    if(!S.dirs[S.cwd])S.cwd=HOME}
+  /* Git Bash's ls sorts with Windows' CompareStringEx (Cygwin's wcscoll): names starting with . or _ first, then digits,
+     then letters ignoring case (lowercase first on a tie); - and ' do not count */
+  var WSYM=" !\"#$%&()*,./:;?@[\\]^_`{|}~+<=>";
+  function winSortKey(n){var pk='',tk='';for(var i=0;i<n.length;i++){var c=n.charAt(i);if(c==='-'||c==="'")continue;var l=c.toLowerCase(),w;
+      if(/[0-9]/.test(c))w=200+(+c);else if(l!==c.toUpperCase()||/[a-z]/i.test(c))w=300+l.charCodeAt(0);else{var k=WSYM.indexOf(c);w=k>=0?10+k:100+c.charCodeAt(0)%90}
+      pk+=String.fromCharCode(w);tk+=c===l?'0':'1'}return pk+'\u0000'+tk+'\u0000'+n}
   function promptHtml(){var d=S.cwd.replace(HOME,'~'),b='';
-    if(S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0))b=' <span class="c">('+esc(S.repo.head)+')</span>';
+    if(S.repo&&under(S.cwd,S.repo.root+'/.git'))b=' <span class="c">(GIT_DIR!)</span>';
+    else if(S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0))b=' <span class="c">('+(S.repo.det?'('+S.repo.det+'...)':esc(S.repo.head))+')</span>';
     return '<span class="g">you@laptop</span> <span class="p">MINGW64</span> <span class="y">'+esc(d)+'</span>'+b+'<br>$ '}
-  function setPrompt(){ps.innerHTML=promptHtml().replace('<br>$ ','')}
+  function setPrompt(){gitDirSync();ps.innerHTML=promptHtml().replace('<br>$ ','');if(window.mlTermBar)try{window.mlTermBar()}catch(z){}}
+  /* Git Bash's GitHub login: real (with the account) or the Mini laptop's pretend GitHub */
+  function termAuth(){var t=tvCur==='term'?RL:(TV.term&&TV.term.rl)||{};return {on:!!t.on,login:t.login||'',busy:tvCur==='term'&&(busy||pend)}}
   function run(line){
     if(scripting&&tvCur!=='lab'&&!termPaste)tvUse('lab');
     if(!scripting)holdCap=false;
@@ -724,7 +1028,7 @@
   function graph(){
     if(!S.repo)return '<i class="empty">Your commits will be drawn here.</i>';
     /* only commits something still points at (a branch, origin/..., a tag), like git log: after git reset --hard the dropped ones disappear */
-    var r=R(),seen0={};keys(r.br).map(function(b){return r.br[b]}).concat(keys(r.rbr||{}).map(function(b){return r.rbr[b]}),keys(r.tags||{}).map(function(t){return r.tags[t].id})).forEach(function(t){if(t)keys(anc(t)).forEach(function(k){seen0[k]=1})});
+    var r=R(),seen0={};keys(r.br).map(function(b){return r.br[b]}).concat(r.det?[r.det]:[]).concat(keys(r.rbr||{}).map(function(b){return r.rbr[b]}),keys(r.tags||{}).map(function(t){return r.tags[t].id})).forEach(function(t){if(t)keys(anc(t)).forEach(function(k){seen0[k]=1})});
     var cs=visible().filter(function(c){return seen0[c.id]});if(!cs.length)return '<i class="empty">No commits yet. Try: git add, then git commit -m "..."</i>';
     var bn=keys(r.br).filter(function(b){return r.br[b]}).sort(function(x,y){return x==='main'?-1:y==='main'?1:x<y?-1:1});
     var ln=0,owner={},laneName=[];
@@ -745,7 +1049,7 @@
     cs.forEach(function(c){c.p.forEach(function(q){var a=pos[q],b=pos[c.id];if(!a)return;
       if(a.y===b.y)s+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+LC[b.l%5]+'" stroke-width="5" stroke-linecap="round"/>';
       else s+='<path d="M'+a.x+' '+a.y+' C '+(a.x+step*.55)+' '+a.y+' '+(b.x-step*.55)+' '+b.y+' '+b.x+' '+b.y+'" fill="none" stroke="'+LC[Math.max(a.l,b.l)%5]+'" stroke-width="5" stroke-linecap="round"/>'})});
-    var tips={};bn.forEach(function(b){var t=r.br[b];if(t&&pos[t])(tips[t]=tips[t]||[]).push(b)});
+    var tips={};if(r.det&&pos[r.det])tips[r.det]=['HEAD'];bn.forEach(function(b){var t=r.br[b];if(t&&pos[t])(tips[t]=tips[t]||[]).push(b)});
     keys(r.rbr||{}).sort().forEach(function(b){var t=r.rbr[b];if(t&&pos[t])(tips[t]=tips[t]||[]).push('origin/'+b)});
     keys(r.tags||{}).sort().forEach(function(tg){var t=r.tags[tg].id;if(t&&pos[t])(tips[t]=tips[t]||[]).push('tag: '+tg)});
     var cloud='<path d="M0 6a3 3 0 0 1 4.6-2.5A3.8 3.8 0 0 1 11.8 5a2.5 2.5 0 0 1-.6 4.9H2.4A2.6 2.6 0 0 1 0 6z" fill="#fff" stroke="#16327a" stroke-width="1.2"/>';
@@ -759,7 +1063,7 @@
        +'<text x="'+p.x+'" y="'+(p.y+44)+'" text-anchor="middle" font-size="10" font-family="Fira Code,monospace" fill="#7a86b0">'+c.id+'</text>'
        +(bits.length?'<text x="'+p.x+'" y="'+(p.y+57)+'" text-anchor="middle" font-size="11" font-weight="800" font-family="Fira Code,monospace">'+bits.join(' ')+'</text>':'')+'</g>';
       var k=0;(tips[c.id]||[]).forEach(function(b){
-        var tg=b.indexOf('tag: ')===0,up=b.indexOf('origin/')===0,head=!up&&!tg&&b===r.head,label=(head?'HEAD > ':'')+b,w=label.length*6.9+16+(up?18:0),y=p.y-30-k*24;
+        var tg=b.indexOf('tag: ')===0,up=b.indexOf('origin/')===0,head=b==='HEAD'||!up&&!tg&&b===r.head&&!r.det,label=b==='HEAD'?'HEAD (detached)':(head?'HEAD > ':'')+b,w=label.length*6.9+16+(up?18:0),y=p.y-30-k*24;
         s+='<rect class="'+(up?'gorig':'gtag')+'" x="'+(p.x-w/2)+'" y="'+(y-14)+'" width="'+w+'" height="21" rx="5" fill="'+(tg?'#ffd34e':up?'#fff':head?'#e8336d':LC[p.l%5])+'" stroke="#16327a" stroke-width="2"'+(up?' stroke-dasharray="4 2"':'')+'/><text x="'+(p.x-w/2+8)+'" y="'+(y+1)+'" font-size="12" font-weight="800" fill="'+(up||tg?'#16327a':'#fff')+'" font-family="Nunito,sans-serif">'+esc(label)+'</text>'
          +(up?'<g transform="translate('+(p.x+w/2-20)+','+(y-9)+')">'+cloud+'</g>':'');k++});
     });
@@ -797,7 +1101,7 @@
     var h='<div class="vsside scmside"><div class="vssh"><span>SOURCE CONTROL</span>'+(S.repo?'<span class="scmtools"><button class="vsnew" data-scm="merge" title="Merge Branch...">'+VI.merge+'</button><button class="vsnew" data-scm="more" title="More Actions...">'+VI.more+'</button></span>':'')+'</div>';
     if(!S.repo)return h+'<p class="scmtxt">The folder currently open doesn\'t have a Git repository. You can initialize a repository which will enable source control features powered by Git.</p><button class="scmbtn" data-scm="init">Initialize Repository</button></div>';
     var st=status(),r=R(),mg=r.merge,msg=S.scmMsg!=null?S.scmMsg:'';
-    h+='<div class="scmbox"><textarea id="scmMsg" rows="2" spellcheck="false" placeholder="'+(mg?esc(mg.msg):'Message (Ctrl+Enter to commit on \''+esc(r.head)+'\')')+'">'+esc(msg)+'</textarea><button class="scmbtn" data-scm="commit">&#10003; '+(mg?'Continue':'Commit')+'</button></div>';
+    h+='<div class="scmbox"><textarea id="scmMsg" rows="2" spellcheck="false" placeholder="'+(mg?esc(mg.msg):'Message (Ctrl+Enter to commit on \''+esc(hName(r))+'\')')+'">'+esc(msg)+'</textarea><button class="scmbtn" data-scm="commit">&#10003; '+(mg?'Continue':'Commit')+'</button></div>';
     function row(f,letter,cls,acts){return '<div class="vsfile scmrow g'+cls+'" data-f="'+esc(f)+'">'+ficon(f)+'<span>'+esc(base(f))+'</span>'+acts+'<b>'+letter+'</b></div>'}
     function sec(t,n,act,body){return n?'<div class="scmsec"><div class="scmh"><span>&#8964; '+t+'</span>'+act+'<em>'+n+'</em></div>'+body+'</div>':''}
     var ch=st.unstaged.map(function(x){return [x[0],x[1]==='deleted'?'D':'M']}).concat(st.untracked.map(function(f){return [f,'U']}));
@@ -1000,7 +1304,7 @@
     np.style.setProperty('--vsw',w+'px');np.classList.add('vswset');vsGrip()});
   ['pointerup','pointercancel'].forEach(function(n){np.addEventListener(n,function(){if(vsGripD){vsGripD=null;np.classList.remove('sizing')}})});
   addEventListener('resize',function(){if(np.classList.contains('show'))vsGrip()});
-  function vsKeep(){vsGrip();var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l}}vsSel=null}
+  function vsKeep(){vsGrip();var ta=$('vsTa'),nm=$('vsName'),sm=$('scmMsg');if(nm){nm.focus();return}if(sm&&S.scmFocus){sm.focus({preventScroll:true});sm.setSelectionRange(sm.value.length,sm.value.length)}var edDone=false;if(ta&&vsSel&&vsSel.f===S.fvf){ta.focus({preventScroll:true});ta.setSelectionRange(vsSel.s,vsSel.e);var sc=ta.closest('.vscode');if(sc){sc.scrollTop=vsSel.t;sc.scrollLeft=vsSel.l;edDone=true}}vsSel=null;vsRestoreScroll(edDone)}
   $('fvB').addEventListener('input',function(e){if(e.target.id!=='vsTa')return;var ta=e.target,v=ta.value;
     var hp=vsPath(),h=vsHist(hp),was=S.files[hp]===undefined?'':S.files[hp],now=Date.now();
     if(h.last!==null&&h.last!==was){h.u=[];h.r=[]} /* the file was changed outside the editor (git restore, merge...): start a fresh history */
@@ -1070,7 +1374,17 @@
       items=[{t:'Open',fn:function(){S.fvf=k;fvDraw()}},'-',{t:'Rename...',k:'F2',fn:function(){vsRename(a)}},{t:'Delete',k:'Del',fn:function(){vsDelete(a)}}]}
     else items=[{t:'New File...',fn:function(){nw(m.root,'file')}},{t:'New Folder...',fn:function(){nw(m.root,'dir')}}];
     ctxMenu(e.clientX,e.clientY,items)}
-  function fvDraw(){
+  /* VS Code is drawn again after every click; keep where you had scrolled to: the file list, the tabs, the window,
+     and each file's own place in the editor (switching tabs and back keeps your spot, like real VS Code) */
+  var vsSV=null,vsFileScroll={};
+  function vsSaveScroll(){var np=$('notepad');if(!np)return null;var o={},ed=np.querySelector('.vscode');
+    ['.vsside','.vstree','.vstabs','.npb','.vsed'].forEach(function(q){var e=np.querySelector(q);if(e)o[q]=[e.scrollTop,e.scrollLeft]});
+    if(ed&&o.f===undefined&&S.fvfShown)vsFileScroll[S.fvfShown]=[ed.scrollTop,ed.scrollLeft];return o}
+  function vsRestoreScroll(edDone){var np=$('notepad'),o=vsSV;vsSV=null;if(!np)return;
+    if(o)keys(o).forEach(function(q){var e=np.querySelector(q);if(e){e.scrollTop=o[q][0];e.scrollLeft=o[q][1]}});
+    var ed=np.querySelector('.vscode');if(ed&&!edDone){var f=vsFileScroll[S.fvf];ed.scrollTop=f?f[0]:0;ed.scrollLeft=f?f[1]:0}
+    S.fvfShown=S.fvf}
+  function fvDraw(){vsSV=vsSaveScroll();
     /* VS Code starts with no folder open, like the real one on first launch. It opens a folder once you use it:
        Open Folder, Open with VS Code, cd into a folder in the terminal, or tapping a file in the lab */
     if(S.vsEmpty&&(S.cwd!==HOME||S.vsPin))S.vsEmpty=false;
@@ -1090,7 +1404,7 @@
     w=work();ks=keys(w).sort();
     var hT=headTree();
     function st(f){return R().conf[f]?'C':!(f in R().index)?'U':w[f]!==R().index[f]?'M':R().index[f]!==hT[f]?(f in hT?'M':'A'):''}
-    if(!ks.length){np.classList.remove('bad');vsTreeHtml=vsTree(m,[],null);T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,R().head);vsKeep();return}
+    if(!ks.length){np.classList.remove('bad');vsTreeHtml=vsTree(m,[],null);T.textContent=folder+' - Visual Studio Code';B.innerHTML=vsShell(folder,[],null,empty,R().det?R().det:R().head);vsKeep();return}
     if(!S.fvf||!(S.fvf in w))S.fvf=ks[0];
     conf=!!R().conf[S.fvf];
     if(S.vsMerge&&(!conf||S.vsMerge.f!==S.fvf||!/^<<<<<<</m.test(w[S.fvf]||''))){S.vsMerge=null;np.classList.remove('merging')}
@@ -1101,7 +1415,7 @@
     if(conf&&!S.conflShown){S.conflShown=1;np.classList.remove('min');if(np.classList.contains('docked'))vsDock(false);np.classList.remove('flash');void np.offsetWidth;np.classList.add('flash')}
     if(!conf)S.conflShown=0;
     var nc=conf?((w[S.fvf].match(/^<<<<<<</gm)||[]).length):0;
-    B.innerHTML=vsShell(folder,lst,S.fvf,(S.vsMerge&&S.vsMerge.f===S.fvf&&nc?mEditor(w[S.fvf]):nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc&&!(S.vsMerge&&S.vsMerge.f===S.fvf)?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),R().head+(R().merge?' (merging)':''),state);vsKeep();
+    B.innerHTML=vsShell(folder,lst,S.fvf,(S.vsMerge&&S.vsMerge.f===S.fvf&&nc?mEditor(w[S.fvf]):nc?'<div class="vsconf">'+nc+' conflict'+(nc>1?'s':'')+' &middot; pick a change below, or edit the file yourself</div>'+fvHtml(w[S.fvf]):vsEdit(w[S.fvf]))+(/\.md$/i.test(S.fvf)?mdPrev(w[S.fvf]):'')+(nc&&!(S.vsMerge&&S.vsMerge.f===S.fvf)?'<div class="vsme"><button data-me="1">Resolve in Merge Editor</button></div>':''),(R().det?R().det:R().head)+(R().merge?' (merging)':''),state);vsKeep();
   }
   function mdPrev(t){var h='<div class="mdp"><div class="mdh">How GitHub shows it</div>';t.replace(/\n$/,'').split('\n').forEach(function(l){
       if(/^## /.test(l))h+='<h4>'+esc(l.replace(/^#+ /,''))+'</h4>';else if(/^# /.test(l))h+='<h3>'+esc(l.slice(2))+'</h3>';else if(l.trim())h+='<p>'+esc(l)+'</p>'});return h+'</div>'}
@@ -1116,7 +1430,7 @@
     if(!S.repo||!S.fvf)return;var f=S.fvf,t=work()[f]||'',m=t.match(/<<<<<<<[^\n]*\n([\s\S]*?)=======\n([\s\S]*?)>>>>>>>[^\n]*\n?/);if(!m)return;
     var rpl=act==='cur'?m[1]:act==='inc'?m[2]:m[1]+m[2];S.files[R().root+'/'+f]=t.replace(m[0],rpl);
     pr('<span class="y">[VS Code] '+(act==='cur'?'Accepted Current Change':act==='inc'?'Accepted Incoming Change':'Accepted Both Changes')+' in '+esc(f)+'. File saved. Next: git add '+esc(f)+', then git commit.</span>');render()}
-  var TT1=['Make a folder called recipes and go inside it','Turn it into a Git repo and set your name and email','Create a file called pasta.txt','Save it as your first commit','Connect GitHub and push it','Make a branch called feature','Change the file and commit it on the branch','Push the branch to GitHub','Go back to main','Change the same line on main and commit it','Merge feature into main (a conflict will appear)','Read the conflict markers in the file','Fix the file by writing the final line yourself','Mark it fixed and finish the merge','Push the result to GitHub','Add a README file','Look at the history'];
+  var TT1=['Make a folder called recipes and go inside it','Turn it into a Git repo and set your name and email','Create a file called pasta.txt','Save it as your first commit','Connect GitHub and push it','Make a branch called feature','Change the file and commit it on the branch','Push the branch to GitHub','Go back to main','Change the same line on main and commit it','Merge feature into main (a conflict will appear)','Read the conflict markers in the file','Fix the file by writing the final line yourself','Mark it fixed and finish the merge','Push the result to GitHub','Delete the merged feature branch, here and on GitHub','Add a README file','Look at the history'];
   function hasC(f){return S.repo&&visible().some(function(c){return f in c.files})}
   var PR1=[
    function(){return !!S.dirs[HOME+'/recipes']&&(S.cwd===HOME+'/recipes'||S.cwd.indexOf(HOME+'/recipes/')===0||!!S.repo)},
@@ -1134,6 +1448,7 @@
    function(){return !!(S.merged||(S.repo&&S.repo.merge&&!/^<<<<<<</m.test(work()['pasta.txt']||'')&&!/<<<<<<</.test(work()['pasta.txt']||'')))},
    function(){return !!S.merged&&!!S.repo&&!S.repo.merge},
    function(){return !!(S.merged&&S.repo.remote&&S.repo.remote.br.main===S.repo.br.main)},
+   function(){return !!(S.merged&&S.repo&&!('feature' in S.repo.br)&&S.repo.remote&&!S.repo.remote.br.feature)},
    function(){return !!(S.repo&&'README.md' in headTree())},
    function(){return !!S.ran.log}
   ];
@@ -1282,6 +1597,7 @@
    {say:'<b>You</b> decide which line survives: the red sauce (Current), the white sauce (Incoming), or both. In VS Code you would click <b>Accept Current Change</b>, <b>Accept Incoming Change</b> or <b>Accept Both Changes</b>. Try those buttons in the VS Code window, or press Next step to pick here.',cmds:['@FIX@'],choose:true},
    {say:'Tell Git the conflict is fixed with <b>git add</b>, then <b>commit</b> to finish the merge.',cmds:['git add pasta.txt','git commit -m "Resolve conflict: @CH@"']},
    {say:'Push the finished merge to GitHub.',cmds:['git push']},
+   {say:'The feature work is part of main now, so the <b>feature</b> branch is done. <b>git branch -d</b> deletes it on your laptop (it only deletes branches that are merged), and <b>git push origin --delete</b> deletes it on GitHub.',cmds:['git branch -d feature','git push origin --delete feature']},
    {say:'Last touch: add a <b>README.md</b>. It is the front page of the project, GitHub shows it under your files. The # makes a big heading.',cmds:['echo "# Recipes" > README.md','echo "My pasta recipes. Made at the Git workshop." >> README.md','git add README.md','git commit -m "Add README"','git push']},
    {say:'<b>git log</b> shows the whole story. The graph on the right shows the branch splitting off and joining back. You just resolved a merge conflict!',cmds:['git log --oneline']}
   ];
@@ -1295,7 +1611,7 @@
    {say:'Now we <b>delete draft.txt</b> from our folder. Git notices: it says <b>deleted</b>, but the deletion is not saved yet. GitHub still has the file.',cmds:['rm draft.txt','git status']},
    {say:'<b>git add</b> also records deletions. Then we commit. (<b>git rm draft.txt</b> does the delete and the add in one go.)',cmds:['git add draft.txt','git commit -m "Remove draft"']},
    {say:'Push, so GitHub drops the file as well. Check the GitHub box: only two files are left.',cmds:['git push']},
-   {say:'Oops, we needed it! <b>git revert HEAD</b> undoes the last commit by making a <b>new</b> commit. Nothing is ever lost, because history keeps everything.',cmds:['git revert HEAD']},
+   {say:'Oops, we needed it! <b>git revert HEAD</b> undoes the last commit by making a <b>new</b> commit. Nothing is ever lost, because history keeps everything. (Any older commit works too: <b>git revert</b> and its id from <b>git log --oneline</b>.)',cmds:['git revert HEAD']},
    {say:'Push the fix. The file is back on GitHub, and <b>git log</b> shows the full story, deletion and undo included.',cmds:['git push','git log --oneline']}
   ];
   var PR2=[
@@ -1374,7 +1690,7 @@
     var tip=r.remote.br[r.head],tf=copy(C(tip).files),t=tf['plan.txt']||'';
     if(n===1)tf['plan.txt']=t+'Roli: I will make the logo\n';
     else{var ls=t.replace(/\n$/,'').split('\n');ls[0]='Plan: build an app';tf['plan.txt']=ls.join('\n')+'\n'}
-    var c={id:rid(),msg:n===1?'Add Roli\'s line':'Make it an app',p:[tip],files:tf,br:r.head,n:++S.n,who:'Roli',hidden:true};r.cm[c.id]=c;r.list.push(c);r.remote.br[r.head]=c.id;S['mate'+n]=c.id;ghShare(r);
+    var c=cfin({id:'',msg:n===1?'Add Roli\'s line':'Make it an app',p:[tip],files:tf,br:r.head,n:++S.n,who:'Roli',hidden:true});r.cm[c.id]=c;r.list.push(c);r.remote.br[r.head]=c.id;S['mate'+n]=c.id;ghShare(r);
     pr('<span class="y">[Meanwhile on GitHub: Roli pushed "'+esc(c.msg)+'". Your laptop does not know yet.]</span>')}
   /* story 5: your own project. You pick the folder name, your name and email; the set-up is typed for you, then it is your turn */
   var TT5=['Set up your project folder (done for you)','Create a file in it','Stage it: git add .','Save it: git commit -m "..."','Upload it: git push -u origin main'];
@@ -1386,7 +1702,7 @@
    {say:'<b>Your turn.</b> Upload it to GitHub: <code>git push -u origin main</code>.',cmds:['git push -u origin main'],free:true}
   ];
   function ownRepo(){return S.own&&S.repos[HOME+'/'+S.own.f]}
-  function ownFiles(){var rp=ownRepo();if(!rp)return [];return keys(S.files).filter(function(f){return f.indexOf(rp.root+'/')===0})}
+  function ownFiles(){var rp=ownRepo();if(!rp)return [];return keys(S.files).filter(function(f){return f.indexOf(rp.root+'/')===0&&!hasGit(f.slice(rp.root.length))})}
   var PR5=[
    function(){var rp=ownRepo();return !!(rp&&S.cfg.name&&S.cfg.email&&rp.remote)},
    function(){var rp=ownRepo();return !!rp&&(ownFiles().length>0||!!rp.br[rp.head])},
@@ -1489,7 +1805,7 @@
     if(busy)return;var r=S.repo;
     if(!r||!r.remote||!r.remote.br[r.head]){window.gitPop&&window.gitPop('warn','NOT YET','Push something to GitHub first. Finish the missions up to <b>git push</b>, or press Watch a demo then push.');return}
     var tip=r.remote.br[r.head],tf=copy(C(tip).files);tf['from-roli.txt']='Hi from Roli\n';
-    var cur=r.head;var c={id:rid(),msg:'Roli adds a note',p:[tip],files:tf,br:cur,n:++S.n,who:'Roli',hidden:true};r.cm[c.id]=c;r.list.push(c);r.remote.br[cur]=c.id;ghShare(r);
+    var cur=r.head;var c=cfin({id:'',msg:'Roli adds a note',p:[tip],files:tf,br:cur,n:++S.n,who:'Roli',hidden:true});r.cm[c.id]=c;r.list.push(c);r.remote.br[cur]=c.id;ghShare(r);
     pr('<span class="y">[A teammate (Roli) just pushed a commit to GitHub.]</span>');
     window.gitPop&&window.gitPop('warn','NEW ON GITHUB','Roli pushed new work to GitHub.<br>You do not have it yet. Type <code>git pull</code> to bring it down.');render();
   };
@@ -1539,7 +1855,8 @@
           var made={};
           function build(sha){if(RL.map[sha])return RL.map[sha];var c=bySha[sha];if(!c)return null;if(made[sha])return made[sha];
             var ps=(c.parents||[]).map(function(q){return build(q.sha)}).filter(Boolean);
-            var sc={id:rid(),msg:(c.commit.message||'').split('\n')[0],p:ps,files:trees[sha],br:br,n:++S.n,who:(c.commit.author&&c.commit.author.name)||'GitHub',hidden:true};
+            var sc={id:sha.slice(0,7),full:sha,msg:(c.commit.message||'').split('\n')[0],p:ps,files:trees[sha],br:br,n:++S.n,who:(c.commit.author&&c.commit.author.name)||'GitHub',hidden:true};FULLID[sc.id]=sha;
+            if(c.commit.author&&c.commit.author.date){sc.ts=Math.floor(Date.parse(c.commit.author.date)/1000);sc.email=c.commit.author.email}
             r.cm[sc.id]=sc;r.list.push(sc);made[sha]=sc.id;RL.map[sha]=sc.id;return sc.id}
           build(head);
           if(RL.map[head]){r.remote.br[br]=RL.map[head];RL.known[br]=head}
@@ -1551,8 +1868,12 @@
   }
   function b64(t){return btoa(unescape(encodeURIComponent(t)))}
   function ago(d){var s=Math.max(0,(Date.now()-new Date(d))/1000);return s<60?'just now':s<3600?Math.floor(s/60)+' min ago':Math.floor(s/3600)+' h ago'}
-  function setupForm(msg){
-    rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
+  /* while switching repos, the rest of the Practice Lab is greyed out (nothing else can be clicked or typed) */
+  function labLock(on){RL.form=!!on;$('pg').classList.toggle('rswitching',!!on);labIn.disabled=!!on}
+  /* while GitHub answers, the panel greys out too, so Connect cannot be pressed twice */
+  function rbBusy(t){rbody.classList.add('rbusy');rbody.querySelectorAll('button,input').forEach(function(e){e.disabled=true});var m=document.createElement('p');m.className='rbusymsg';m.textContent=t;rbody.insertBefore(m,rbody.firstChild)}
+  function setupForm(msg,sw){rbody.classList.remove('rbusy');
+    rbody.innerHTML='<ol class="rsteps"><li><b>Make a token.</b> <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">Open github.com/settings/tokens/new</a>, tick <b>repo</b>, set <b>Expiration</b> to <b>7 days</b>, scroll down, click <b>Generate token</b>, and copy it.</li>'
      +'<li><b>Pick the repo.</b> Already have an empty repo? Paste its link. No repo yet? Make one right here, below.</li></ol>'
      +'<label class="rf">Token (starts with ghp_ or github_pat_)<input id="rfTok" type="password" placeholder="paste the token here" autocomplete="off"></label>'
      +'<label class="rf">Repo link<input id="rfRepo" placeholder="https://github.com/your-name/your-repo" value="'+esc(RL.repo)+'"></label>'
@@ -1563,6 +1884,9 @@
      +'<label><input type="radio" name="rfVis" value="public" checked> Public</label><label><input type="radio" name="rfVis" value="private"> Private</label></span>'
      +'<div class="btns" style="justify-content:flex-start;margin:6px 0 0"><button id="rfNew">Create it and connect</button></div><small>Your token makes an empty repo on your GitHub account (like github.com/new), then connects to it.</small></div>';
     $('rfGo').onclick=connect;$('rfOff').onclick=realOff;$('rfNew').onclick=connectNew;
+    /* switching repos: you stay logged in (the token is kept), and Cancel goes back to the repo you were on */
+    if(sw&&RL.on){labLock(true);$('rfTok').value=RL.tok;var st=rbody.querySelector('.rsteps');if(st)st.outerHTML='<p class="rswitch"><b>Switch repo.</b> You stay logged in. Paste another repo\'s link and press <b>Connect</b>, or make a new repo below. Now on: <b>'+esc(RL.repo)+'</b></p>';
+      $('rfRepo').value='';var c=$('rfOff');c.textContent='Cancel';c.onclick=function(){labLock(false);refreshLive(true)}}
     $('rfNewName').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();connectNew()}});
   }
   function parseRepo(v){v=v.trim();var m=v.match(/github\.com[\/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[\/?#].*)?$/);if(m)return m[1]+'/'+m[2];m=v.match(/^([\w.-]+)\/([\w.-]+)$/);return m?m[1]+'/'+m[2].replace(/\.git$/,''):''}
@@ -1572,35 +1896,39 @@
     connectTo(rp,tk)}
   /* no repo yet: make it with the token (POST /user/repos), then connect to it */
   function connectNew(){tvUse('lab');var tk=$('rfTok').value.trim(),nm=ghFixName($('rfNewName').value),priv=!!document.querySelector('input[name="rfVis"][value="private"]:checked');
-    function again(m){setupForm(m);$('rfTok').value=tk;$('rfNewName').value=nm;if(priv)document.querySelector('input[name="rfVis"][value="private"]').checked=true}
+    function again(m){setupForm(m,RL.on);$('rfTok').value=tk;$('rfNewName').value=nm;if(priv)document.querySelector('input[name="rfVis"][value="private"]').checked=true}
     if(!tk){again('Paste the token first: it is what makes the repo on your account.');return}
     if(!nm||nm==='.'||nm==='..'){again('Type a name for the new repo, like my-first-repo.');return}
-    RL.tok=tk;rbody.innerHTML='<p class="empty">Making github.com/&hellip;/'+esc(nm)+' ...</p>';
+    RL.tok=tk;rbBusy('Making github.com/.../'+nm+' ...');
     gh('POST','/user/repos',{name:nm,description:'Made with the Git & GitHub Workshop Mini laptop',private:priv,auto_init:false}).then(function(x){
       if(x.s===201||x.s===200){var full=x.j.full_name;pl('✓ Created repository '+full+' on GitHub\n  https://github.com/'+full,'g');connectTo(full,tk);return}
-      var msg=(x.j&&x.j.message)||'',det=(x.j&&x.j.errors&&x.j.errors[0]&&(x.j.errors[0].message||x.j.errors[0].code))||'';RL.tok='';
+      var msg=(x.j&&x.j.message)||'',det=(x.j&&x.j.errors&&x.j.errors[0]&&(x.j.errors[0].message||x.j.errors[0].code))||'';if(!RL.on)RL.tok='';
       if(x.s===422&&/exist/i.test(msg+' '+det)){again('You already have a repo called '+nm+'. Pick another name, or paste its link above and press Connect.');return}
       if(x.s===401){again('GitHub said 401: the token is wrong or expired. Make a new one.');return}
       if(x.s===403||x.s===404){again('GitHub said '+x.s+': this token cannot make repos. Use a classic token with the repo box ticked (a fine-grained token also needs Administration: Read and write). Or make the repo at github.com/new and paste its link.');return}
       again('GitHub said '+x.s+': '+(msg||'could not make the repo')+(det?' ('+det+')':''))
-    }).catch(function(e){RL.tok='';again('Could not reach GitHub ('+((e&&e.message)||'blocked')+'). Check your internet and open the file directly in Chrome or Edge.')})}
-  function connectTo(rp,tk){
-    RL.repo=rp;RL.tok=tk;rbody.innerHTML='<p class="empty">Connecting...</p>';
+    }).catch(function(e){if(!RL.on)RL.tok='';again('Could not reach GitHub ('+((e&&e.message)||'blocked')+'). Check your internet and open the file directly in Chrome or Edge.')})}
+  function connectTo(rp,tk){var prev=RL.on?{repo:RL.repo,tok:RL.tok,def:RL.def}:null;
+    function fail(m){if(prev){RL.repo=prev.repo;RL.tok=prev.tok;RL.def=prev.def;setupForm(m,true)}else{RL.tok='';setupForm(m)}}
+    RL.repo=rp;RL.tok=tk;if($('rfGo'))rbBusy('Connecting to github.com/'+rp+' ...');else rbody.innerHTML='<p class="empty">Connecting...</p>';
     gh('GET','/repos/'+rp).then(function(x){
-      if(x.s!==200){RL.tok='';setupForm('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
-      if(x.j.permissions&&!x.j.permissions.push){RL.tok='';setupForm('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
-      RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};RL.login='';
+      if(x.s!==200){fail('GitHub said '+x.s+': '+(x.j.message||'could not reach the repo')+'. Check the name and token.');return}
+      if(x.j.permissions&&!x.j.permissions.push){fail('This token cannot write to that repo. Make a classic token with the repo box ticked.');return}
+      if(RL.form)labLock(false);rbody.classList.remove('rbusy');RL.def=x.j.default_branch||'main';RL.view=RL.def;RL.on=true;RL.seen={};RL.known={};RL.map={};RL.blobs={};RL.up={};RL.login='';
       $('pg').classList.add('real');$('pgReal').textContent='Real mode: ON';
-      pl('Connected to github.com/'+rp+' for real. Add it as origin and push!','y');
-      pl('git remote add origin https://github.com/'+rp+'.git','c');
+      pl('Connected to github.com/'+rp+' for real.','y');
+      var inRepo=S.repo&&(S.cwd===S.repo.root||S.cwd.indexOf(S.repo.root+'/')===0);
+      if(inRepo){pl('Connect this repo to it, then upload (once you have a commit):','y');pl('  git remote add origin https://github.com/'+rp+'.git\n  git push -u origin main','c')}
+      else{pl('Next: press Start the story (it uses this repo), or make your own project first:','y');
+        pl('  mkdir my-project\n  cd my-project\n  git init\n  echo "hello" > hello.txt\n  git add .\n  git commit -m "First commit"\n  git remote add origin https://github.com/'+rp+'.git\n  git push -u origin main','c')}
       refreshLive(true);clearInterval(RL.timer);RL.timer=setInterval(function(){refreshLive()},8000);
     }).catch(function(e){var keep=tk;var inFrame=false;try{inFrame=window.top!==window}catch(z){inFrame=true}
       setupForm('Could not reach GitHub ('+(e&&e.message||'blocked')+'). '+(inFrame?'This page is inside a preview that blocks outside connections. Download the file and open it in Chrome or Edge.':'Check your internet, turn off ad blockers, and open the file directly in Chrome or Edge instead of a preview.'));
       var t=$('rfTok');if(t)t.value=keep;RL.tok=''})
   }
-  function realOff(){RL.on=false;RL.tok='';clearInterval(RL.timer);$('pg').classList.remove('real');rb.hidden=true;$('pgReal').textContent='Real GitHub mode'}
+  function realOff(){if(RL.form)labLock(false);rbody.classList.remove('rbusy');RL.on=false;RL.tok='';clearInterval(RL.timer);$('pg').classList.remove('real');rb.hidden=true;$('pgReal').textContent='Real GitHub mode'}
   function refreshLive(first){
-    if(!RL.on||tvCur!=='lab'||!RL.repo)return;
+    if(!RL.on||tvCur!=='lab'||!RL.repo||RL.form)return;
     var r=R(),v=(r&&r.head&&r.remote&&r.remote.br[r.head])?r.head:RL.view;
     Promise.all([gh('GET','/repos/'+RL.repo+'/commits?sha='+encodeURIComponent(v)+'&per_page=8'),gh('GET','/repos/'+RL.repo+'/contents?ref='+encodeURIComponent(v)),gh('GET','/repos/'+RL.repo+'/branches')]).then(function(a){
       var cm=a[0],ct=a[1],br=a[2],h='';
@@ -1610,12 +1938,12 @@
         if(ct.s===200)ct.j.forEach(function(f){h+='<div class="lvfile" data-p="'+esc(f.path)+'" data-t="'+f.type+'"><span>'+(f.type==='dir'?'&#128193;':'&#128196;')+'</span> '+esc(f.name)+'</div>'});
         h+='</div><div class="lvc">';
         cm.j.forEach(function(c){var isNew=!first&&!RL.seen[c.sha]&&Object.keys(RL.seen).length>0;RL.seen[c.sha]=1;
-          h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+c.html_url+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
+          h+='<a class="lvcm'+(isNew?' newc':'')+'" href="'+esc(c.html_url)+'" target="_blank" rel="noopener"><b>'+esc(c.commit.message.split('\n')[0])+'</b><small><code>'+c.sha.slice(0,7)+'</code> '+esc(c.commit.author.name)+' &middot; '+ago(c.commit.author.date)+'</small></a>'});
         h+='</div>';
       }else h+='<p class="empty">This repo has no commits on <b>'+esc(v)+'</b> yet. Make a commit and push.</p>';
-      h+='<div class="btns" style="justify-content:flex-start;margin:8px 0 0"><button id="rfWipe" class="redbtn">Delete everything in this repo</button><button id="rfOff2">Switch off real mode</button></div>';
+      h+='<div class="btns rbtns"><button id="rfSwitch">Switch repo</button><button id="rfOff2">Switch off real mode</button><button id="rfWipe" class="redbtn">Delete everything in this repo</button></div>';
       rbody.innerHTML=h;rb.hidden=false;
-      var b=$('rfRef');if(b)b.onclick=function(){refreshLive()};$('rfOff2').onclick=realOff;$('rfWipe').onclick=function(){if(busy)return;window.gitPop('err','DELETE EVERYTHING?','This deletes <b>every file and every extra branch</b> in <b>github.com/'+esc(RL.repo)+'</b> and clears the Mini laptop too. Use it to reset the repo for the next demo.',[{t:'Yes, delete everything',fn:wipeReal},{t:'Cancel'}])};
+      var b=$('rfRef');if(b)b.onclick=function(){refreshLive()};$('rfOff2').onclick=realOff;$('rfSwitch').onclick=function(){if(busy||pend)return;setupForm(null,true)};$('rfWipe').onclick=function(){if(busy)return;window.gitPop('err','DELETE EVERYTHING?','This deletes <b>every file and every extra branch</b> in <b>github.com/'+esc(RL.repo)+'</b> and clears the Mini laptop too. Use it to reset the repo for the next demo.',[{t:'Yes, delete everything',fn:wipeReal},{t:'Cancel'}])};
     });
   }
   rbody.addEventListener('click',function(e){var el=e.target.closest&&e.target.closest('.lvfile');if(!el||el.getAttribute('data-t')!=='file')return;
@@ -1715,14 +2043,24 @@
       git(['push','-u','origin',hb]);S.forceRepo=keep;if(srcRepo.br[hb]&&srcRepo.remote.br[hb]===srcRepo.br[hb])pl('✓ Pushed commits to '+git2,'g');render()})}
   /* ---------- the Terminal app: a plain Git Bash. It asks for a GitHub token once, then works like a real terminal ---------- */
   var termPaste=false;
-  function termAttach(o,i,p){TV.term={out:o,inp:i,ps:p,cwd:HOME,hist:[],hi:0,rl:null};
+  /* Git Bash tabs, like a real terminal: each tab has its own output, folder and history; they share the
+     Mini laptop (files, repos) and the gh login. The command line and prompt are shared and show the current tab. */
+  var TT=[],tcur=0;
+  function termTabs(){var c=tvCur==='term'?S.cwd:(TV.term&&TV.term.cwd)||HOME;return {cur:tcur,busy:busy||pend,list:TT.map(function(t,i){var d=i===tcur?c:t.cwd;return d===HOME?'~':d.indexOf(HOME+'/')===0?'~'+d.slice(HOME.length):d})}}
+  function termTabGo(i){if(busy||pend||!TT[i])return false;if(tvCur!=='term')tvUse('term');if(i===tcur){setPrompt();return true}
+    var a=TT[tcur];a.cwd=S.cwd;a.hist=S.hist;a.hi=S.hi;a.out.hidden=true;
+    tcur=i;var n=TT[i];n.out.hidden=false;out=n.out;TV.term.out=n.out;S.cwd=S.dirs[n.cwd]||n.cwd===HOME?n.cwd:HOME;S.hist=n.hist;S.hi=n.hi;setPrompt();n.out.scrollTop=n.out.scrollHeight;return true}
+  function termTabNew(o){if(busy||pend)return false;o.hidden=true;TT.push({out:o,cwd:HOME,hist:[],hi:0});return termTabGo(TT.length-1)}
+  function termTabClose(i){if(busy||pend||TT.length<2||!TT[i])return false;
+    if(i===tcur)termTabGo(i>0?i-1:1);var t=TT[i];TT.splice(i,1);if(tcur>i)tcur--;t.out.remove();setPrompt();return true}
+  function termAttach(o,i,p){TV.term={out:o,inp:i,ps:p,cwd:HOME,hist:[],hi:0,rl:null};TT=[{out:o,cwd:HOME,hist:[],hi:0}];tcur=0;
     i.addEventListener('focus',function(){if(!busy&&!pend)tvUse('term')});
     i.addEventListener('keydown',function(e){
       if(tvCur!=='term'){if(busy||pend){if(e.key==='Enter')e.preventDefault();return}tvUse('term')}
       if(e.key==='Enter'){e.preventDefault();if(busy||pend)return;var v=i.value;i.value='';run(v)}
       else if(e.key==='ArrowUp'){if(S.hi>0){S.hi--;i.value=S.hist[S.hi]||'';e.preventDefault()}}
       else if(e.key==='ArrowDown'){if(S.hi<S.hist.length){S.hi++;i.value=S.hist[S.hi]||'';e.preventDefault()}}
-      else if(e.key==='l'&&e.ctrlKey){o.innerHTML='';e.preventDefault()}});
+      else if(e.key==='l'&&e.ctrlKey){(TT[tcur]?TT[tcur].out:o).innerHTML='';e.preventDefault()}});
     i.addEventListener('paste',function(e){var t=(e.clipboardData||window.clipboardData).getData('text');if(!/[\r\n]/.test(t))return;
       e.preventDefault();if(busy||pend)return;tvUse('term');var lines=(i.value+t).split(/\r?\n/).filter(function(l){return l.trim()});i.value='';
       termPaste=true;(function next(){if(pend||busy){setTimeout(next,200);return}if(!lines.length){termPaste=false;return}run(lines.shift());setTimeout(next,80)})()})}
@@ -1752,6 +2090,13 @@
       perr("remote: Repository not found.\nfatal: repository '"+url+"/' not found");
       pl('The link must point to a repo that really exists on GitHub.'+(RL.repo?' Your connected repo is github.com/'+RL.repo+':\n  git remote set-url origin https://github.com/'+RL.repo+'.git\nOr':'')+' Make this one first:  gh repo create '+t.split('/')[1]+' --public\n(check the spelling too: the link shows on the repo\'s page on github.com, under Code)','y');ghDone()
     }).catch(function(e){perr("fatal: unable to access '"+url+"/': "+((e&&e.message)||'network error'));ghDone()})}
+  /* git push origin --delete <branch>, for real */
+  function realDelBranch(db){var r=R(),repo=ghRepo(r),url='https://github.com/'+repo+'.git';pend=true;busy=true;inp.disabled=true;
+    gh('DELETE','/repos/'+repo+'/git/refs/heads/'+encodeURIComponent(db)).then(function(x){
+      if(x.s===204||x.s===200){delete r.remote.br[db];if(r.rbr)delete r.rbr[db];if(r.up)delete r.up[db];delete RL.known[db];pl('To '+url);pl(' - [deleted]         '+db,'g');refreshLive();return}
+      if(x.s===422||x.s===404)perr("error: unable to delete '"+db+"': remote ref does not exist\nerror: failed to push some refs to '"+url+"'");
+      else perr('error: GitHub refused: '+x.s+' '+((x.j&&x.j.message)||''))
+    }).catch(function(e){perr("fatal: unable to access '"+url+"/': "+((e&&e.message)||'network error'))}).then(function(){ghDone()})}
   /* git push, for real. Each commit on your Mini laptop becomes ONE commit on GitHub, the way real Git does it:
      upload each changed file (a blob), make the folder listing (a tree, built on the parent's tree), make the commit
      (tree + parents + message), and only at the end move the branch to it. A merge keeps both parents.
@@ -1776,7 +2121,7 @@
       return gh('GET','/repos/'+repo+'/git/commits/'+sha).then(chk).then(function(x){treeOf[sha]=x.j.tree.sha;return treeOf[sha]})}
     /* upload one file's contents, once per different contents */
     function blobFor(t){if(up[t])return Promise.resolve(up[t]);
-      return gh('POST','/repos/'+repo+'/git/blobs',{content:isBin(t)?binInfo(t).b64:b64(t),encoding:'base64'}).then(chk).then(function(x){up[t]=x.j.sha;return x.j.sha})}
+      return (isBin(t)?binLoad(t):Promise.resolve(b64(t))).then(function(c){return gh('POST','/repos/'+repo+'/git/blobs',{content:c,encoding:'base64'})}).then(chk).then(function(x){up[t]=x.j.sha;return x.j.sha})}
     function oneCommit(c){if(shaOf[c.id])return Promise.resolve();
       var parents=c.p.map(function(id){return shaOf[id]});
       if(parents.some(function(s){return !s})){var er=new Error('GitHub does not have the commit before '+c.id+' yet. Type git push again.');return Promise.reject(er)}
@@ -1788,7 +2133,7 @@
           .then(function(){if(bt&&!entries.length)return bt; /* nothing changed (like some merges): same tree as the parent */
             var body={tree:entries};if(bt)body.base_tree=bt;
             return gh('POST','/repos/'+repo+'/git/trees',body).then(chk).then(function(x){return x.j.sha})})
-          .then(function(ts){return gh('POST','/repos/'+repo+'/git/commits',{message:c.msg,tree:ts,parents:parents}).then(chk).then(function(x){
+          .then(function(ts){return gh('POST','/repos/'+repo+'/git/commits',(function(){var o={message:c.msg+'\n',tree:ts,parents:parents};if(c.ts){var iso=new Date(c.ts*1000).toISOString().replace(/\.\d{3}Z$/,'')+'Z',tz=c.tz||'+0000',loc=new Date((c.ts+(tz[0]==='-'?-1:1)*(+tz.slice(1,3)*3600+ +tz.slice(3,5)*60))*1000).toISOString().replace(/\.\d{3}Z$/,'')+tz.slice(0,3)+':'+tz.slice(3),a={name:c.who,email:c.email||(S.cfg.email||'you@example.com'),date:loc};o.author=a;o.committer=a}return o})()).then(chk).then(function(x){
             shaOf[c.id]=x.j.sha;treeOf[x.j.sha]=(x.j.tree&&x.j.tree.sha)||ts;RL.map[x.j.sha]=c.id})})})}
     ensure.then(function(){return seq(list,oneCommit)})
     /* 2. move the branch to the newest commit, in one step. Without force, GitHub itself refuses if it moved meanwhile */
@@ -1818,7 +2163,7 @@
     }).then(function(){pend=false;if(!scripting){busy=false;inp.disabled=false;inp.focus({preventScroll:true})}setPrompt();render()});
   }
   $('pgReal').onclick=function(){if(busy||pend)return;tvUse('lab');if(RL.on){realOff();return}$('pg').classList.add('real');rb.hidden=false;setupForm()};
-  window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
+  window.ML={isBin:isBin,isPic:isPic,binReg:binReg,binLazy:binLazy,termAuth:termAuth,termTabs:termTabs,termTabGo:termTabGo,termTabNew:termTabNew,termTabClose:termTabClose,binUrl:binUrl,binSize:binSize,binInfo:binInfo,repoOf:function(p){return repoOf(p)},S:function(){return S},HOME:HOME,render:render,pr:pr,esc:esc,base:base,dirname:dirname,under:under,okName:okName,exists:exists,uniq:uniq,
     fsNew:fsNew,fsRename:fsRename,fsCopy:fsCopy,fsMove:fsMove,binPut:binPut,binRestore:binRestore,binEmpty:binEmpty,gitMark:gitMark,ghCreate:ghCreate,ghOwner:ghOwner,ghFixName:ghFixName,realOn:function(){return RL.on},termAttach:termAttach,termLogin:termLogin,termSkip:termSkip,termInfo:function(){var r=tvCur==='term'?RL:(TV.term&&TV.term.rl)||{};return {on:!!r.on,login:r.login||''}},run:function(c){run(c)},
     ctxMenu:ctxMenu,ctxClose:ctxClose,longPress:longPress,ficon:ficon,openInVS:vsOpenPath,showVS:vsShowWin};
   reset();

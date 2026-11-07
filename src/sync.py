@@ -64,6 +64,30 @@ if os.path.isdir('memes'):
         i=h.rindex('</body>')
         h=h[:i]+'<script type="text/plain" class="memePack" data-name="'+name+'">\n'+b64+'\n</script>\n'+h[i:]
 
+# the presentations in resources/ for the resources folder on the desktop. They are big, so only their names,
+# sizes and slide titles go into the page; the files themselves are fetched from resources/ when they are needed
+import zipfile,json,html
+h=re.sub(r'<script type="application/json" id="resPack">.*?</script>\n?','',h,flags=re.S)
+if os.path.isdir('resources'):
+    decks=[]
+    for name in sorted(os.listdir('resources')):
+        if not name.lower().endswith('.pptx'):continue
+        path=os.path.join('resources',name);titles=[]
+        try:
+            z=zipfile.ZipFile(path)
+            sl=sorted([n for n in z.namelist() if re.match(r'ppt/slides/slide\d+\.xml$',n)],key=lambda n:int(re.findall(r'\d+',n)[0]))
+            for n in sl:
+                runs=[html.unescape(t).strip() for t in re.findall(r'<a:t>([^<]*)</a:t>',z.read(n).decode('utf-8'))]
+                runs=[t for t in runs if t and re.search('[A-Za-z]',t) and t not in ('$','//','>')]
+                if runs and runs[0].startswith('//') and len(runs)>1:runs=runs[1:]
+                titles.append(runs[0][:70] if runs else '')
+        except Exception:pass
+        sd=os.path.join('resources','slides',name[:-5]);slides=sorted(f for f in os.listdir(sd) if f.lower().endswith('.jpg')) if os.path.isdir(sd) else []
+        decks.append({'name':name,'size':os.path.getsize(path),'titles':titles,'slides':slides})
+    if decks:
+        i=h.rindex('</body>')
+        h=h[:i]+'<script type="application/json" id="resPack">'+json.dumps(decks,ensure_ascii=False).replace('</','<\\/')+'</script>\n'+h[i:]
+
 # tiny head script: hide the lessons until the start screen is ready
 h=re.sub(r'<script id="preboot">.*?</script>','',h,flags=re.S)
 i=h.index('</head>')

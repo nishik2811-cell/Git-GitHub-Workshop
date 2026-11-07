@@ -48,12 +48,12 @@
     {"c":["git add .","git commit -m \"add gitignore\""],"cap":".gitignore itself is committed, so the whole team shares the same rules.","v":{"tree":["my-first-repo/","  .git/:G","  node_modules/:I","    react.js:I","  .DS_Store:I","  .env:I","  .gitignore","  debug.log:I","  index.html"],"edit":{"f":".gitignore","l":["# secrets",".env","","# dependencies","node_modules/","","# logs and OS junk","*.log",".DS_Store"]},"g":{"add":[["c71e5a0","add gitignore"]]}}}]},
   m3:{title:".gitkeep",
     init:{"show":["tree","sees","graph"],"tree":["my-first-repo/","  .git/:G","  .gitignore","  index.html"],"g":{"init":"main","add":[["3f8a1c2","initial commit"],["9bd04e7","add paragraph"],["c71e5a0","add gitignore"]]}},
-
-
-      
+    steps:[
+    {"c":"mkdir uploads","cap":"A new, empty uploads/ folder.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/^","  .gitignore","  index.html"]}},
+    {"c":"git status","cap":"\"working tree clean\": Git tracks files, so an empty folder is invisible to it."},
     {"c":"touch uploads/.gitkeep","cap":"A tiny empty .gitkeep file goes inside.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/:U","    .gitkeep:U^","  .gitignore","  index.html"]}},
     {"c":"git status","cap":"Now the folder has a file, so Git sees uploads/.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/:U","    .gitkeep:U","  .gitignore","  index.html"]}},
-   
+    {"c":["git add .","git commit -m \"keep uploads folder\""],"cap":"Committed: anyone who clones the repo gets the folder too.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/","    .gitkeep","  .gitignore","  index.html"],"g":{"add":[["5e6f7a8","keep uploads folder"]]}}}]},
   m4:{title:"Branching",
     init:{"show":["graph","tree"],"tree":["git-club/","  .git/:G","  index.html"],"edit":{"f":"index.html","l":["<h1>Git Club</h1>","<p>Welcome!</p>"]},"g":{"init":"master","add":[["a1b2c3d","initial commit"],["b2c4e61","add homepage"]]}},
     steps:[
@@ -77,7 +77,7 @@
     {"c":["git switch main","git commit -am \"new heading on main\""],"cap":"main changes the same line differently. The history splits in two.","v":{"edit":{"f":"index.html","l":["<h1>Hello Workshop</h1>","<p>Learning Git</p>"],"hl":[0]},"g":{"head":"main","add":[["f1e2d3c","new heading on main"]]}}},
     {"c":"git diff redesign","cap":"git diff redesign: the - line is in redesign, the + line is what you have on main.","d":["-<h1>Welcome to Git Club</h1>","+<h1>Hello Workshop</h1>"," <p>Learning Git</p>"],"v":{"edit":{"f":"index.html","l":["<h1>Hello Workshop</h1>","<p>Learning Git</p>"]}}},
     {"c":"git merge redesign","cap":"Both branches changed the same line: CONFLICT. Git writes both versions into the file.","v":{"pb":"main|MERGING","tree":["git-club/","  .git/:G","  index.html:X^"],"edit":{"f":"index.html","l":["<<<<<<< HEAD","<h1>Hello Workshop</h1>","=======","<h1>Welcome to Git Club</h1>",">>>>>>> redesign","<p>Learning Git</p>"],"acts":1}}},
-    {"c":"git status","cap":"git status: index.html is \"both modified\".","v":{"tree":["git-club/","  .git/:G","  index.html:X"]}},
+    {"c":"git status","cap":"git status: index.html is \"both modified\". Changed your mind? git merge --abort puts everything back as it was before the merge.","v":{"tree":["git-club/","  .git/:G","  index.html:X"]}},
     {"a":"Point at the three markers in the editor","cap":"Between <<<<<<< HEAD and ======= is yours. Between ======= and >>>>>>> redesign is theirs."},
     {"a":"Resolve: keep what you want, delete every marker line, save","cap":"Fixed by hand: all three markers deleted, one final line kept.","v":{"edit":{"f":"index.html","l":["<h1>Hello Workshop, welcome to Git Club</h1>","<p>Learning Git</p>"],"hl":[0]}}},
     {"c":"git add index.html","cap":"git add marks the conflict as resolved.","v":{"tree":["git-club/","  .git/:G","  index.html:S^"],"edit":{"f":"index.html","l":["<h1>Hello Workshop, welcome to Git Club</h1>","<p>Learning Git</p>"]}}},
@@ -140,7 +140,7 @@
     G.c.forEach(function(c,i){c.p.forEach(function(pid){var j=idx[pid];if(j==null)return;var p=G.c[j];
       var x1=X(c),y1=Y(i),x2=X(p),y2=Y(j),col=LANE[Math.max(c.l,p.l)%LANE.length],ds=(c.x||p.x)?' stroke-dasharray="4 4" opacity=".45"':'';
       s+=x1===x2?'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="3.5"'+ds+'/>'
-       
+        :'<path d="M'+x1+' '+y1+' C'+x1+' '+(y1+y2)/2+' '+x2+' '+(y1+y2)/2+' '+x2+' '+y2+'" fill="none" stroke="'+col+'" stroke-width="3.5"'+ds+'/>'})});
     var headTip=G.b[G.head];
     G.c.forEach(function(c,i){var x=X(c),y=Y(i),col=LANE[c.l%LANE.length],t=tx;
       if(c.x)s+='<circle cx="'+x+'" cy="'+y+'" r="8" fill="#fff" stroke="'+col+'" stroke-width="2" stroke-dasharray="3 2" opacity=".55"/>';
@@ -179,12 +179,29 @@
     return '<div class="tp-zones"><div class="tp-zn"><b>Working folder</b><small>your edits</small>'+(W.join('')||'<small>clean</small>')+'</div>'
       +'<div class="tp-zn"><b>Staging area</b><small>git add puts it here</small>'+(St.join('')||'<small>empty</small>')+'</div>'
       +'<div class="tp-zn"><b>Repository</b><small>'+(G?live.length+' commit'+(live.length===1?'':'s'):'no .git yet')+'</small>'+R.join('')+'</div></div>'}
+  /* what git status prints at this step, worked out from the files, the way real Git words it */
+  function statusHtml(S){var G=S.g;if(!G)return '<pre class="tp-st"><span class="r">fatal: not a git repository (or any of the parent directories): .git</span></pre>';
+    var t=parseTree(S.tree),fp=fullPaths(t),stg=[],mod=[],unt=[],conf=[],skip=null;
+    fp.forEach(function(x){var e=x.e;if(!x.p)return;if(skip&&x.p.indexOf(skip)===0)return;skip=null;if(e.st==='I'||e.st==='G')return;
+      if(e.dir){if(e.st==='U'){skip=x.p+'/';unt.push(x.p+'/')}return}
+      if(e.st==='U')unt.push(x.p);else if(e.st==='A')stg.push('new file:   '+x.p);else if(e.st==='S')stg.push('modified:   '+x.p);else if(e.st==='M')mod.push('modified:   '+x.p);else if(e.st==='X')conf.push('both modified:   '+x.p)});
+    unt.sort(function(a,b){return a<b?-1:a>b?1:0});
+    var L=['On branch '+G.head],n=G.c.length,f=function(c,l){return '<span class="'+c+'">\t'+esc(l)+'</span>'};
+    if(!n)L.push('','No commits yet');
+    if(conf.length)L.push('You have unmerged paths.','  (fix conflicts and run "git commit")','  (use "git merge --abort" to abort the merge)','','Unmerged paths:','  (use "git add <file>..." to mark resolution)');
+    var o=L.map(esc);if(conf.length)conf.forEach(function(l){o.push(f('r',l))});
+    if(stg.length){o.push('','Changes to be committed:',esc(n?'  (use "git restore --staged <file>..." to unstage)':'  (use "git rm --cached <file>..." to unstage)'));stg.forEach(function(l){o.push(f('g',l))})}
+    if(mod.length){o.push('','Changes not staged for commit:',esc('  (use "git add <file>..." to update what will be committed)'),esc('  (use "git restore <file>..." to discard changes in working directory)'));mod.forEach(function(l){o.push(f('r',l))})}
+    if(unt.length){o.push('','Untracked files:',esc('  (use "git add <file>..." to include in what will be committed)'));unt.forEach(function(l){o.push(f('r',l))})}
+    if(!stg.length&&!mod.length&&!unt.length&&!conf.length)o.push(esc(n?'nothing to commit, working tree clean':'nothing to commit (create/copy files and use "git add" to track)'));
+    else if(!stg.length)o.push('',esc(mod.length||conf.length?'no changes added to commit (use "git add" and/or "git commit -a")':'nothing added to commit but untracked files present (use "git add" to track)'));
+    return '<pre class="tp-st">'+o.join('\n')+'</pre>'}
   function seesHtml(S){var t=parseTree(S.tree),fp=fullPaths(t),h='',skip=null;
     fp.forEach(function(x,i){var e=x.e;if(!x.p)return;if(skip&&x.p.indexOf(skip)===0)return;skip=null;if(e.st==='I'||e.st==='G')return;
       /* a new folder Git has never seen is listed as one line, like git status does */
       if(e.dir&&e.st==='U'){skip=x.p+'/';h+='<span>'+esc(x.p)+'/ <em class="U">(untracked folder)</em></span>';return}
       if(e.dir){var kids=t[i+1]&&t[i+1].d>e.d;if(!kids)h+='<span class="none">'+esc(x.p)+'/ is empty, so Git cannot see it</span>';return}
-      h+='<span>'+esc(x.p)+(e.st?' <em class="'+e.st+'">('+STT[e.st]+')</em>':'')+'</span>'});
+      h+='<span>'+esc(x.p)+(e.st?' <em class="'+e.st+'">('+STT[e.st]+')</em>':' <em class="T">(tracked, unchanged)</em>')+'</span>'});
     return '<div class="tp-sees">'+(h||'<span class="none">nothing</span>')+'</div>'}
 
   /* ---------------- a file's contents ---------------- */
@@ -276,7 +293,7 @@
         if(k==='graph')p=box('COMMIT GRAPH','newest on top &middot; ring = HEAD','<div class="tp-graph">'+gSvg(St.g)+'</div>','wide');
         else if(k==='zones')p=box('THE THREE ZONES','',zonesHtml(St),'wide');
         else if(k==='tree')p=box('FILES','',treeHtml(St.tree));
-        else if(k==='sees')p=box('WHAT GIT CAN SEE','git status lists these',seesHtml(St));
+        else if(k==='sees')p=box('GIT STATUS','what git status prints right now',statusHtml(St));
         if(/ wide/.test(p))(seenHalf?rest:lead).push(p);else{half.push(p);seenHalf=true}});
       if(st&&st.d)half.push(box('git diff redesign','- in redesign &middot; + in main',diffHtml(st.d)));
       else if(St.edit)half.push(box(esc(St.edit.f),St.edit.l.some(function(l){return /^<{7}/.test(l)})?'conflict!':'',fileHtml(St.edit),'file'));

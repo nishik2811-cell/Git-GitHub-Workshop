@@ -31,12 +31,13 @@ Read a little, try it straight away, and break things on purpose.
 |---|---|
 | **Workshop** | The lessons: nine modules from "what is Git?" to working in a team |
 | **Practice Lab** | A Git terminal with a live picture of your files, commits and GitHub, plus guided stories |
-| **Git Bash / Terminal** | A plain terminal, like on a real computer: log in with a GitHub token once, then `gh repo create`, `git clone`, `git push` |
+| **Git Bash / Terminal** | A plain terminal, like on a real computer: log in with a GitHub token once, then `gh repo create`, `git clone`, `git push`. Open more tabs with **+** (each has its own folder and history), and **Log out** from the bar at the top |
 | **VS Code** | A look-alike of the real editor, with Source Control, merge conflict buttons and undo / redo |
 | **Cheat Sheet** | Every command the lab understands, with search, *Try it* and *Copy* |
 | **File Explorer and Bin** | Folders, drag and drop, and restoring things you deleted |
 | **Browser** | The project's GitHub page, the setup guide website, and a **New repository** page like github.com/new |
 | **Setup-Guide.pdf** | Installing Git, Git Bash and VS Code on your own computer |
+| **resources** | The workshop's slide decks (.pptx). Open one to flip through its slides, or download it. It is a normal folder, so you can `git add`, commit and push it too |
 | **hehehe** | A folder of memes. Its `task.txt` walks you through putting it on GitHub in a new repo, `workshop-demo`, in Git Bash, without leaking the secret key inside |
 | **Notepad** | A drawing app, for sketching branches and merges. Save a drawing to your device, or as a file on the Mini laptop to commit and push |
 
@@ -48,12 +49,12 @@ It behaves like a real desktop: windows move, resize, minimise and pin on phones
 |---|---|---|
 | 1 | Foundational concepts | What Git and GitHub are, where Git came from, centralized vs distributed |
 | 2 | Setup and the 4 states | Installing Git, `git config`, the working folder, staging area, local and remote repo |
-| 3 | Everyday commands | Repositories, then a single-user repo from `git init` to `git log --oneline` |
-| 4 | Ignoring files | `.gitignore` for secrets and junk, `.gitkeep` for empty folders |
-| 5 | Branches and more | branches, merging, conflicts and `git reset`. Then `stash`, rebase vs merge and tags |
+| 3 | Everyday commands | Repositories, a single-user repo from `git init` to `git log --oneline`, then `git status -s`, `commit -am` and reading the history |
+| 4 | Ignoring files | `.gitignore`, `git rm --cached` and keeping empty folders with `.gitkeep` |
+| 5 | Branches and more | Branches, merging, conflicts and `git reset`. Then `stash`, rebase vs merge and tags |
 | 6 | GitHub | Remotes, push, pull, clone, and fetch vs pull |
 | 7 | Git with buttons | VS Code Source Control, Git Graph and GitHub Desktop |
-| 8 | Teamwork | Forks, issues, assignees and pull requests. Then branch protection and the three ways to merge |
+| 8 | Teamwork | Forks, issues, assignees and pull requests, team collaboration. Then branch protection and the three ways to merge |
 | 9 | Good habits | Commit messages, small commits, keeping secrets out, and using AI safely |
 
 ## See it happen
@@ -61,6 +62,17 @@ It behaves like a real desktop: windows move, resize, minimise and pin on phones
 Seven lessons have a step-by-step picture for presenting: you type the real commands in your own terminal, press **Next** (or a clicker), and the picture shows what that command changed. The commit graph with HEAD and every branch, the files with their U / A / M letters, the three zones, the file's contents (conflict markers included), or the GitHub page with the button to click. **Big view** (or F) fills the projector.
 
 The steps live in `src/viz.js`. Change them there, then run `python3 src/sync.py`.
+
+## Workshop slides
+
+The decks from the sessions are in [`resources/`](resources), and in the Mini laptop's **resources** folder, where you can flip through them in Slides:
+
+| Deck | What it covers |
+|---|---|
+| [Session 1: Intro to hands-on Git](resources/git_session1_intro_hands_on_1.pptx) | Why Git and GitHub, version control, centralised vs distributed, installing Git, `init`, `status`, `add`, `commit`, `log`, the first push |
+| [Part 2: Single user setup](resources/git_single_user_setup.pptx) | Why we ignore files, `.gitignore`, an already committed `.env`, empty folders and `.gitkeep` |
+| [Part 3: Branches, undo and teamwork](resources/git_branches_undo_teamwork.pptx) | Branches, merging, merge conflicts, undoing with `git reset`, issues, assignees and pull requests |
+| [Session 2: Stashing to GitHub](resources/git_session2_stash_to_github.pptx) | `stash`, tags, signing up and making a repo on GitHub, `clone`, private repos and SSH keys, pushing, fetch vs pull |
 
 Every module has something to click: diagrams you can play with, drawn GitHub screens where you tap a part to learn what it does, code with a *Copy* button, and a short quiz at the end.
 
@@ -83,7 +95,7 @@ After each story there are missions to try alone, with a *Type it for me* button
 ## Real GitHub mode
 
 When you're ready, the same commands can work on your real GitHub account. All you need is a token:
-make one at **github.com/settings/tokens/new**, tick **repo**, and copy it.
+make one at **github.com/settings/tokens/new**, tick **repo**, set **Expiration** to **7 days**, and copy it.
 
 **In Git Bash / Terminal** (the simplest way): open it, paste the token, press **Log in**. Then use Git like on a real computer:
 
@@ -93,7 +105,7 @@ gh repo create my-project --public --source=. --remote=origin --push
 
 or `git clone https://github.com/your-name/a-repo.git` for a repo you already have.
 
-**In the Practice Lab:** press **Real GitHub mode**, paste the token, and either paste a repo link or type a name under **No repo yet? Make one**. The stories and the four boxes then use your real repo.
+**In the Practice Lab:** press **Real GitHub mode**, paste the token, and either paste a repo link or type a name under **No repo yet? Make one**. The stories and the four boxes then use your real repo, and **Switch repo** moves to another one without logging out.
 
 What happens on GitHub is what real Git does:
 
@@ -113,10 +125,10 @@ The token stays in your browser tab and is never saved. Use a throwaway repo, an
 | Undo | `restore`, `reset`, `revert`, `stash` |
 | Files | `rm`, `mv`, `.gitignore` |
 | Branches | `branch` (also `-M` to rename and `--set-upstream-to`), `switch`, `checkout`, `merge`, `rebase`, `tag` |
-| GitHub | `remote` (`add`, `set-url`, `remove`, `-v`), `push`, `fetch`, `pull`, `gh repo create`, `gh auth` |
+| GitHub | `remote` (`add`, `set-url`, `remove`, `-v`), `push` (also `--delete` a branch), `fetch`, `pull`, `gh repo create`, `gh auth` |
 | Terminal | `ls`, `cd`, `pwd`, `mkdir`, `touch`, `echo`, `cat`, `mv`, `cp`, `rm` |
 
-Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`. The Cheat Sheet lists all 99 commands, each with *Try it* and *Copy*.
+Remote addresses can be HTTPS (what the lessons use) or SSH, like `git@github.com:you/repo.git`. The Cheat Sheet lists all 105 commands, each with *Try it* and *Copy*.
 
 ## Why this one
 
@@ -146,8 +158,12 @@ Tools like *Learn Git Branching* draw the commit graph as you type. This worksho
 | `src/sync.py` | Copies the `src/` files, the PDF and the memes into `index.html` |
 | `docs/` | The setup guide PDF, screenshots and the link preview picture |
 | `memes/` | The pictures for the hehehe folder |
+| `resources/` | The slide decks for the resources folder, and `resources/slides/`, a picture of every slide |
+| `src/slides.py` | Makes those slide pictures from the decks (needs LibreOffice) |
 
-After changing `src/playground.js`, `src/desktop.*`, `src/viz.*`, `docs/` or `memes/`, rebuild the page from the project folder:
+Added or changed a deck in `resources/`? Run `python3 src/slides.py` first to make its slide pictures.
+
+After changing `src/playground.js`, `src/desktop.*`, `src/viz.*`, `docs/`, `memes/` or `resources/`, rebuild the page from the project folder:
 
 ```bash
 python3 src/sync.py
