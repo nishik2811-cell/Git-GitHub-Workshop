@@ -48,12 +48,12 @@
     {"c":["git add .","git commit -m \"add gitignore\""],"cap":".gitignore itself is committed, so the whole team shares the same rules.","v":{"tree":["my-first-repo/","  .git/:G","  node_modules/:I","    react.js:I","  .DS_Store:I","  .env:I","  .gitignore","  debug.log:I","  index.html"],"edit":{"f":".gitignore","l":["# secrets",".env","","# dependencies","node_modules/","","# logs and OS junk","*.log",".DS_Store"]},"g":{"add":[["c71e5a0","add gitignore"]]}}}]},
   m3:{title:".gitkeep",
     init:{"show":["tree","sees","graph"],"tree":["my-first-repo/","  .git/:G","  .gitignore","  index.html"],"g":{"init":"main","add":[["3f8a1c2","initial commit"],["9bd04e7","add paragraph"],["c71e5a0","add gitignore"]]}},
-    steps:[
-    {"c":"mkdir uploads","cap":"A new, empty uploads/ folder.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/^","  .gitignore","  index.html"]}},
-    {"c":"git status","cap":"\"working tree clean\": Git tracks files, so an empty folder is invisible to it."},
+
+
+      
     {"c":"touch uploads/.gitkeep","cap":"A tiny empty .gitkeep file goes inside.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/:U","    .gitkeep:U^","  .gitignore","  index.html"]}},
     {"c":"git status","cap":"Now the folder has a file, so Git sees uploads/.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/:U","    .gitkeep:U","  .gitignore","  index.html"]}},
-    {"c":["git add .","git commit -m \"keep uploads folder\""],"cap":"Committed: anyone who clones the repo gets the folder too.","v":{"tree":["my-first-repo/","  .git/:G","  uploads/","    .gitkeep","  .gitignore","  index.html"],"g":{"add":[["5e6f7a8","keep uploads folder"]]}}}]},
+   
   m4:{title:"Branching",
     init:{"show":["graph","tree"],"tree":["git-club/","  .git/:G","  index.html"],"edit":{"f":"index.html","l":["<h1>Git Club</h1>","<p>Welcome!</p>"]},"g":{"init":"master","add":[["a1b2c3d","initial commit"],["b2c4e61","add homepage"]]}},
     steps:[
@@ -140,7 +140,7 @@
     G.c.forEach(function(c,i){c.p.forEach(function(pid){var j=idx[pid];if(j==null)return;var p=G.c[j];
       var x1=X(c),y1=Y(i),x2=X(p),y2=Y(j),col=LANE[Math.max(c.l,p.l)%LANE.length],ds=(c.x||p.x)?' stroke-dasharray="4 4" opacity=".45"':'';
       s+=x1===x2?'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="3.5"'+ds+'/>'
-        :'<path d="M'+x1+' '+y1+' C'+x1+' '+(y1+y2)/2+' '+x2+' '+(y1+y2)/2+' '+x2+' '+y2+'" fill="none" stroke="'+col+'" stroke-width="3.5"'+ds+'/>'})});
+       
     var headTip=G.b[G.head];
     G.c.forEach(function(c,i){var x=X(c),y=Y(i),col=LANE[c.l%LANE.length],t=tx;
       if(c.x)s+='<circle cx="'+x+'" cy="'+y+'" r="8" fill="#fff" stroke="'+col+'" stroke-width="2" stroke-dasharray="3 2" opacity=".55"/>';
