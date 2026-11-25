@@ -93,5 +93,11 @@ h=re.sub(r'<script id="preboot">.*?</script>','',h,flags=re.S)
 i=h.index('</head>')
 h=h[:i]+'<script id="preboot">document.documentElement.classList.add(\'preboot\');try{var nv=performance.getEntriesByType(\'navigation\')[0];if(nv&&nv.type===\'reload\'&&sessionStorage.getItem(\'mlStarted\')===\'1\')document.documentElement.classList.add(\'skipboot\')}catch(e){};addEventListener(\'load\',function(){if(!document.getElementById(\'boot\'))document.documentElement.classList.remove(\'preboot\')})</script>'+h[i:]
 
+# Vercel Web Analytics: counts visitors on the live site (no cookies). It only loads over https on a real host,
+# so a copy opened from your own laptop (file://) or localhost sends nothing.
+h=re.sub(r'<script id="vaboot">.*?</script>','',h,flags=re.S)
+i=h.index('</head>')
+h=h[:i]+'<script id="vaboot">(function(){if(location.protocol!==\'https:\'||/^(localhost|127\\.)/.test(location.hostname))return;window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};var s=document.createElement(\'script\');s.defer=true;s.src=\'/_vercel/insights/script.js\';document.head.appendChild(s)})()</script>'+h[i:]
+
 open('index.html','w',encoding='utf-8').write(h)
 print('index.html updated:',len(h)//1024,'KB')
